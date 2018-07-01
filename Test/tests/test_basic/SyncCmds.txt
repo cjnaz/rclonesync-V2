@@ -1,0 +1,2 @@
+:MSG:	Issue rclonesync clould to local
+:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log

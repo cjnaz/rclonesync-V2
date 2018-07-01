@@ -1,0 +1,5 @@
+:MSG:	Sync with --dry-run
+:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log --dry-run
+
+:MSG:	Sync without --dry-run
+:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log

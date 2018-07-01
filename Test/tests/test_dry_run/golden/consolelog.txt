@@ -1,0 +1,99 @@
+:MSG:	Sync with --dry-run
+***** BiDirectional Sync for Cloud Services using rclone *****
+Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
+Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=True, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+>>>>> Generating Local and Remote lists
+  LOCAL    Checking for Diffs                  - ./testdir/
+  LOCAL      File is newer                     - file2.txt
+  LOCAL      File size is different            - file2.txt
+  LOCAL      File was deleted                  - file4.txt
+  LOCAL      File is newer                     - file5.txt
+  LOCAL      File size is different            - file5.txt
+  LOCAL      File was deleted                  - file6.txt
+  LOCAL      File is newer                     - file7.txt
+  LOCAL      File size is different            - file7.txt
+  LOCAL      File is new                       - file11.txt
+     6 file change(s) on LOCAL:     1 new,    3 newer,    0 older,    2 deleted
+  REMOTE   Checking for Diffs                  - GDrive:/testdir/
+  REMOTE     File is newer                     - file1.txt
+  REMOTE     File size is different            - file1.txt
+  REMOTE     File was deleted                  - file3.txt
+  REMOTE     File is newer                     - file5.txt
+  REMOTE     File size is different            - file5.txt
+  REMOTE     File is newer                     - file6.txt
+  REMOTE     File size is different            - file6.txt
+  REMOTE     File was deleted                  - file7.txt
+  REMOTE     File is new                       - file10.txt
+     6 file change(s) on REMOTE:    1 new,    3 newer,    0 older,    2 deleted
+>>>>> Applying changes on Remote to Local
+  REMOTE     Copying to local                  - ./testdir/file1.txt
+2018/07/01 00:34:45 NOTICE: file1.txt: Not copying as --dry-run
+  REMOTE     Copying to local                  - ./testdir/file10.txt
+2018/07/01 00:34:47 NOTICE: file10.txt: Not copying as --dry-run
+  LOCAL      Deleting file                     - ./testdir/file3.txt
+2018/07/01 00:34:47 NOTICE: file3.txt: Not deleting as --dry-run
+  WARNING    Changed in both local and remote  - file5.txt
+  REMOTE     Copying to local                  - ./testdir/file5.txt_REMOTE
+2018/07/01 00:34:48 NOTICE: file5.txt: Not copying as --dry-run
+  LOCAL      Renaming local copy               - ./testdir/file5.txt_LOCAL
+2018/07/01 00:34:48 NOTICE: file5.txt: Not moving as --dry-run
+  WARNING    Deleted locally and also changed remotely - file6.txt
+  REMOTE     Copying to local                  - ./testdir/file6.txt
+2018/07/01 00:34:49 NOTICE: file6.txt: Not copying as --dry-run
+>>>>> Synching Local to Remote
+2018/07/01 00:34:50 NOTICE: file11.txt: Not copying as --dry-run
+2018/07/01 00:34:50 NOTICE: file3.txt: Not copying as --dry-run
+2018/07/01 00:34:50 NOTICE: file2.txt: Not copying as --dry-run
+2018/07/01 00:34:50 NOTICE: file7.txt: Not copying as --dry-run
+2018/07/01 00:34:50 NOTICE: file1.txt: Not copying as --dry-run
+2018/07/01 00:34:50 NOTICE: file5.txt: Not updating modification time as --dry-run
+2018/07/01 00:34:50 NOTICE: file10.txt: Not deleting as --dry-run
+2018/07/01 00:34:50 NOTICE: file4.txt: Not deleting as --dry-run
+2018/07/01 00:34:50 NOTICE: file6.txt: Not deleting as --dry-run
+>>>>> rmdirs Remote
+>>>>> rmdirs Local
+>>>>> Refreshing Local and Remote lsl files
+>>>>> Successful run.  All done.
+
+:MSG:	Sync without --dry-run
+***** BiDirectional Sync for Cloud Services using rclone *****
+Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
+Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+>>>>> Generating Local and Remote lists
+  LOCAL    Checking for Diffs                  - ./testdir/
+  LOCAL      File is newer                     - file2.txt
+  LOCAL      File size is different            - file2.txt
+  LOCAL      File was deleted                  - file4.txt
+  LOCAL      File is newer                     - file5.txt
+  LOCAL      File size is different            - file5.txt
+  LOCAL      File was deleted                  - file6.txt
+  LOCAL      File is newer                     - file7.txt
+  LOCAL      File size is different            - file7.txt
+  LOCAL      File is new                       - file11.txt
+     6 file change(s) on LOCAL:     1 new,    3 newer,    0 older,    2 deleted
+  REMOTE   Checking for Diffs                  - GDrive:/testdir/
+  REMOTE     File is newer                     - file1.txt
+  REMOTE     File size is different            - file1.txt
+  REMOTE     File was deleted                  - file3.txt
+  REMOTE     File is newer                     - file5.txt
+  REMOTE     File size is different            - file5.txt
+  REMOTE     File is newer                     - file6.txt
+  REMOTE     File size is different            - file6.txt
+  REMOTE     File was deleted                  - file7.txt
+  REMOTE     File is new                       - file10.txt
+     6 file change(s) on REMOTE:    1 new,    3 newer,    0 older,    2 deleted
+>>>>> Applying changes on Remote to Local
+  REMOTE     Copying to local                  - ./testdir/file1.txt
+  REMOTE     Copying to local                  - ./testdir/file10.txt
+  LOCAL      Deleting file                     - ./testdir/file3.txt
+  WARNING    Changed in both local and remote  - file5.txt
+  REMOTE     Copying to local                  - ./testdir/file5.txt_REMOTE
+  LOCAL      Renaming local copy               - ./testdir/file5.txt_LOCAL
+  WARNING    Deleted locally and also changed remotely - file6.txt
+  REMOTE     Copying to local                  - ./testdir/file6.txt
+>>>>> Synching Local to Remote
+>>>>> rmdirs Remote
+>>>>> rmdirs Local
+>>>>> Refreshing Local and Remote lsl files
+>>>>> Successful run.  All done.
+

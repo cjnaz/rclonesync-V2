@@ -1,0 +1,18 @@
+# Filter file for use with rclonesync
+# See https://rclone.org/filtering/ for filtering rules
+# NOTICE:  If you make changes to this file you MUST do a --first-sync run.  Run with --dry-run to see what changes will be made.
+
+# Dropbox wont sync some files, so filtered here.  See https://www.dropbox.com/en/help/syncing-uploads/files-not-syncing
+- .dropbox.attr
+- ~*.tmp
+- ~$*
+- .~*
+- desktop.ini
+- .dropbox
+
+# Used for rclonesync testing, so excluded from normal runs
+- /testdir/**
+
+# Other example filters
+# /TiBU/*
+# /Photos/**

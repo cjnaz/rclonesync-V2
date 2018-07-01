@@ -1,0 +1,30 @@
+
+:MSG:	New on Remote							file10
+rclone copy :TESTCASEROOT:/modfiles/file10.txt :CLOUDTESTDIR:
+
+:MSG:	Newer on Remote							file1
+rclone copy :TESTCASEROOT:/modfiles/file1.txt :CLOUDTESTDIR:
+
+:MSG:	New on Local							file11
+rclone copy :TESTCASEROOT:/modfiles/file11.txt :LOCALTESTDIR:
+
+:MSG:	Newer on Local							file2
+rclone copy :TESTCASEROOT:/modfiles/file2.txt :LOCALTESTDIR:
+
+:MSG:	Deleted on Remote						file3
+rclone delete :CLOUDTESTDIR:/file3.txt
+
+:MSG:	Deleted on Local						file4	
+rclone delete :LOCALTESTDIR:/file4.txt
+
+:MSG:	Changed on Remote and on Local			file5 (file5R, file5L)
+rclone copyto :TESTCASEROOT:/modfiles/file5R.txt :CLOUDTESTDIR:/file5.txt
+rclone copyto :TESTCASEROOT:/modfiles/file5L.txt :LOCALTESTDIR:/file5.txt
+
+:MSG:	Newer on Remote and deleted on Local	file6
+rclone copy :TESTCASEROOT:/modfiles/file6.txt :CLOUDTESTDIR:
+rclone delete :LOCALTESTDIR:/file6.txt
+
+:MSG:	Newer on Local and deleted on Remote	file7
+rclone copy :TESTCASEROOT:/modfiles/file7.txt :LOCALTESTDIR:
+rclone delete :CLOUDTESTDIR:/file7.txt

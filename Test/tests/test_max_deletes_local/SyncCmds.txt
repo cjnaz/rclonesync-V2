@@ -1,0 +1,5 @@
+:MSG:	Sync should fail due to too many local deletes
+:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log
+
+:MSG:   Change --max-delta limit to 60%, and sync should run.
+:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log --max-deletes 60

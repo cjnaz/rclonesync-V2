@@ -1,0 +1,11 @@
+test_check_access
+
+RCLONE_TEST files in the top level and subdir
+
+1) First, see that --check-access passes with the initial setup
+2) Delete the remote subdir RCLONE_TEST, run sync, will fail critical
+3) Put the remote subdir RCLONE_TEST back, run --first-sync
+4) Run sync with --check-access.  Should pass.
+5) Delete local top level RCLONE_TEST, run sync, will fail critical
+6) Run --first-sync, which will copy the remote top level back to local
+7) Run sync with --check-access.  Should pass.

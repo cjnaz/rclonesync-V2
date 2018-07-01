@@ -1,0 +1,6 @@
+# This first line has a --first-sync to force building the filters file -MD5.  Uncomment and run once to reset the stored MD5.
+#:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --filters-file :TESTCASEROOT:/filtersfile.txt --workdir :WORKDIR: --no-datetime-log  --first-sync
+
+:MSG:	Issue rclonesync with --filters-file.  Cloud-side fileZ.txt is filtered.  
+
+:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --filters-file :TESTCASEROOT:/filtersfile.txt --workdir :WORKDIR: --no-datetime-log

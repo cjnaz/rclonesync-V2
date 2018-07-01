@@ -1,0 +1,14 @@
+test_filtersfile_checks
+
+Tests rclonesync's --filters-file MD5 hash checks logic
+
+Note that this test checks for rclonesync's handling of filters files, not an extensive test of rclone's filter capability.
+The effectiveness of the filters is not tested.
+
+Sequence:
+	Run with --filters-file but with no MD5	Should CRITICAL abort
+	Run without --filtersfile 				Should be blocked due to prior CRITICAL abort
+	Run with --filters-file and --first-sync
+	Run with --filters-file alone.  		Should run
+	push changed filtersfile
+	Run with --filters-file alone.  		Should CRITICAL abort

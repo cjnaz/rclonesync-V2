@@ -1,0 +1,3 @@
+:MSG:	Place a newer files on the Remote
+rclone copy :TESTCASEROOT:/modfiles/file1.txt :CLOUDTESTDIR:
+rclone copyto :TESTCASEROOT:/modfiles/file1.txt :CLOUDTESTDIR:/subdir/file20.txt

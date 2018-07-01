@@ -1,0 +1,41 @@
+:MSG:	Sync should fail due to too many Remote deletes
+***** BiDirectional Sync for Cloud Services using rclone *****
+Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
+Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+>>>>> Generating Local and Remote lists
+  LOCAL    Checking for Diffs                  - ./testdir/
+  REMOTE   Checking for Diffs                  - GDrive:/testdir/
+  REMOTE     File was deleted                  - file1.txt
+  REMOTE     File was deleted                  - file2.txt
+  REMOTE     File was deleted                  - file3.txt
+  REMOTE     File was deleted                  - file4.txt
+  REMOTE     File was deleted                  - file5.txt
+     5 file change(s) on REMOTE:    0 new,    0 newer,    0 older,    5 deleted
+Excessive number of deletes (>50%, 5 of 9) found on the Remote system GDrive:/testdir/ - Aborting.  Run with --force if desired.
+***** Error Abort.  Try running rclonesync again. *****
+
+:MSG:   Apply --force switch, and sync should run.
+***** BiDirectional Sync for Cloud Services using rclone *****
+Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
+Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=True, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+>>>>> Generating Local and Remote lists
+  LOCAL    Checking for Diffs                  - ./testdir/
+  REMOTE   Checking for Diffs                  - GDrive:/testdir/
+  REMOTE     File was deleted                  - file1.txt
+  REMOTE     File was deleted                  - file2.txt
+  REMOTE     File was deleted                  - file3.txt
+  REMOTE     File was deleted                  - file4.txt
+  REMOTE     File was deleted                  - file5.txt
+     5 file change(s) on REMOTE:    0 new,    0 newer,    0 older,    5 deleted
+>>>>> Applying changes on Remote to Local
+  LOCAL      Deleting file                     - ./testdir/file1.txt
+  LOCAL      Deleting file                     - ./testdir/file2.txt
+  LOCAL      Deleting file                     - ./testdir/file3.txt
+  LOCAL      Deleting file                     - ./testdir/file4.txt
+  LOCAL      Deleting file                     - ./testdir/file5.txt
+>>>>> Synching Local to Remote
+>>>>> rmdirs Remote
+>>>>> rmdirs Local
+>>>>> Refreshing Local and Remote lsl files
+>>>>> Successful run.  All done.
+
