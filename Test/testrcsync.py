@@ -3,18 +3,18 @@
 Test cases are organized in subdirs beneath ./tests.
 Results are compared against golden LSL files and the rclonesync log file.
 
-Example, for running all tests with output directed to a log file:
-    ./testrcsync.py GDrive: ALL > runlog.txt 2>&1
+Example for running all tests with output directed to a log file:
+    ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.0 180701"
+version = "V1.1 180729"
 
 # Revision history
+# 180729  Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
 # 180701  New
 
-# Todo
-#   None
-
+# Todos
+#   none
 
 
 import argparse
@@ -26,65 +26,62 @@ import subprocess
 import shutil
 import filecmp
 
+RCSEXEC = "../rclonesync.py"
+LOCALTESTBASE = "./"
+TESTDIR = "testdir/"
+WORKDIR = "./testwd" + "/"
+CONSOLELOGFILE = WORKDIR + "consolelog.txt"
+
 def rcstest():
-    print ("***** Test case <{}> on cloud <{}>".format(testcase, cloud))
-
-    TESTDIR = "testdir"
-
-    LOCALTESTDIR = "./" + TESTDIR
-    CLOUDTESTDIR = cloud + '/' + TESTDIR
-    WORKDIR = "./testwd" + "/"
-    RCSEXEC = "../rclonesync.py"
-    CONSOLELOGFILE = WORKDIR + "consolelog.txt"
+    path1 = path1base + TESTDIR + "path1/"
+    path2 = path2base + TESTDIR + "path2/"
+    print ("***** Test case <{}> using Path1 <{}> and Path2 <{}> and rclonesync <{}>".format(testcase, path1, path2, rcsexec))
 
     TESTCASEROOT = "./tests/" + testcase + "/"
-
     INITIALDIR   = TESTCASEROOT + "initial/"
     MODFILESDIR  = TESTCASEROOT + "modfiles/"
     GOLDENDIR    = TESTCASEROOT + "golden/"
+    CHANGECMDS   = TESTCASEROOT + "/ChangeCmds.txt"         # File of commands for changes from initial setup state for a test
+    SYNCCMD      = TESTCASEROOT + "/SyncCmds.txt"           # File of rclonesync (and other) commands
 
-    CHANGECMDS = TESTCASEROOT + "/ChangeCmds.txt"   # File of commands for changes from initial setup state for a test
-    SYNCCMD = TESTCASEROOT + "/SyncCmds.txt"        # File of rclonesync command
-
-
-    print ("CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Local and Remote")
+    print ("CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2")
     if os.path.exists(WORKDIR):
         shutil.rmtree(WORKDIR)
     os.mkdir(WORKDIR)
 
-    if os.path.exists(LOCALTESTDIR):
-        shutil.rmtree(LOCALTESTDIR)
-    sys.stdout.flush()                              # Flush to align stdout and stderr to a redirected output file.
+    testdirpath1 = TESTDIR + "path1/"
+    if testdirpath1 in subprocess.check_output(["rclone", "lsf", path1base, "-R"]).decode("utf8"):
+        subprocess.call(["rclone", "purge", path1])
     
-    #shutil.copytree(INITIALDIR, LOCALTESTDIR)      # Changed to cp since Python 2.7 copytree changed timestamp (truncated to 1us resolution)
-    subprocess.call(["cp", INITIALDIR, LOCALTESTDIR, "-rp"])
-    subprocess.call(["rclone", "sync", LOCALTESTDIR, CLOUDTESTDIR])     # Sync completely replaces the Cloud with the Local content
+    # git tends to change file mod dates.  For test stability, jam initial dates to a fix past date.
+    # test cases that changes files (test_changes, for example) will touch specific files to fixed new dates.
+    subprocess.call("find " + INITIALDIR + r' -type f -exec touch --date="2000-01-01" {} +', shell=True)
+
+    subprocess.call(["rclone", "copy", INITIALDIR, path1])
+    subprocess.call(["rclone", "sync", path1, path2])
+    sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
+    
+    print ("\nDO <rclonesync --first-sync> to set LSL files baseline")
+    subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR, "--no-datetime-log" ])
     sys.stdout.flush()
     
 
-    print ("\nDO RCLONESYNC --FIRST-SYNC to set LSL files baseline")
-    subprocess.call([RCSEXEC, CLOUDTESTDIR, LOCALTESTDIR, "--first-sync", "--workdir", WORKDIR, "--no-datetime-log" ])
-    sys.stdout.flush()
-    
-
-    print ("RUN CHANGECMDS to appy changes from test case initial state")
+    print ("RUN CHANGECMDS to apply changes from test case initial state")
     with open(CHANGECMDS) as ifile:
         for line in ifile:
-            line = line[0:line.find('#')].lstrip().rstrip() # throw away comment and any leading & trailing whitespace
+            line = line[0:line.find('#')].lstrip().rstrip() # Throw away comment and any leading & trailing whitespace.
             if len(line) > 0:
                 if ":MSG:" in line:
                     print ("    {}".format(line))
                 else:
                     xx = line \
                          .replace(":TESTCASEROOT:", TESTCASEROOT) \
-                         .replace(":LOCALTESTDIR:", LOCALTESTDIR) \
-                         .replace(":CLOUDTESTDIR:", CLOUDTESTDIR) \
-                         .replace(":RCSEXEC:", RCSEXEC) \
-                         .replace(":WORKDIR:", WORKDIR) \
-                         .replace(":CLOUD:", cloud) \
-                         .split()
+                         .replace(":PATH1:", path1) \
+                         .replace(":PATH2:", path2) \
+                         .replace(":RCSEXEC:", rcsexec) \
+                         .replace(":WORKDIR:", WORKDIR)
                     print ("    {}".format(xx))
-                    subprocess.call(xx) #, stdout=logfile, stderr=logfile)
+                    subprocess.call(xx, shell=True) # using shell=True so that touch commands can have quoted date strings
                 sys.stdout.flush()
 
 
@@ -99,15 +96,14 @@ def rcstest():
                         subprocess.call(["echo", line], stdout=logfile, stderr=logfile)
                     else:
                         xx = line \
-                             .replace(":TESTCASEROOT:", TESTCASEROOT) \
-                             .replace(":LOCALTESTDIR:", LOCALTESTDIR) \
-                             .replace(":CLOUDTESTDIR:", CLOUDTESTDIR) \
-                             .replace(":RCSEXEC:", RCSEXEC) \
-                             .replace(":WORKDIR:", WORKDIR) \
-                             .replace(":CLOUD:", cloud) \
-                             .split()
+                            .replace(":TESTCASEROOT:", TESTCASEROOT) \
+                            .replace(":PATH1:", path1) \
+                            .replace(":PATH2:", path2) \
+                            .replace(":RCSEXEC:", rcsexec) \
+                            .replace(":WORKDIR:", WORKDIR)
                         print ("    {}".format(xx))
-                        subprocess.call(xx, stdout=logfile, stderr=logfile)
+                        subprocess.call("echo " + xx, stdout=logfile, stderr=logfile, shell=True)
+                        subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
                     sys.stdout.flush()
 
 
@@ -147,7 +143,7 @@ def rcstest():
                 else:
                     if xx in resultsfiles:
                         errcnt += 1
-                        print ("MISCOMPARE  < Golden  to  Results > for:  <{}>".format(xx))
+                        print ("MISCOMPARE  < Golden  to  > Results  for:  <{}>".format(xx))
                         sys.stdout.flush()
                         subprocess.call(["diff", GOLDENDIR + xx, WORKDIR + xx ])
                 sys.stdout.flush()
@@ -156,20 +152,17 @@ def rcstest():
 
 
     if args.no_cleanup:
-        print ("SKIPPING CLEANING UP of Local and Remote testdirs")
+        print ("SKIPPING CLEANUP of testdirs")
     else:
-        print ("CLEANING UP Local and Remote testdirs")
-        if os.path.exists(LOCALTESTDIR):
-            shutil.rmtree(LOCALTESTDIR)
-        subprocess.call(["rclone", "purge", CLOUDTESTDIR])
+        print ("CLEANING UP testdirs")
+        subprocess.call(["rclone", "purge", path1])
+        subprocess.call(["rclone", "purge", path2])
 
     if errcnt > 0:
         print ("TEST <{}> FAILED WITH {} ERRORS.\n\n".format(testcase, errcnt))
     else:
         print ("TEST <{}> PASSED\n\n".format(testcase))
     sys.stdout.flush()
-
-    
 
 
 if __name__ == '__main__':
@@ -184,16 +177,21 @@ if __name__ == '__main__':
     clouds = str(clouds.decode("utf8")).split()
 
     parser = argparse.ArgumentParser(description="rclonesync test engine")
-    parser.add_argument('Cloud',
-                        help="Name of remote cloud service ({}) plus optional path".format(clouds))
+    parser.add_argument('Path1',
+                        help="'local' or name of cloud service ({})".format(clouds))
+    parser.add_argument('Path2',
+                        help="'local' or name of cloud service ({})".format(clouds))
     parser.add_argument('TestCase',
-                        help="Test case subdir name (beneath ./tests).  ALL to run all tests in the tests subdir")
+                        help="Test case subdir name (beneath ./tests).  'ALL' to run all tests in the tests subdir")
     parser.add_argument('-g', '--golden',
                         help="Capture output and place in testcase golden subdir",
                         action='store_true')
     parser.add_argument('--no-cleanup',
-                        help="Disable cleanup of Local and Remote testdirs.  Useful for debug.",
+                        help="Disable cleanup of Path1 and Path2 testdirs.  Useful for debug.",
                         action='store_true')
+    parser.add_argument('--rclonesync',
+                        help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC),
+                        default=RCSEXEC)
     parser.add_argument('-V', '--version',
                         help="Return version number and exit.",
                         action='version',
@@ -201,16 +199,30 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     testcase = args.TestCase
+    rcsexec  = args.rclonesync
     
-    remoteFormat = re.compile('([\w-]+):(.*)')      # Handle variations in the Cloud argument -- Remote: or Remote:some/path or Remote:/some/path
-    out = remoteFormat.match(args.Cloud)
-    cloud = remoteName = remotePathPart = remotePathBase = ''
-    if out:
-        cloud = out.group(1) + ':'
-        if cloud not in clouds:
-            print ("ERROR  Cloud argument <{}> not in list of configured remotes: {}".format(cloud, clouds)); exit()
+    remoteFormat = re.compile('([\w-]+):(.*)')
+    if args.Path1 == "local":
+        path1base = LOCALTESTBASE
     else:
-        print ("ERROR  Cloud parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Cloud, clouds)); exit()
+        out = remoteFormat.match(args.Path1)
+        if out:
+            path1base = out.group(1) + ':'
+            if path1base not in clouds:
+                print ("ERROR  Path1 parameter <{}> not in list of configured remotes: {}".format(path1base, clouds)); exit()
+        else:
+            print ("ERROR  Path1 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path1, clouds)); exit()
+
+    if args.Path2 == "local":
+        path2base = LOCALTESTBASE
+    else:
+        out = remoteFormat.match(args.Path2)
+        if out:
+            path2base = out.group(1) + ':'
+            if path2base not in clouds:
+                print ("ERROR  Path2 parameter <{}> not in list of configured remotes: {}".format(path2base, clouds)); exit()
+        else:
+            print ("ERROR  Path2 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path2, clouds)); exit()
 
 
     if testcase != "ALL":

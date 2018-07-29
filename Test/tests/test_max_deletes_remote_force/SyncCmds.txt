@@ -1,5 +1,0 @@
-:MSG:	Sync should fail due to too many Remote deletes
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log
-
-:MSG:   Apply --force switch, and sync should run.
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --workdir :WORKDIR: --no-datetime-log --force

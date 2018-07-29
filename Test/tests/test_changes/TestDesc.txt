@@ -1,11 +1,11 @@
 test_all
- - New on Remote							file10
- - Newer on Remote							file1
- - New on Local								file11
- - Newer on Local							file2
- - Deleted on Remote						file3
- - Deleted on Local							file4	
- - Changed on Remote and on Local			file5 (file5r, file5l)
- - Newer on Remote and deleted on Local		file6
- - Newer on Local and deleted on Remote		file7
+ - New on Path2							    file10
+ - Newer on Path2							file1
+ - New on Path1								file11
+ - Newer on Path1							file2
+ - Deleted on Path2						    file3
+ - Deleted on Path1							file4	
+ - Changed on Path2 and on Path1			file5 (file5r, file5l)
+ - Newer on Path2 and deleted on Path1		file6
+ - Newer on Path1 and deleted on Path2		file7
  

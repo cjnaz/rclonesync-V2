@@ -1,3 +1,7 @@
-:MSG:	Place a newer files on the Remote
-rclone copy :TESTCASEROOT:/modfiles/file1.txt :CLOUDTESTDIR:
-rclone copyto :TESTCASEROOT:/modfiles/file1.txt :CLOUDTESTDIR:/subdir/file20.txt
+:MSG:	Place a newer files on the Path1 and Path2
+
+# Must force a specific mod date since file mod data is lost through git
+touch :TESTCASEROOT:modfiles/file1.txt --date="2025-01-02"
+
+rclone copy :TESTCASEROOT:modfiles/file1.txt :PATH2:
+rclone copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir/file20.txt

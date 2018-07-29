@@ -1,23 +1,23 @@
 :MSG:	1) First, see that --check-access passes with the initial setup
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	2) Delete the remote subdir RCLONE_TEST, run sync, will fail critical
-rclone delete :CLOUDTESTDIR:/subdir/RCLONE_TEST
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
+:MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
+rclone delete :PATH2:subdir/RCLONE_TEST
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	3) Put the remote subdir RCLONE_TEST back, run --first-sync
-rclone copy :LOCALTESTDIR:/subdir/RCLONE_TEST :CLOUDTESTDIR:
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --first-sync --workdir :WORKDIR: --no-datetime-log
+:MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
+rclone copy :PATH1:subdir/RCLONE_TEST :PATH2:
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --first-sync --workdir :WORKDIR: --no-datetime-log
 
 :MSG:	4) Run sync with --check-access.  Should pass.
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	5) Delete local top level RCLONE_TEST, run sync, will fail critical
-rclone delete :LOCALTESTDIR:/RCLONE_TEST
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
+:MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
+rclone delete :PATH1:RCLONE_TEST
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	6) Run --first-sync, which will copy the remote top level back to local
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --first-sync --workdir :WORKDIR: --no-datetime-log
+:MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --first-sync --workdir :WORKDIR: --no-datetime-log
 
 :MSG:	7) Run sync with --check-access.  Should pass.
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
+:RCSEXEC: :PATH1: :PATH2: --verbose --check-access --workdir :WORKDIR: --no-datetime-log
