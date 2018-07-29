@@ -1,29 +1,38 @@
-:MSG:	New on Remote							file10
-rclone copy :TESTCASEROOT:/modfiles/file10.txt :CLOUDTESTDIR:
 
-:MSG:	Newer on Remote							file1
-rclone copy :TESTCASEROOT:/modfiles/file1.txt :CLOUDTESTDIR:
+:MSG:	New on Path2							file10
+touch :TESTCASEROOT:modfiles/file10.txt --date="2025-01-02"
+rclone copy :TESTCASEROOT:/modfiles/file10.txt :PATH2:
 
-:MSG:	New on Local							file11
-rclone copy :TESTCASEROOT:/modfiles/file11.txt :LOCALTESTDIR:
+:MSG:	Newer on Path2							file1
+touch :TESTCASEROOT:modfiles/file1.txt --date="2025-01-02"
+rclone copy :TESTCASEROOT:/modfiles/file1.txt :PATH2:
 
-:MSG:	Newer on Local							file2
-rclone copy :TESTCASEROOT:/modfiles/file2.txt :LOCALTESTDIR:
+:MSG:	New on Path1							file11
+touch :TESTCASEROOT:modfiles/file11.txt --date="2025-01-02"
+rclone copy :TESTCASEROOT:/modfiles/file11.txt :PATH1:
 
-:MSG:	Deleted on Remote						file3
-rclone delete :CLOUDTESTDIR:/file3.txt
+:MSG:	Newer on Path1							file2
+touch :TESTCASEROOT:modfiles/file2.txt --date="2025-01-02"
+rclone copy :TESTCASEROOT:/modfiles/file2.txt :PATH1:
 
-:MSG:	Deleted on Local						file4	
-rclone delete :LOCALTESTDIR:/file4.txt
+:MSG:	Deleted on Path2						file3
+rclone delete :PATH2:/file3.txt
 
-:MSG:	Changed on Remote and on Local			file5 (file5R, file5L)
-rclone copyto :TESTCASEROOT:/modfiles/file5R.txt :CLOUDTESTDIR:/file5.txt
-rclone copyto :TESTCASEROOT:/modfiles/file5L.txt :LOCALTESTDIR:/file5.txt
+:MSG:	Deleted on Path1						file4	
+rclone delete :PATH1:/file4.txt
 
-:MSG:	Newer on Remote and deleted on Local	file6
-rclone copy :TESTCASEROOT:/modfiles/file6.txt :CLOUDTESTDIR:
-rclone delete :LOCALTESTDIR:/file6.txt
+:MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
+touch :TESTCASEROOT:modfiles/file5R.txt --date="2025-01-02"
+rclone copyto :TESTCASEROOT:/modfiles/file5R.txt :PATH2:/file5.txt
+touch :TESTCASEROOT:modfiles/file5L.txt --date="2025-03-04"
+rclone copyto :TESTCASEROOT:/modfiles/file5L.txt :PATH1:/file5.txt
 
-:MSG:	Newer on Local and deleted on Remote	file7
-rclone copy :TESTCASEROOT:/modfiles/file7.txt :LOCALTESTDIR:
-rclone delete :CLOUDTESTDIR:/file7.txt
+:MSG:	Newer on Path2 and deleted on Path1	file6
+touch :TESTCASEROOT:modfiles/file6.txt --date="2025-01-02"
+rclone copy :TESTCASEROOT:/modfiles/file6.txt :PATH2:
+rclone delete :PATH1:/file6.txt
+
+:MSG:	Newer on Path1 and deleted on Path2	file7
+touch :TESTCASEROOT:modfiles/file7.txt --date="2025-01-02"
+rclone copy :TESTCASEROOT:/modfiles/file7.txt :PATH1:
+rclone delete :PATH2:/file7.txt

@@ -1,0 +1,4 @@
+test_max_deletes_path1
+
+Set up with 9 files.  ChangeCmds delete 5 from Path1, causing max deletes error.
+Run with --max-deletes 60 to allow sync.

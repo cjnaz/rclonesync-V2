@@ -1,0 +1,8 @@
+
+:MSG:	Delete >50% of Remote files
+rclone delete :PATH2:file1.txt
+rclone delete :PATH2:file2.txt
+rclone delete :PATH2:file3.txt
+rclone delete :PATH2:file4.txt
+rclone delete :PATH2:file5.txt
+

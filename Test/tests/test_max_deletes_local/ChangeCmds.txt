@@ -1,8 +1,0 @@
-
-:MSG:	Delete >50% of local files
-rclone delete :LOCALTESTDIR:/file1.txt
-rclone delete :LOCALTESTDIR:/file2.txt
-rclone delete :LOCALTESTDIR:/file3.txt
-rclone delete :LOCALTESTDIR:/file4.txt
-rclone delete :LOCALTESTDIR:/file5.txt
-

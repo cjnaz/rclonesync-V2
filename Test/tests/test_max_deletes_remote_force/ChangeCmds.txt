@@ -1,8 +1,0 @@
-
-:MSG:	Delete >50% of Remote files
-rclone delete :CLOUDTESTDIR:/file1.txt
-rclone delete :CLOUDTESTDIR:/file2.txt
-rclone delete :CLOUDTESTDIR:/file3.txt
-rclone delete :CLOUDTESTDIR:/file4.txt
-rclone delete :CLOUDTESTDIR:/file5.txt
-

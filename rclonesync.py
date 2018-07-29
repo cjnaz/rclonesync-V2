@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.0 180701"                          # Version number and date code
+__version__ = "V2.1 180729"                          # Version number and date code
 
 
 #==========================================================================================================
@@ -14,6 +14,7 @@ __version__ = "V2.0 180701"                          # Version number and date c
 # See README.md for revision history
 #
 # Known bugs:
+#   remove size compare since its not used
 #
 #==========================================================================================================
 
@@ -39,19 +40,20 @@ RTN_CRITICAL = 2                                    # Aborts allow rerunning.  C
 
 def bidirSync():
 
-    def print_msg(locale, msg, key=''):
-        return "  {:9}{:35} - {}".format(locale, msg, key)
+    def print_msg(path2e, msg, key=''):
+        return "  {:9}{:35} - {}".format(path2e, msg, key)
 
  
-    if not os.path.exists(local_wd):
-        os.makedirs(local_wd)
+    if not os.path.exists(workdir):
+        os.makedirs(workdir)
 
-    global local_list_file, remote_list_file
-    list_file_base   = local_wd + remote_path_base.replace(':','_').replace(r'/','_')    # '/home/<user>/.rclonesyncwd/<Remote_><_some_path_>' or '/home/<user>/.rclonesyncwd/<Remote_>'.
-    local_list_file  = list_file_base + '_llocalLSL'    # '/home/<user>/.rclonesyncwd/<Remote_><_some_path_>_llocalLSL' (extra 'l' to make the dir list pretty)
-    remote_list_file = list_file_base + '_remoteLSL'    # '/home/<user>/.rclonesyncwd/<Remote_><_some_path_>_remoteLSL'
+    global path1_list_file, path2_list_file
+    list_file_base  = workdir + "LSL_" + (path1_base + path2_base).replace(':','_').replace(r'/','_')
+            # '/home/<user>/.rclonesyncwd/LSL_<path1_base><path2_base>'
+    path1_list_file = list_file_base + '_Path1'
+    path2_list_file = list_file_base + '_Path2'
 
-    logging.warning("Synching Remote path  <{}>  with Local path  <{}>".format(remote_path_base, local_path_base))
+    logging.warning("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
     logging.info("Command line:  <{}>".format(args))
 
 
@@ -69,7 +71,7 @@ def bidirSync():
         with open(filters_file, 'r') as ifile:
             current_file_hash = hashlib.md5(ifile.read().replace("\r", "").encode('utf-8')).hexdigest()
             # If the filters file is written from windows it will have a \r in it.  Py2.7 on Windows discards
-            # the \r, as does Py3.6 on Linux, but Py2.7 on Linux includes the \r in the calucated hash, resulting
+            # the \r, as does Py3.6 on Linux, but Py2.7 on Linux includes the \r in the calculated hash, resulting
             # in a different file hash than in other environments.  Removing the \r makes the calculation platform
             # agnostic.
 
@@ -100,12 +102,12 @@ def bidirSync():
         switches.append("-v")
     if dry_run:
         switches.append("--dry-run")
-        if os.path.exists(local_list_file):          # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
-            subprocess.call(['cp', local_list_file, local_list_file + '_DRYRUN'])
-            local_list_file  += '_DRYRUN'
-        if os.path.exists(remote_list_file):
-            subprocess.call(['cp', remote_list_file, remote_list_file + '_DRYRUN'])
-            remote_list_file += '_DRYRUN'
+        if os.path.exists(path2_list_file):          # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
+            subprocess.call(['cp', path2_list_file, path2_list_file + '_DRYRUN'])
+            path2_list_file  += '_DRYRUN'
+        if os.path.exists(path1_list_file):
+            subprocess.call(['cp', path1_list_file, path1_list_file + '_DRYRUN'])
+            path1_list_file += '_DRYRUN'
 
 
     # ***** rclone call wrapper functions with retries *****
@@ -138,334 +140,329 @@ def bidirSync():
         return 1
 
 
-    # ***** first_sync generate local and remote file lists, and copy any unique Remote files to Local ***** 
+    # ***** first_sync generate path1 and path2 file lists, and copy any unique path2 files to path1 ***** 
     if first_sync:
-        logging.info(">>>>> Generating --first-sync Local and Remote lists")
-        if rclone_lsl(local_path_base, local_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        logging.info(">>>>> --first-sync copying any unique Path2 files to Path1")
+        if rclone_lsl(path1_base, path1_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
-        if rclone_lsl(remote_path_base, remote_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_lsl(path2_base, path2_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
-        status, local_now  = load_list(local_list_file)
+        status, path1_now = load_list(path1_list_file)
         if status:
-            logging.error(print_msg("ERROR", "Failed loading local list file <{}>".format(local_list_file)))
+            logging.error(print_msg("ERROR", "Failed loading Path1 list file <{}>".format(path1_list_file)))
             return RTN_CRITICAL
 
-        status, remote_now = load_list(remote_list_file)
+        status, path2_now  = load_list(path2_list_file)
         if status:
-            logging.error(print_msg("ERROR", "Failed loading remote list file <{}>".format(remote_list_file)))
+            logging.error(print_msg("ERROR", "Failed loading Path2 list file <{}>".format(path2_list_file)))
             return RTN_CRITICAL
 
-        for key in remote_now:
-            if key not in local_now:
-                src  = remote_path_base + key
-                dest = local_path_base + key
-                logging.info(print_msg("REMOTE", "  Copying to local", dest))
+        for key in path2_now:
+            if key not in path1_now:
+                src  = path2_base + key
+                dest = path1_base + key
+                logging.info(print_msg("Path2", "  --first-sync copying to Path1", dest))
                 if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
-        if rclone_lsl(local_path_base, local_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_lsl(path1_base, path1_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
 
-    # ***** Check for existance of prior local and remote lsl files *****
-    if not os.path.exists(local_list_file) or not os.path.exists(remote_list_file):
-        # On prior critical error abort, the prior LSL files are renamed to _ERRROR to lock out further runs
-        logging.error("***** Cannot find prior local or remote lsl files.")
+    # ***** Check for existence of prior Path1 and Path2 lsl files *****
+    if not os.path.exists(path1_list_file) or not os.path.exists(path2_list_file):
+        # On prior critical error abort, the prior LSL files are renamed to _ERROR to lock out further runs
+        logging.error("***** Cannot find prior Path1 or Path2 lsl files.")
         return RTN_CRITICAL
 
 
-    # ***** Check basic health of access to the local and remote filesystems *****
+    # ***** Check basic health of access to the Path1 and Path2 filesystems *****
     if check_access:
         if first_sync:
             logging.info(">>>>> --check-access skipped on --first-sync")
         else:
-            logging.info(">>>>> Checking rclone Local and Remote filesystems access health")
-            local_chk_list_file  = list_file_base + '_llocalChkLSL'
-            remote_chk_list_file = list_file_base + '_remoteChkLSL'
-            chk_file = 'RCLONE_TEST'
+            logging.info(">>>>> Checking Path1 and Path2 rclone filesystems access health")
+            path1_chk_list_file = list_file_base + '_Path1_CHK'
+            path2_chk_list_file = list_file_base + '_Path2_CHK'
+            CHK_FILE = 'RCLONE_TEST'
 
-            if "testdir" not in remote_path_base:   # Normally, disregard any RCLONE_TEST files in the test directory tree.
-                xx = ['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ RCLONE_TEST', '--filter', '- *']
+            if "testdir" not in path1_base:         # Normally, disregard any RCLONE_TEST files in the test directory tree.
+                xx = ['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ ' + CHK_FILE, '--filter', '- *']
             else:                                   # If testing, include RCLONE_TEST files within the test directory tree.
-                xx = ['--filter', '- rclonesync/Test/', '--filter', '+ RCLONE_TEST', '--filter', '- *']
+                xx = ['--filter', '- rclonesync/Test/', '--filter', '+ ' + CHK_FILE, '--filter', '- *']
             
-            if rclone_lsl(local_path_base, local_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+            if rclone_lsl(path1_base, path1_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                 return RTN_ABORT
 
-            if rclone_lsl(remote_path_base, remote_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+            if rclone_lsl(path2_base, path2_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                 return RTN_ABORT
 
-            status, local_check  = load_list(local_chk_list_file)
+            status, path1_check = load_list(path1_chk_list_file)
             if status:
-                logging.error(print_msg("ERROR", "Failed loading local check list file <{}>".format(local_chk_list_file)))
+                logging.error(print_msg("ERROR", "Failed loading Path1 check list file <{}>".format(path1_chk_list_file)))
                 return RTN_CRITICAL
 
-            status, remote_check = load_list(remote_chk_list_file)
+            status, path2_check  = load_list(path2_chk_list_file)
             if status:
-                logging.error(print_msg("ERROR", "Failed loading remote check list file <{}>".format(remote_chk_list_file)))
+                logging.error(print_msg("ERROR", "Failed loading Path2 check list file <{}>".format(path2_chk_list_file)))
                 return RTN_CRITICAL
 
-            if len(local_check) < 1 or len(local_check) != len(remote_check):
-                logging.error(print_msg("ERROR", "Failed access health test:  <{}> local count {}, remote count {}"
-                                         .format(chk_file, len(local_check), len(remote_check)), ""))
+            check_error = False
+            if len(path1_check) < 1 or len(path1_check) != len(path2_check):
+                logging.error(print_msg("ERROR", "Failed access health test:  <{}> Path1 count {}, Path2 count {}"
+                                         .format(CHK_FILE, len(path1_check), len(path2_check)), ""))
+                check_error = True
+
+            for key in path1_check:
+                if key not in path2_check:
+                    logging.error(print_msg("ERROR", "Failed access health test:  Path1 key <{}> not found in Path2".format(key), ""))
+                    check_error = True
+            for key in path2_check:
+                if key not in path1_check:
+                    logging.error(print_msg("ERROR", "Failed access health test:  Path2 key <{}> not found in Path1".format(key), ""))
+                    check_error = True
+
+            if check_error:
                 return RTN_CRITICAL
-            else:
-                for key in local_check:
-                    logging.debug("Check key <{}>".format(key))
-                    if key not in remote_check:
-                        logging.error(print_msg("ERROR", "Failed access health test:  Local key <{}> not found in remote".format(key), ""))
-                        return RTN_CRITICAL
 
-            os.remove(local_chk_list_file)          # _*ChkLSL files will be left if the check fails.  Look at these files for clues.
-            os.remove(remote_chk_list_file)
+            os.remove(path1_chk_list_file)          # _*ChkLSL files will be left if the check fails.  Look at these files for clues.
+            os.remove(path2_chk_list_file)
 
 
-    # ***** Get current listings of the local and remote trees *****
-    logging.info(">>>>> Generating Local and Remote lists")
-
-    local_list_file_new = list_file_base + '_llocalLSL_new'
-    if rclone_lsl(local_path_base, local_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    # ***** Get current listings of the path1 and path2 trees *****
+    path1_list_file_new = list_file_base + '_Path1_NEW'
+    if rclone_lsl(path1_base, path1_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
         return RTN_CRITICAL
 
-    remote_list_file_new = list_file_base + '_remoteLSL_new'
-    if rclone_lsl(remote_path_base, remote_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    path2_list_file_new = list_file_base + '_Path2_NEW'
+    if rclone_lsl(path2_base, path2_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
         return RTN_CRITICAL
 
 
-    # ***** Load Current and Prior listings of both Local and Remote trees *****
-    status, local_prior =   load_list(local_list_file)                    # Successful load of the file return status = 0.
-    if status:                  logging.error(print_msg("ERROR", "Failed loading prior local list file <{}>".format(local_list_file))); return RTN_CRITICAL
-    if len(local_prior) == 0:    logging.error(print_msg("ERROR", "Zero length in prior local list file <{}>".format(local_list_file))); return RTN_CRITICAL
+    # ***** Load Current and Prior listings of both Path1 and Path2 trees *****
+    status, path1_prior =  load_list(path1_list_file)                    # Successful load of the file return status = 0.
+    if status:                  logging.error(print_msg("ERROR", "Failed loading prior Path1 list file <{}>".format(path1_list_file))); return RTN_CRITICAL
+    if len(path1_prior) == 0:   logging.error(print_msg("ERROR", "Zero length in prior Path1 list file <{}>".format(path1_list_file))); return RTN_CRITICAL
 
-    status, remote_prior =  load_list(remote_list_file)
-    if status:                  logging.error(print_msg("ERROR", "Failed loading prior remote list file <{}>".format(remote_list_file))); return RTN_CRITICAL
-    if len(remote_prior) == 0:   logging.error(print_msg("ERROR", "Zero length in prior remote list file <{}>".format(remote_list_file))); return RTN_CRITICAL
+    status, path2_prior =  load_list(path2_list_file)
+    if status:                  logging.error(print_msg("ERROR", "Failed loading prior Path2 list file <{}>".format(path2_list_file))); return RTN_CRITICAL
+    if len(path2_prior) == 0:   logging.error(print_msg("ERROR", "Zero length in prior Path2 list file <{}>".format(path2_list_file))); return RTN_CRITICAL
 
-    status, local_now =     load_list(local_list_file_new)
-    if status:                  logging.error(print_msg("ERROR", "Failed loading current local list file <{}>".format(local_list_file_new))); return RTN_ABORT
-    if len(local_now) == 0:      logging.error(print_msg("ERROR", "Zero length in current local list file <{}>".format(local_list_file_new))); return RTN_ABORT
+    status, path1_now =    load_list(path1_list_file_new)
+    if status:                  logging.error(print_msg("ERROR", "Failed loading current Path1 list file <{}>".format(path1_list_file_new))); return RTN_ABORT
+    if len(path1_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current Path1 list file <{}>".format(path1_list_file_new))); return RTN_ABORT
 
-    status, remote_now =    load_list(remote_list_file_new)
-    if status:                  logging.error(print_msg("ERROR", "Failed loading current remote list file <{}>".format(remote_list_file_new))); return RTN_ABORT
-    if len(remote_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current remote list file <{}>".format(remote_list_file_new))); return RTN_ABORT
+    status, path2_now =    load_list(path2_list_file_new)
+    if status:                  logging.error(print_msg("ERROR", "Failed loading current Path2 list file <{}>".format(path2_list_file_new))); return RTN_ABORT
+    if len(path2_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current Path2 list file <{}>".format(path2_list_file_new))); return RTN_ABORT
 
 
-    # ***** Check for LOCAL deltas relative to the prior sync *****
-    logging.info(print_msg("LOCAL", "Checking for Diffs", local_path_base))
-    local_deltas = {}
-    local_deleted = 0
-    for key in local_prior:
+    # ***** Check for Path1 deltas relative to the prior sync *****
+    logging.info(">>>>> Path1 Checking for Diffs")
+    path1_deltas = {}
+    path1_deleted = 0
+    for key in path1_prior:
         _newer=False; _older=False; _size=False; _deleted=False
-        if key not in local_now:
-            logging.info(print_msg("LOCAL", "  File was deleted", key))
-            local_deleted += 1
+        if key not in path1_now:
+            logging.info(print_msg("Path1", "  File was deleted", key))
+            path1_deleted += 1
             _deleted = True
         else:
-            if local_prior[key]['datetime'] != local_now[key]['datetime']:
-                if local_prior[key]['datetime'] < local_now[key]['datetime']:
-                    logging.info(print_msg("LOCAL", "  File is newer", key))
+            if path1_prior[key]['datetime'] != path1_now[key]['datetime']:
+                if path1_prior[key]['datetime'] < path1_now[key]['datetime']:
+                    logging.info(print_msg("Path1", "  File is newer", key))
                     _newer = True
-                else:               # Now local version is older than prior sync.
-                    logging.info(print_msg("LOCAL", "  File is OLDER", key))
+                else:               # Current path1 version is older than prior sync.
+                    logging.info(print_msg("Path1", "  File is OLDER", key))
                     _older = True
-            if local_prior[key]['size'] != local_now[key]['size']:
-                logging.info(print_msg("LOCAL", "  File size is different", key))
+            if path1_prior[key]['size'] != path1_now[key]['size']:
+                logging.info(print_msg("Path1", "  File size is different", key))
                 _size = True
 
         if _newer or _older or _size or _deleted:
-            local_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
+            path1_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
 
-    for key in local_now:
-        if key not in local_prior:
-            logging.info(print_msg("LOCAL", "  File is new", key))
-            local_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
+    for key in path1_now:
+        if key not in path1_prior:
+            logging.info(print_msg("Path1", "  File is new", key))
+            path1_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
 
-    local_deltas = collections.OrderedDict(sorted(local_deltas.items()))      # Sort the deltas list.
-    if len(local_deltas) > 0:
+    path1_deltas = collections.OrderedDict(sorted(path1_deltas.items()))    # Sort the deltas list.
+    if len(path1_deltas) > 0:
         news = newers = olders = deletes = 0
-        for key in local_deltas:
-            if local_deltas[key]['new']:      news += 1
-            if local_deltas[key]['newer']:    newers += 1
-            if local_deltas[key]['older']:    olders += 1
-            if local_deltas[key]['deleted']:  deletes += 1
-        logging.warning("  {:4} file change(s) on LOCAL:  {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(local_deltas), news, newers, olders, deletes))
+        for key in path1_deltas:
+            if path1_deltas[key]['new']:      news += 1
+            if path1_deltas[key]['newer']:    newers += 1
+            if path1_deltas[key]['older']:    olders += 1
+            if path1_deltas[key]['deleted']:  deletes += 1
+        logging.warning("  {:4} file change(s) on Path1: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path1_deltas), news, newers, olders, deletes))
 
 
-    # ***** Check for REMOTE deltas relative to the prior sync *****
-    logging.info(print_msg("REMOTE", "Checking for Diffs", remote_path_base))
-    remote_deltas = {}
-    remote_deleted = 0
-    for key in remote_prior:
+    # ***** Check for Path2 deltas relative to the prior sync *****
+    logging.info(">>>>> Path2 Checking for Diffs")
+    path2_deltas = {}
+    path2_deleted = 0
+    for key in path2_prior:
         _newer=False; _older=False; _size=False; _deleted=False
-        if key not in remote_now:
-            logging.info(print_msg("REMOTE", "  File was deleted", key))
-            remote_deleted += 1
+        if key not in path2_now:
+            logging.info(print_msg("Path2", "  File was deleted", key))
+            path2_deleted += 1
             _deleted = True
         else:
-            if remote_prior[key]['datetime'] != remote_now[key]['datetime']:
-                if remote_prior[key]['datetime'] < remote_now[key]['datetime']:
-                    logging.info(print_msg("REMOTE", "  File is newer", key))
+            if path2_prior[key]['datetime'] != path2_now[key]['datetime']:
+                if path2_prior[key]['datetime'] < path2_now[key]['datetime']:
+                    logging.info(print_msg("Path2", "  File is newer", key))
                     _newer = True
-                else:               # Current remote version is older than prior sync.
-                    logging.info(print_msg("REMOTE", "  File is OLDER", key))
+                else:               # Now Path2 version is older than prior sync.
+                    logging.info(print_msg("Path2", "  File is OLDER", key))
                     _older = True
-            if remote_prior[key]['size'] != remote_now[key]['size']:
-                logging.info(print_msg("REMOTE", "  File size is different", key))
+            if path2_prior[key]['size'] != path2_now[key]['size']:
+                logging.info(print_msg("Path2", "  File size is different", key))
                 _size = True
 
         if _newer or _older or _size or _deleted:
-            remote_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
+            path2_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
 
-    for key in remote_now:
-        if key not in remote_prior:
-            logging.info(print_msg("REMOTE", "  File is new", key))
-            remote_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
+    for key in path2_now:
+        if key not in path2_prior:
+            logging.info(print_msg("Path2", "  File is new", key))
+            path2_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
 
-    remote_deltas = collections.OrderedDict(sorted(remote_deltas.items()))    # Sort the deltas list.
-    if len(remote_deltas) > 0:
+    path2_deltas = collections.OrderedDict(sorted(path2_deltas.items()))      # Sort the deltas list.
+    if len(path2_deltas) > 0:
         news = newers = olders = deletes = 0
-        for key in remote_deltas:
-            if remote_deltas[key]['new']:      news += 1
-            if remote_deltas[key]['newer']:    newers += 1
-            if remote_deltas[key]['older']:    olders += 1
-            if remote_deltas[key]['deleted']:  deletes += 1
-        logging.warning("  {:4} file change(s) on REMOTE: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(remote_deltas), news, newers, olders, deletes))
+        for key in path2_deltas:
+            if path2_deltas[key]['new']:      news += 1
+            if path2_deltas[key]['newer']:    newers += 1
+            if path2_deltas[key]['older']:    olders += 1
+            if path2_deltas[key]['deleted']:  deletes += 1
+        logging.warning("  {:4} file change(s) on Path2: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path2_deltas), news, newers, olders, deletes))
 
 
     # ***** Check for too many deleted files - possible error condition and don't want to start deleting on the other side !!! *****
-    to_many_local_deletes = False
-    if not force and float(local_deleted)/len(local_prior) > float(max_deletes)/100:
-        logging.error("Excessive number of deletes (>{}%, {} of {}) found on the Local system {} - Aborting.  Run with --force if desired."
-                       .format(max_deletes, local_deleted, len(local_prior), local_path_base))
-        to_many_local_deletes = True
+    too_many_path1_deletes = False
+    if not force and float(path1_deleted)/len(path1_prior) > float(max_deletes)/100:
+        logging.error("Excessive number of deletes (>{}%, {} of {}) found on the Path1 filesystem <{}> - Aborting.  Run with --force if desired."
+                       .format(max_deletes, path1_deleted, len(path1_prior), path1_base))
+        too_many_path1_deletes = True
 
-    to_many_remote_deletes = False    # Local error message placed here so that it is at the end of the listed changes for both.
-    if not force and float(remote_deleted)/len(remote_prior) > float(max_deletes)/100:
-        logging.error("Excessive number of deletes (>{}%, {} of {}) found on the Remote system {} - Aborting.  Run with --force if desired."
-                       .format(max_deletes, remote_deleted, len(remote_prior), remote_path_base))
-        to_many_remote_deletes = True
+    too_many_path2_deletes = False
+    if not force and float(path2_deleted)/len(path2_prior) > float(max_deletes)/100:
+        logging.error("Excessive number of deletes (>{}%, {} of {}) found on the Path2 filesystem <{}> - Aborting.  Run with --force if desired."
+                       .format(max_deletes, path2_deleted, len(path2_prior), path2_base))
+        too_many_path2_deletes = True
 
-    if to_many_local_deletes or to_many_remote_deletes:
+    if too_many_path1_deletes or too_many_path2_deletes:
         return RTN_ABORT
 
 
-    # ***** Update LOCAL with all the changes on REMOTE *****
-    if len(remote_deltas) == 0:
-        logging.info(">>>>> No changes on Remote - Skipping ahead")
+    # ***** Update Path1 with all the changes on Path2 *****
+    if len(path2_deltas) == 0:
+        logging.info(">>>>> No changes on Path2 - Skipping ahead")
     else:
-        logging.info(">>>>> Applying changes on Remote to Local")
+        logging.info(">>>>> Applying changes on Path2 to Path1")
 
-    for key in remote_deltas:
+    for key in path2_deltas:
 
-        if remote_deltas[key]['new']:
-            #logging.info(print_msg("REMOTE", "  New file", key))
-            if key not in local_now:
-                # File is new on remote, does not exist on local.
-                src  = remote_path_base + key
-                dest = local_path_base + key
-                logging.info(print_msg("REMOTE", "  Copying to local", dest))
+        if path2_deltas[key]['new']:
+            if key not in path1_now:
+                # File is new on Path2, does not exist on Path1.
+                src  = path2_base + key
+                dest = path1_base + key
+                logging.info(print_msg("Path2", "  Copying to Path1", dest))
                 if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
             else:
-                # File is new on remote AND new on local.
-                src  = remote_path_base + key 
-                dest = local_path_base + key + '_REMOTE' 
-                logging.warning(print_msg("WARNING", "  Changed in both local and remote", key))
-                logging.warning(print_msg("REMOTE", "  Copying to local", dest))
+                # File is new on Path1 AND new on Path2.
+                src  = path2_base + key 
+                dest = path1_base + key + '_Path2' 
+                logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
+                logging.warning(print_msg("Path2", "  Copying to Path1", dest))
                 if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
-                # Rename local.
-                src  = local_path_base + key 
-                dest = local_path_base + key + '_LOCAL' 
-                logging.warning(print_msg("LOCAL", "  Renaming local copy", dest))
+                # Rename Path1.
+                src  = path1_base + key 
+                dest = path1_base + key + '_Path1' 
+                logging.warning(print_msg("Path1", "  Renaming Path1 copy", dest))
                 if rclone_cmd('moveto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
-
-        if remote_deltas[key]['newer']:
-            if key not in local_deltas:
-                # File is newer on remote, unchanged on local.
-                src  = remote_path_base + key 
-                dest = local_path_base + key 
-                logging.info(print_msg("REMOTE", "  Copying to local", dest))
+        if path2_deltas[key]['newer']:
+            if key not in path1_deltas:
+                # File is newer on Path2, unchanged on Path1.
+                src  = path2_base + key 
+                dest = path1_base + key 
+                logging.info(print_msg("Path2", "  Copying to Path1", dest))
                 if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
             else:
-                if key in local_now:
-                    # File is newer on remote AND also changed (newer/older/size) on local.
-                    src  = remote_path_base + key 
-                    dest = local_path_base + key + '_REMOTE' 
-                    logging.warning(print_msg("WARNING", "  Changed in both local and remote", key))
-                    logging.warning(print_msg("REMOTE", "  Copying to local", dest))
+                if key in path1_now:
+                    # File is newer on Path2 AND also changed (newer/older/size) on Path1.
+                    src  = path2_base + key 
+                    dest = path1_base + key + '_Path2' 
+                    logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
+                    logging.warning(print_msg("Path2", "  Copying to Path1", dest))
                     if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                         return RTN_CRITICAL
-                    # Rename local.
-                    src  = local_path_base + key 
-                    dest = local_path_base + key + '_LOCAL' 
-                    logging.warning(print_msg("LOCAL", "  Renaming local copy", dest))
+                    # Rename Path1.
+                    src  = path1_base + key 
+                    dest = path1_base + key + '_Path1' 
+                    logging.warning(print_msg("Path1", "  Renaming Path1 copy", dest))
                     if rclone_cmd('moveto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                         return RTN_CRITICAL
-## 180622 - redundant with below.  Resulted in copying a file to local twice
-##                else:
-##                    # File is newer on remote AND also deleted locally.
-##                    src  = remote_path_base + key 
-##                    dest = local_path_base + key 
-##                    logging.info(print_msg("REMOTE", "  Copying to local", dest))
-##                    if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-##                        return RTN_CRITICAL
-                    
 
-        if remote_deltas[key]['deleted']:
-            if key not in local_deltas:
-                if key in local_now:
-                    # File is deleted on remote, unchanged locally.
-                    src  = local_path_base + key 
-                    logging.info(print_msg("LOCAL", "  Deleting file", src))
+        if path2_deltas[key]['deleted']:
+            if key not in path1_deltas:
+                if key in path1_now:
+                    # File is deleted on Path2, unchanged on Path1.
+                    src  = path1_base + key 
+                    logging.info(print_msg("Path1", "  Deleting file", src))
                     if rclone_cmd('delete', src, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                         return RTN_CRITICAL
 
 
-    for key in local_deltas:     # 180622 above was redundant with this section.
-        if local_deltas[key]['deleted']:
-            if (key in remote_deltas) and (key in remote_now):
-                # File is deleted on local AND changed (newer/older/size) on remote.
-                src  = remote_path_base + key 
-                dest = local_path_base + key 
-                logging.warning(print_msg("WARNING", "  Deleted locally and also changed remotely", key))
-                logging.warning(print_msg("REMOTE", "  Copying to local", dest))
+    for key in path1_deltas:
+        if path1_deltas[key]['deleted']:
+            if (key in path2_deltas) and (key in path2_now):
+                # File is deleted on Path1 AND changed (newer/older/size) on Path2.
+                src  = path2_base + key 
+                dest = path1_base + key 
+                logging.warning(print_msg("WARNING", "  Deleted on Path1 and also changed on Path2", key))
+                logging.warning(print_msg("Path2", "  Copying to Path1", dest))
                 if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
 
-    # ***** Sync LOCAL changes to REMOTE ***** 
-    if len(remote_deltas) == 0 and len(local_deltas) == 0 and not first_sync:
-        logging.info(">>>>> No changes on Local  - Skipping sync from Local to Remote")
+    # ***** Sync Path1 changes to Path2 ***** 
+    if len(path1_deltas) == 0 and len(path2_deltas) == 0 and not first_sync:
+        logging.info(">>>>> No changes on Path1 or Path2 - Skipping sync from Path1 to Path2")
     else:
-        logging.info(">>>>> Synching Local to Remote")
-        if rclone_cmd('sync', local_path_base, remote_path_base, options=filters + switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        logging.info(">>>>> Synching Path1 to Path2")
+        # NOTE:  --min-size 0 added to block attempting to overwrite Google Doc files which have size -1 on Google Drive.  180729
+        if rclone_cmd('sync', path1_base, path2_base, options=filters + switches + ['--min-size', '0'], linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
-        logging.info(">>>>> rmdirs Remote")
-        if rclone_cmd('rmdirs', remote_path_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        logging.info(">>>>> rmdirs Path1")
+        if rclone_cmd('rmdirs', path1_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
-        logging.info(">>>>> rmdirs Local")
-        if rclone_cmd('rmdirs', local_path_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        logging.info(">>>>> rmdirs Path2")
+        if rclone_cmd('rmdirs', path2_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
 
     # ***** Clean up *****
-    logging.info(">>>>> Refreshing Local and Remote lsl files")
-    os.remove(remote_list_file_new)
-    os.remove(local_list_file_new)
+    logging.info(">>>>> Refreshing Path1 and Path2 lsl files")
+    os.remove(path1_list_file_new)
+    os.remove(path2_list_file_new)
 
-    if rclone_lsl(local_path_base, local_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    if rclone_lsl(path1_base, path1_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
         return RTN_CRITICAL
 
-    if rclone_lsl(remote_path_base, remote_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    if rclone_lsl(path2_base, path2_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
         return RTN_CRITICAL
 
     return 0
@@ -492,7 +489,7 @@ def load_list(infile):
                     filename = out.group(5)
                     d[filename] = {'size': size, 'datetime': date_time}
                 else:
-                    logging.warning("Something wrong with this line (ignored) in {}:\n   <{}>".format(infile, line))
+                    logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
 
         return 0, collections.OrderedDict(sorted(d.items()))        # return Success and a sorted list
     except:
@@ -534,21 +531,21 @@ if __name__ == '__main__':
     try:
         clouds = subprocess.check_output(['rclone', 'listremotes'])
     except subprocess.CalledProcessError as e:
-        print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
+        print("ERROR  Can't get list of known path1s.  Have you run rclone config?"); exit()
     except:
         print("ERROR  rclone not installed?\nError message: {}\n".format(sys.exc_info()[1])); exit()
-    clouds = str(clouds.decode("utf8")).split()
+    clouds = str(clouds.decode("utf8")).split()     # Required for Python 3 so that clouds can be compared to a string
 
     parser = argparse.ArgumentParser(description="***** BiDirectional Sync for Cloud Services using rclone *****")
-    parser.add_argument('Cloud',
-                        help="Name of remote cloud service ({}) plus optional path.".format(clouds))
-    parser.add_argument('LocalPath',
-                        help="Path to local tree base.")
+    parser.add_argument('Path1',
+                        help="Local path, or cloud service ({}) plus optional path.".format(clouds))
+    parser.add_argument('Path2',
+                        help="Local path, or cloud service ({}) plus optional path.".format(clouds))
     parser.add_argument('-1', '--first-sync',
-                        help="First run setup.  WARNING: Local files may overwrite Remote versions.  Consider using --dry-run.  Also asserts --verbose.",
+                        help="First run setup.  WARNING: Path2 files may overwrite path1 versions.  Consider using with --dry-run first.  Also asserts --verbose.",
                         action='store_true')
     parser.add_argument('-c', '--check-access',
-                        help="Ensure expected RCLONE_TEST files are found on both Local and Remote filesystems, else abort.",
+                        help="Ensure expected RCLONE_TEST files are found on both path1 and path2 filesystems, else abort.",
                         action='store_true')
     parser.add_argument('-D', '--max-deletes',
                         help="Safety check for percent maximum deletes allowed (default {}%%).  If exceeded the rclonesync run will abort.  See --force.".format(MAX_DELETE),
@@ -590,7 +587,7 @@ if __name__ == '__main__':
     filters_file =   args.filters_file
     dry_run      =  args.dry_run
     force        =  args.force
-    local_wd     =  args.workdir + '/'
+    workdir      =  args.workdir + '/'
 
     if not args.no_datetime_log:
         logging.basicConfig(format='%(asctime)s:  %(message)s') # /%(levelname)s/%(module)s/%(funcName)s
@@ -599,29 +596,50 @@ if __name__ == '__main__':
 
     logging.warning("***** BiDirectional Sync for Cloud Services using rclone *****")
 
-    REMOTE_FORMAT = re.compile('([\w-]+):(.*)')                 # Handle variations in the Cloud argument -- Remote: or Remote:some/path or Remote:/some/path
-    out = REMOTE_FORMAT.match(args.Cloud)
-    remote_name = remote_path_part = remote_path_base = ''
+    pathx_FORMAT = re.compile('([\w-]+):(.*)')                  # Handle variations in the Cloud argument -- Cloud: or Cloud:some/path or Cloud:/some/path
+    out = pathx_FORMAT.match(args.Path1)
+    path1_name = path1_path_part = path1_base = ''
     if out:
-        remote_name = out.group(1) + ':'
-        if remote_name not in clouds:
-            logging.error("ERROR  Cloud argument <{}> not in list of configured remotes: {}".format(remote_name, clouds)); exit()
-        remote_path_part = out.group(2)
-        if remote_path_part != '':
-            if remote_path_part[0] != '/':
-                remote_path_part = '/' + remote_path_part       # For consistency ensure the path part starts and ends with /'s
-            if remote_path_part[-1] != '/':
-                remote_path_part += '/'
-        remote_path_base = remote_name + remote_path_part       # 'Remote:' or 'Remote:/some/path/'
+        path1_name = out.group(1) + ':'
+        if path1_name not in clouds:
+            logging.error("ERROR  Path1 argument <{}> not in list of configured Clouds: {}"
+                          .format(path1_name, clouds)); exit()
+        path1_path_part = out.group(2)
+        if path1_path_part:
+            if not path1_path_part.startswith('/'):
+                path1_path_part = '/' + path1_path_part         # For consistency ensure the path part starts and ends with /'s
+            if not path1_path_part.endswith('/'):
+                path1_path_part += '/'
+        path1_base = path1_name + path1_path_part               # 'path1:' or 'path1:/some/path/'
     else:
-        logging.error("ERROR  Cloud parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Cloud, clouds)); exit()
+        path1_base = args.Path1
+        if not path1_base.endswith('/'):                        # For consistency ensure the path ends with /
+            path1_base += '/'
+        if not os.path.exists(path1_base):
+            logging.error("ERROR  Path1 parameter <{}> cannot be accessed.  Path error?  Aborting"
+                          .format(path1_base)); exit()
 
-
-    local_path_base = args.LocalPath
-    if local_path_base[-1] != '/':                              # For consistency ensure the path ends with /
-        local_path_base += '/'
-    if not os.path.exists(local_path_base):
-        logging.error("ERROR  LocalPath parameter <{}> cannot be accessed.  Path error?  Aborting".format(local_path_base)); exit()
+    out = pathx_FORMAT.match(args.Path2)
+    path2_name = path2_path_part = path2_base = ''
+    if out:
+        path2_name = out.group(1) + ':'
+        if path2_name not in clouds:
+            logging.error("ERROR  Path2 argument <{}> not in list of configured Clouds: {}"
+                          .format(path2_name, clouds)); exit()
+        path2_path_part = out.group(2)
+        if path2_path_part:
+            if not path2_path_part.startswith('/'):
+                path2_path_part = '/' + path2_path_part
+            if not path2_path_part.endswith('/'):
+                path2_path_part += '/'
+        path2_base = path2_name + path2_path_part
+    else:
+        path2_base = args.Path2
+        if not path2_base.endswith('/'):
+            path2_base += '/'
+        if not os.path.exists(path2_base):
+            logging.error("ERROR  path2 parameter <{}> cannot be accessed.  Path error?  Aborting"
+                          .format(path2_base)); exit()
 
 
     if verbose or rc_verbose>0 or force or first_sync or dry_run:
@@ -635,10 +653,10 @@ if __name__ == '__main__':
         status = bidirSync()
         if status == RTN_CRITICAL:
             logging.error("***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****\n")
-            if os.path.exists(local_list_file):
-                subprocess.call(['mv', local_list_file, local_list_file + '_ERROR'])
-            if os.path.exists(remote_list_file):
-                subprocess.call(['mv', remote_list_file, remote_list_file + '_ERROR'])
+            if os.path.exists(path2_list_file):
+                subprocess.call(['mv', path2_list_file, path2_list_file + '_ERROR'])
+            if os.path.exists(path1_list_file):
+                subprocess.call(['mv', path1_list_file, path1_list_file + '_ERROR'])
         if status == RTN_ABORT:
             logging.error("***** Error Abort.  Try running rclonesync again. *****\n")
         if status == 0:            

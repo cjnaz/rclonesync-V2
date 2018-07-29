@@ -1,22 +1,22 @@
-:MSG:   Place filtersfile in WORKDIR
+:MSG:   1) Place filtersfile in WORKDIR
 rclone copy :TESTCASEROOT:filtersfile.txt :WORKDIR:
 
-:MSG:	Run with --filters-file but with no MD5	Should abort
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --filters-file :WORKDIR:/filtersfile.txt --workdir :WORKDIR: --no-datetime-log
+:MSG:	2) Run with --filters-file but with no MD5	Should abort
+:RCSEXEC: :PATH1: :PATH2: --verbose --filters-file :WORKDIR:filtersfile.txt --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	Run without --filters-file 				Should be blocked due to prior CRITICAL abort
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose                                          --workdir :WORKDIR: --no-datetime-log
+:MSG:	3) Run without --filters-file 				Should be blocked due to prior CRITICAL abort
+:RCSEXEC: :PATH1: :PATH2: --verbose                                          --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	Run with --filters-file and --first-sync
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --filters-file :WORKDIR:/filtersfile.txt --workdir :WORKDIR: --no-datetime-log --first-sync
+:MSG:	4) Run with --filters-file and --first-sync
+:RCSEXEC: :PATH1: :PATH2: --verbose --filters-file :WORKDIR:filtersfile.txt  --workdir :WORKDIR: --no-datetime-log --first-sync
 
-:MSG:	Run with --filters-file alone.  		Should run
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --filters-file :WORKDIR:/filtersfile.txt --workdir :WORKDIR: --no-datetime-log
+:MSG:	5) Run with --filters-file alone.  		Should run
+:RCSEXEC: :PATH1: :PATH2: --verbose --filters-file :WORKDIR:filtersfile.txt  --workdir :WORKDIR: --no-datetime-log
 
-:MSG:	push changed filters-file to WORKDIR
-rclone copyto :TESTCASEROOT:/filtersfile2.txt :WORKDIR:/filtersfile.txt
+:MSG:	6) push changed filters-file to WORKDIR
+rclone copyto :TESTCASEROOT:filtersfile2.txt :WORKDIR:filtersfile.txt
 
-:MSG:	Run with --filters-file alone.  		Should abort
-:RCSEXEC: :CLOUDTESTDIR: :LOCALTESTDIR: --verbose --filters-file :WORKDIR:/filtersfile.txt --workdir :WORKDIR: --no-datetime-log
+:MSG:	7) Run with --filters-file alone.  		Should abort
+:RCSEXEC: :PATH1: :PATH2: --verbose --filters-file :WORKDIR:filtersfile.txt  --workdir :WORKDIR: --no-datetime-log
 
 

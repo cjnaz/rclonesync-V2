@@ -2,10 +2,14 @@
 
 
 [Rclone](https://rclone.org/) provides a programmatic building block interface for transferring files between a cloud service 
-provider and your Local filesystem (actually a lot of functionality), but _rclone does not provide a turnkey bidirectional 
+provider and your local filesystem (actually a lot of functionality), but _rclone does not provide a turnkey bidirectional 
 sync capability_.  rclonesync.py provides a bidirectional sync solution using rclone.
 
-I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a Local disk which is Samba shared on my LAN. 
+**NOTE ON CHANGING TO VERSION 2.1** - V2.1 changes from `Cloud` and `LocalPath` arguments to `Path1` and `Path2` arguments, enabling 
+unrestricted local and cloud syncing.  When changing to V2.1 for efficiency reasons you should reverse the order of filesystem references:  Change `./rclonesync.py GDrive: /path_to_local_root` to `./rclonesync.py /path_to_local_root GDrive:`.  Prior to V2.1, and Cloud changes were pushed to LocalPath (the second argument).  Starting with V2.1, Path2 changes are pushed to Path1 (the first argument).  _This change 
+is only for sync efficiency reasons - your data should not be at risk without this change._
+
+I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a local disk which is Samba-shared on my LAN. 
 I run rclonesync as a Cron job every 30 minutes, or on-demand from the command line.
 
 rclonesync runs on both Python 2.7 and 3.x, and has been validated for Google Drive and Dropbox.  rclonesync has not been 
@@ -14,14 +18,14 @@ to check for proper operation.
 
 
 ### High level behaviors / operations
--  Keeps `rclone lsl` file lists of the Local and Remote systems, and on each run checks for deltas on Local and Remote
--  Applies Remote deltas to the Local filesystem, then `rclone syncs` the Local to the Remote filesystem
--  Handles change conflicts nondestructively by creating _Local and _Remote file versions
+-  Keeps `rclone lsl` file lists of the Path1 and Path2 filesystems, and on each run checks for deltas on Path1 and Path2
+-  Applies Path2 deltas to the Path1 filesystem, then `rclone syncs` the Path1 filesystem to the Path2 filesystem
+-  Handles change conflicts nondestructively by creating _Path1 and _Path2 file versions
 -  Reasonably fail safe:
-	- Lock file prevents multiple simultaneous runs when taking a while
-	- File access health check using `RCLONE_TEST` files (see --check-access switch)
+	- Lock file prevents multiple simultaneous runs when taking a while.
+	- File access health check using `RCLONE_TEST` files (see `--check-access` switch).
 	- Excessive deletes abort - Protects against a failing `rclone lsl` being interpreted as all the files were deleted.  See 
-	the --max-deletes and --force switches.
+	the `--max-deletes` and `--force` switches.
 	- If something evil happens, rclonesync goes into a safe state to block damage by later runs.  (See **Runtime Error Handling**, below)
 
 
@@ -30,22 +34,23 @@ $ ./rclonesync.py -h
 usage: rclonesync.py [-h] [-1] [-c] [-D MAX_DELETES] [-F] [-f FILTERS_FILE]
                      [-v] [--rc-verbose] [-d] [-w WORKDIR] [--no-datetime-log]
                      [-V]
-                     Cloud LocalPath
+                     Path1 Path2
 
 ***** BiDirectional Sync for Cloud Services using rclone *****
 
 positional arguments:
-  Cloud                 Name of Remote cloud service (['Dropbox:', 'GDrive:'])
-                        plus optional path.
-  LocalPath             Path to Local tree base.
+  Path1                 Local path, or cloud service (['Dropbox:', 'GDrive:',
+                        'gdrive2:']) plus optional path.
+  Path2                 Local path, or cloud service (['Dropbox:', 'GDrive:',
+                        'gdrive2:']) plus optional path.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -1, --first-sync      First run setup. WARNING: Local files may overwrite
-                        Remote versions. Consider using --dry-run. Also
-                        asserts --verbose.
+  -1, --first-sync      First run setup. WARNING: Path2 files may overwrite
+                        path1 versions. Consider using with --dry-run first.
+                        Also asserts --verbose.
   -c, --check-access    Ensure expected RCLONE_TEST files are found on both
-                        Local and Remote filesystems, else abort.
+                        path1 and path2 filesystems, else abort.
   -D MAX_DELETES, --max-deletes MAX_DELETES
                         Safety check for percent maximum deletes allowed
                         (default 50%). If exceeded the rclonesync run will
@@ -71,92 +76,77 @@ optional arguments:
 
 Typical run log:
 ```
-2018-07-01 11:41:50,925:  ***** BiDirectional Sync for Cloud Services using rclone *****
-2018-07-01 11:41:50,925:  Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
-2018-07-01 11:41:50,925:  Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=False, rc_verbose=None, verbose=True, workdir='./testwd/')>
-2018-07-01 11:41:50,925:  >>>>> Generating Local and Remote lists
-2018-07-01 11:41:51,513:    Local    Checking for Diffs                  - ./testdir/
-2018-07-01 11:41:51,513:    Local      File is newer                     - file2.txt
-2018-07-01 11:41:51,513:    Local      File size is different            - file2.txt
-2018-07-01 11:41:51,513:    Local      File was deleted                  - file4.txt
-2018-07-01 11:41:51,513:    Local      File is newer                     - file5.txt
-2018-07-01 11:41:51,513:    Local      File size is different            - file5.txt
-2018-07-01 11:41:51,513:    Local      File was deleted                  - file6.txt
-2018-07-01 11:41:51,513:    Local      File is newer                     - file7.txt
-2018-07-01 11:41:51,513:    Local      File size is different            - file7.txt
-2018-07-01 11:41:51,513:    Local      File is new                       - file11.txt
-2018-07-01 11:41:51,513:       6 file change(s) on Local:     1 new,    3 newer,    0 older,    2 deleted
-2018-07-01 11:41:51,514:    Remote   Checking for Diffs                  - GDrive:/testdir/
-2018-07-01 11:41:51,514:    Remote     File is newer                     - file1.txt
-2018-07-01 11:41:51,514:    Remote     File size is different            - file1.txt
-2018-07-01 11:41:51,514:    Remote     File was deleted                  - file3.txt
-2018-07-01 11:41:51,514:    Remote     File is newer                     - file5.txt
-2018-07-01 11:41:51,514:    Remote     File size is different            - file5.txt
-2018-07-01 11:41:51,514:    Remote     File is newer                     - file6.txt
-2018-07-01 11:41:51,514:    Remote     File size is different            - file6.txt
-2018-07-01 11:41:51,514:    Remote     File was deleted                  - file7.txt
-2018-07-01 11:41:51,514:    Remote     File is new                       - file10.txt
-2018-07-01 11:41:51,514:       6 file change(s) on Remote:    1 new,    3 newer,    0 older,    2 deleted
-2018-07-01 11:41:51,514:  >>>>> Applying changes on Remote to Local
-2018-07-01 11:41:51,514:    Remote     Copying to Local                  - ./testdir/file1.txt
-2018-07-01 11:41:53,530:    Remote     Copying to Local                  - ./testdir/file10.txt
-2018-07-01 11:41:55,197:    Local      Deleting file                     - ./testdir/file3.txt
-2018-07-01 11:41:55,207:    WARNING    Changed in both Local and Remote  - file5.txt
-2018-07-01 11:41:55,207:    Remote     Copying to Local                  - ./testdir/file5.txt_Remote
-2018-07-01 11:42:00,967:    Local      Renaming Local copy               - ./testdir/file5.txt_Local
-2018-07-01 11:42:00,974:    WARNING    Deleted Locally and also changed Remotely - file6.txt
-2018-07-01 11:42:00,974:    Remote     Copying to Local                  - ./testdir/file6.txt
-2018-07-01 11:42:02,605:  >>>>> Synching Local to Remote
-2018-07-01 11:42:06,234:  >>>>> rmdirs Remote
-2018-07-01 11:42:06,834:  >>>>> rmdirs Local
-2018-07-01 11:42:06,841:  >>>>> Refreshing Local and Remote lsl files
-2018-07-01 11:42:07,653:  >>>>> Successful run.  All done.
-
+$ ../rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --verbose
+2018-07-28 17:13:25,912:  ***** BiDirectional Sync for Cloud Services using rclone *****
+2018-07-28 17:13:25,913:  Synching Path1  <./testdir/path1/>  with Path2  <GDrive:/testdir/path2/>
+2018-07-28 17:13:25,913:  Command line:  <Namespace(Path1='./testdir/path1/', Path2='GDrive:testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=False, rc_verbose=None, verbose=True, workdir='./testwd/')>
+2018-07-28 17:13:27,244:  >>>>> Path1 Checking for Diffs
+2018-07-28 17:13:27,244:    Path1      File is newer                     - file2.txt
+2018-07-28 17:13:27,244:    Path1      File size is different            - file2.txt
+2018-07-28 17:13:27,244:    Path1      File was deleted                  - file4.txt
+2018-07-28 17:13:27,244:    Path1      File is newer                     - file5.txt
+2018-07-28 17:13:27,244:    Path1      File size is different            - file5.txt
+2018-07-28 17:13:27,244:    Path1      File was deleted                  - file6.txt
+2018-07-28 17:13:27,244:    Path1      File is newer                     - file7.txt
+2018-07-28 17:13:27,245:    Path1      File size is different            - file7.txt
+2018-07-28 17:13:27,245:    Path1      File is new                       - file11.txt
+2018-07-28 17:13:27,245:       6 file change(s) on Path1:    1 new,    3 newer,    0 older,    2 deleted
+2018-07-28 17:13:27,245:  >>>>> Path2 Checking for Diffs
+2018-07-28 17:13:27,245:    Path2      File is newer                     - file1.txt
+2018-07-28 17:13:27,245:    Path2      File size is different            - file1.txt
+2018-07-28 17:13:27,245:    Path2      File is newer                     - file5.txt
+2018-07-28 17:13:27,245:    Path2      File size is different            - file5.txt
+2018-07-28 17:13:27,245:    Path2      File is newer                     - file6.txt
+2018-07-28 17:13:27,245:    Path2      File size is different            - file6.txt
+2018-07-28 17:13:27,245:    Path2      File is new                       - file10.txt
+2018-07-28 17:13:27,245:       4 file change(s) on Path2:    1 new,    3 newer,    0 older,    0 deleted
+2018-07-28 17:13:27,245:  >>>>> Applying changes on Path2 to Path1
+2018-07-28 17:13:27,245:    Path2      Copying to Path1                  - ./testdir/path1/file1.txt
+2018-07-28 17:13:30,133:    Path2      Copying to Path1                  - ./testdir/path1/file10.txt
+2018-07-28 17:13:33,148:    WARNING    Changed in both Path1 and Path2   - file5.txt
+2018-07-28 17:13:33,148:    Path2      Copying to Path1                  - ./testdir/path1/file5.txt_Path2
+2018-07-28 17:13:43,739:    Path1      Renaming Path1 copy               - ./testdir/path1/file5.txt_Path1
+2018-07-28 17:13:43,747:    WARNING    Deleted on Path1 and also changed on Path2 - file6.txt
+2018-07-28 17:13:43,747:    Path2      Copying to Path1                  - ./testdir/path1/file6.txt
+2018-07-28 17:13:46,642:  >>>>> Synching Path1 to Path2
+2018-07-28 17:13:50,715:  >>>>> rmdirs Path1
+2018-07-28 17:13:50,726:  >>>>> rmdirs Path2
+2018-07-28 17:13:51,932:  >>>>> Refreshing Path1 and Path2 lsl files
+2018-07-28 17:13:53,263:  >>>>> Successful run.  All done.
 ```
 
 ## rclonesync Operations
 
-rclonesync keeps copies of the prior sync file lists of both Local and Remote filesystems, and on a new run checks for any changes 
-locally and then remotely.  Note that on some (all?) cloud storage systems it is not possible to have file timestamps 
-that match between the local and cloud copies of a file.  rclonesync works around this problem by tracking Local-to-Local 
-and Remote-to-Remote deltas, and then applying the changes on the other side. 
+rclonesync keeps copies of the prior sync file lists of both Path1 and Remote filesystems, and on a new run checks for any changes.
+Note that on some (all?) cloud storage systems it is not possible to have file timestamps 
+that match between the local and other cloud filesystems.  rclonesync works around this problem by tracking Path1-to-Path1 
+and Path2-to-Path2 deltas, and then applying the changes on the other side. 
 
 ### Notable features / functions / behaviors
 
-- The **Cloud** argument may be just the configured Remote name (i.e., `GDrive:`), or it may include a path to a sub-directory within the 
-tree of the Remote (i.e., `GDrive:/Exchange`).  Leading and trailing '/'s are not required but will be added by rclonesync.  The 
-path reference is identical with or without the '/'s.  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
-are named based on the Cloud argument, thus separate syncs to individual directories within the tree may be set up. 
-Test with `--dry-run` first to make sure the Remote 
-and Local path bases are as expected.  As usual, double quote `"Exchange/Paths with spaces"`.
+- **Path1** and **Path2** arguments may be references to any mix of local directory paths (absolute or relative) or configured remotes/clouds with optional subdirectory paths.  Cloud references are distinguished by having a ':' in the argument.  Path1 may be considered the master, in that any changed files on Path2 are applied to Path1, and then a native `rlcone sync` is used to make Path2 match Path1.  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
+are named based on the Path1 and Path2 arguments so that separate syncs to individual directories within the tree may be set up. 
+In the tables below, understand that the last operation is to do an `rclone sync` if rclonesync had made any changes on the Path1 filesystem.
 
-- For the **LocalPath** argument, absolute paths or paths relative to the current working directory may be used. `rclonesync GDrive:Exchange
- /mnt/mydisk/GoogleDrive/Exchange` is equivalent to `rclonesync GDrive:Exchange Exchange` if the cwd is /mnt/mydisk/GoogleDrive.
-As usual, double quote `"Exchange/Paths with spaces"`.
+- Any empty directories after the sync are deleted on both the Local and Remote filesystems.  (Change pending)
 
-- rclonesync applies any changes found on the Remote filesystem to the Local filesystem first, then uses `rclone sync` to make the Remote 
-filesystem match the Local.
-In the tables below, understand that the last operation is to do an `rclone sync` if rclonesync had made any changes on the Local filesystem.
-
-- Any empty directories after the sync are deleted on both the Local and Remote filesystems.
-
-- **--first-sync** - This will effectively make both Local and Remote filesystems contain a matching superset of all files.  Remote 
-files that do not exist locally will be copied locally, and the process will then sync the Local tree to the Remote. 
-**NOTE that when using --first-sync a newer version of a file on the Remote filesystem will be overwritten by the Local filesystem 
-version.** Carefully evaluate deltas using --dry-run.  **Note** that the base directories on both the Remote and Local filesystems 
+- **--first-sync** - This will effectively make both Path1 and Path2 filesystems contain a matching superset of all files.  Path2 
+files that do not exist in Path1 will be copied to Path1, and the process will then sync the Path1 tree to Path2. 
+**NOTE that when using --first-sync a newer version of a file on the Path2 filesystem will be overwritten by the Path1 filesystem 
+version.** Carefully evaluate deltas using --dry-run.  **Note** that the base directories on both the Path1 and Path2 filesystems 
 must exist, even if empty, or rclonesync will fail.  The fix is simply to create the missing directory on both sides and rerun the
 rclonesync --first-sync.
 
 - **--check-access** - Access check files are an additional safety measure against data loss.  rclonesync will ensure it can 
-find matching `RCLONE_TEST` files in the same places in the Local and Remote file systems.  Time stamps and file contents 
-are not important, just the names and locations.  Place one or more RCLONE_TEST files in the Local or Remote filesystem and then 
+find matching `RCLONE_TEST` files in the same places in the Path1 and Path2 filesystems.  Time stamps and file contents 
+are not important, just the names and locations.  Place one or more RCLONE_TEST files in the Path1 or Path2 filesystem and then 
 do either a run without `--check-access` or a `--first-sync` to set matching files on both filesystems.
 
-- **--max-deletes** - As a safety check, if greater than the --max-deletes percent of files were deleted on either the Local or
-Remote filesystem, then rclonesync will abort with a warning message, without making any changes.  The default --max-deletes is 50%. 
+- **--max-deletes** - As a safety check, if greater than the --max-deletes percent of files were deleted on either the Path1 or
+Path2 filesystem, then rclonesync will abort with a warning message, without making any changes.  The default --max-deletes is 50%. 
 One way to trigger this limit is to rename a directory that contains more than half of your files.  This will appear to rclonesync as a
 bunch of deleted files and a bunch of new files.
-This safety check is intended to block rclonesync from deleting all of the files on both the Local and Remote filesystems
+This safety check is intended to block rclonesync from deleting all of the files on both filesystems
 due to a temporary network access issue, or if the user had inadvertently deleted the files on one side or the other.  To force the sync 
 either set a different delete percentage limit, eg `--max-deletes 75` (allows up to 75% deletion), or use `--force` to bypass the check.
 
@@ -164,41 +154,43 @@ either set a different delete percentage limit, eg `--max-deletes 75` (allows up
 See [rclone Filtering documentation](https://rclone.org/filtering/#filter-from-read-filtering-patterns-from-a-file).) A
 starer `Filters` file is included with rclonesync that contains filters for not-allowed files for syncing with Dropbox, and a filter
 for the rclonesync test engine temporary test tree, `/testdir/`.  **NOTE:** if you make changes to your filters file then 
-existing files on the Remote or Local side may magically disappear from view (since they are newly excluded in the LSL runs), which would fool
-rclonesync into seeing them as deleted (as compared to the prior run LSL files), and then rclonesynce would proceed to delete them 
+existing files on the Path1 and/or Path2 side may magically disappear from view (since they are newly excluded in the LSL runs), which would fool
+rclonesync into seeing them as deleted (as compared to the prior run LSL files), and then rclonesync would proceed to delete them 
 for real.  To block this from happening rclonesync calculates an MD5 hash of your filters file and stores the hash in a ...MD5 file
 in the same
 place as your filters file.  On each rclonesync run with --filters-file set, rclonesync first calculates the MD5 hash of the current
 filters file and compares it to the hash stored in the ...MD5 file.  If they don't match the run aborts with a CRITICAL error and
 thus forces you to do a --first-sync, likely avoiding a disaster.
 
+- **Google Doc files** - Google docs exist as virtual files on Google Drive, and cannot be transferred to other filesystems natively.
+rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
+deletes, or syncs.  See TROUBLESHOOTING.md for more info.
+
 - **Verbosity controls** - `--verbose` enables rclonesync's logging of each check and action (as shown in the typical run log, above). 
 rclone's verbosity levels may also be enabled using the `--rc-verbose` switch.  rclone supports additional verbosity levels which may be 
 enabled by providing the `--rc-verbose` switch more than once.  Turning on rclone's verbosity using `--rc-verbose` will also turn on
 rclonesync's `--verbose` switch.  **Note** that rclonesync's log messages have '-'s in the date stamp (2018-06-11), while rclone's 
-log messages have '/'s in the date stamp (2018/06/11).
+log messages have '/'s in the date stamp (2018/06/11) - this is important for tracking down the source of problems.
 
 - **Runtime Error Handling** - Certain rclonesync critical errors, such as `rclone copyto` failing, 
-will result in an rclonesync lockout of successive runs.  The lockout is asserted because the sync status of the Local and Remote filesystems
-can't be trusted, so it is safer to block any further changes until someone with a brain (you) check things out.
+will result in an rclonesync lockout of successive runs.  The lockout is asserted because the sync status of the Path1 and Path2 filesystems
+cannot be trusted, so it is safer to block any further changes until someone with a brain (you) check things out.
 The recovery is to do a --first-sync again.  It is recommended to use --first-sync 
 --dry-run --rc-verbose initially and carefully review what changes will be made before running the --first-sync without --dry-run. 
 Most of these events come up due to rclone returning a non-zero status from a command.  On such a critical error 
-the *_llocalLSL and *_remoteLSL files are renamed adding _ERROR, which blocks any future rclonesync runs (since the 
-original files are not found).  These files may possibly be valid and may be renamed back to the non-_ERROR versions 
-to unblock further rclonesync runs.  Some errors are considered temporary, and re-running the rclonesync is not blocked. 
+the <...>__Path1LSL and <...>__Path1LSL files are renamed adding _ERROR, which blocks any future rclonesync runs (since the 
+original files are not found).  Some errors are considered temporary, and re-running the rclonesync is not blocked. 
 Within the code, see usages of `return RTN_CRITICAL` and `return RTN_ABORT`.  `return RTN_CRITICAL` blocks further rclonesync runs.
 
 - **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete files on the Remote server in the last 
-rclonesync step of rclone syncing the Local to the Remote.  If the file did not exist Locally then it would normally be copied to 
-the Local filesystem, but with --dry-run enabled those copies didn't happen, and thus on the final rclone sync step they don't exist locally, 
-which leads to the attempted delete on the Remote, blocked again by --dry-run `... Not deleting as --dry-run`.  This whole situation is an 
-artifact of the --dry-run switch.  Scrutinize the proposed deletes carefully, and if they would have been copied to Local then they 
-may be disregarded.
+rclonesync step of rclone syncing Path1 to the Path2.  If the file did not exist on Path1 then it would normally be copied to 
+the Path1 filesystem, but with --dry-run enabled those copies didn't happen, and thus on the final `rclone sync` step they don't exist on Path1, 
+which leads to the attempted delete on the Path2, blocked again by --dry-run: `... Not deleting as --dry-run`.  This whole confusing situation is an 
+artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then the threatened deletes on Path2 may be disregarded.
 
 - **Lock file** - When rclonesync is running, a lock file is created (/tmp/rclonesync_LOCK).  If rclonesync should crash or 
 hang the lock file will remain in place and block any further runs of rclonesync.  Delete the lock file as part of 
-debugging the situation.  The lock file effectively blocks follow on CRON scheduled runs when the prior invocation 
+debugging the situation.  The lock file effectively blocks follow-on CRON scheduled runs when the prior invocation 
 is taking a long time.  The lock file contains the job command line and time, which may help in debug.  If rclonesync crashes with a Python
 traceback please open an issue.
 
@@ -212,36 +204,39 @@ mechanism is hard-coded to ignore RCLONE_TEST files beneath RCloneSync/Test.
 
  Type | Description | Result| Implementation ** 
 --------|-----------------|---------|------------------------
-Remote new| File is new on Remote, does not exist on Local | Remote version survives | `rclone copyto` Remote to Local
-Remote newer| File is newer on Remote, unchanged on Local | Remote version survives | `rclone copyto` Remote to Local
-Remote deleted | File is deleted on Remote, unchanged Locally | File is deleted | `rclone delete` Local
-Local new | File is new on Local, does not exist on Remote | Local version survives | `rclone sync` Local to Remote
-Local newer| File is newer on Local, unchanged on Remote | Local version survives | `rclone sync` Local to Remote
-Local older| File is older on Local, unchanged on Remote | Local version survives | `rclone sync` Local to Remote
-Local deleted| File no longer exists on Local| File is deleted | `rclone sync` Local to Remote
+Path2 new| File is new on Path2, does not exist on Path1 | Path2 version survives | `rclone copyto` Path2 to Path1
+Path2 newer| File is newer on Path2, unchanged on Path1 | Path2 version survives | `rclone copyto` Path2 to Path1
+Path2 deleted | File is deleted on Path2, unchanged on Path1 | File is deleted | `rclone delete` Path1
+Path1 new | File is new on Path1, does not exist on Path2 | Path1 version survives | `rclone sync` Path1 to Path2
+Path1 newer| File is newer on Path1, unchanged on Path2 | Path1 version survives | `rclone sync` Path1 to Path2
+Path1 older| File is older on Path1, unchanged on Path2 | Path1 version survives | `rclone sync` Path1 to Path2
+Path1 deleted| File no longer exists on Path1| File is deleted | `rclone sync` Path1 to Path2
 
 
 ### *UNusual* sync checks
 
  Type | Description | Result| Implementation **
 --------|-----------------|---------|------------------------
-Remote new AND Local new | File is new on Remote AND new on Local | Files renamed to _Local and _Remote | `rclone copyto` Remote to Local as _Remote, `rclone moveto` Local as _Local
-Remote newer AND Local changed | File is newer on Remote AND also changed (newer/older/size) on Local | Files renamed to _Local and _Remote | `rclone copyto` Remote to Local as _Remote, `rclone moveto` Local as _Local
-Remote newer AND Local deleted | File is newer on Remote AND also deleted Locally | Remote version survives  | `rclone copyto` Remote to Local
-Remote deleted AND Local changed | File is deleted on Remote AND changed (newer/older/size) on Local | Local version survives |`rclone sync` Local to Remote
-Local deleted AND Remote changed | File is deleted on Local AND changed (newer/older/size) on Remote | Remote version survives  | `rclone copyto` Remote to Local
+Path1 new AND Path2 new | File is new on Path1 AND new on Path2 | Files renamed to _Path1 and _Path2 | `rclone copyto` Path2 to Path1 as _Path2, `rclone moveto` Path1 as _Path1
+Path2 newer AND Path1 changed | File is newer on Path2 AND also changed (newer/older/size) on Path1 | Files renamed to _Path1 and _Path2 | `rclone copyto` Path2 to Path1 as _Path2, `rclone moveto` Path1 as _Path1
+Path2 newer AND Path1 deleted | File is newer on Path2 AND also deleted on Path1 | Remote version survives  | `rclone copyto` Path2 to Path1
+Path2 deleted AND Path1 changed | File is deleted on Path2 AND changed (newer/older/size) on Path1 | Path1 version survives |`rclone sync` Path1 to Path2
+Path1 deleted AND Path2 changed | File is deleted on Path1 AND changed (newer/older/size) on Path2 | Path2 version survives  | `rclone copyto` Path2 to Path1
 
-** If any changes are made on the Local filesystem then the final operation is an `rclone sync` to update the Remote filesystem to match.
+** If any changes are made on the Path1 filesystem then the final operation is an `rclone sync` to update the Path2 filesystem to match.
 
-### Unhandled
+### Unhandled - WARNING
 
  Type | Description | Comment 
 --------|-----------------|---------
-Remote older|  File is older on Remote, unchanged on Local | `rclone sync` will push the newer Local version to the Remote.
-Local size | File size is different (same timestamp) | Not sure if `rclone sync` will pick up on just a size difference and push the Local to the Remote.
+Path2 older|  File is older on Path2, unchanged on Path1 | `rclone sync` will push the newer Path1 version to Path2.
+Path1 size | File size is different (same timestamp) | Not sure if `rclone sync` will pick up on just a size difference and push the Path1 to Path2.
 
 
 ## Revision history
+
+- V2.1 180729 Reworked to Path1/Path2, allowing unrestricted sync between local and remote filesystems. Added blocking of syncs of Google
+doc files (size -1).  Google doc file are logged as not syncable, but do not cause the overall rclonesync run to fail.
 
 - V2.0 180701 Added rclonesync test capabilities. 
 		Fixed corner case bug that copied a file from Remote to Local twice. 

@@ -1,55 +1,60 @@
-:MSG:   Place filtersfile in WORKDIR
-:MSG:	Run with --filters-file but with no MD5	Should abort
+:MSG:   1) Place filtersfile in WORKDIR
+rclone copy ./tests/test_filtersfile_checks/filtersfile.txt ./testwd/
+:MSG:	2) Run with --filters-file but with no MD5	Should abort
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt --workdir ./testwd/ --no-datetime-log
 ***** BiDirectional Sync for Cloud Services using rclone *****
-Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
-Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file='./testwd//filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
-Using filters-file  <./testwd//filtersfile.txt>
-MD5 file not found for filters file <./testwd//filtersfile.txt>.  Must run --first-sync.
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file='./testwd/filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Using filters-file  <./testwd/filtersfile.txt>
+MD5 file not found for filters file <./testwd/filtersfile.txt>.  Must run --first-sync.
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 
-:MSG:	Run without --filters-file 				Should be blocked due to prior CRITICAL abort
+:MSG:	3) Run without --filters-file 				Should be blocked due to prior CRITICAL abort
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
 ***** BiDirectional Sync for Cloud Services using rclone *****
-Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
-Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
-***** Cannot find prior local or remote lsl files.
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+***** Cannot find prior Path1 or Path2 lsl files.
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 
-:MSG:	Run with --filters-file and --first-sync
+:MSG:	4) Run with --filters-file and --first-sync
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt --workdir ./testwd/ --no-datetime-log --first-sync
 ***** BiDirectional Sync for Cloud Services using rclone *****
-Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
-Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file='./testwd//filtersfile.txt', first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
-Using filters-file  <./testwd//filtersfile.txt>
-Storing filters-file hash to <./testwd//filtersfile.txt-MD5>
->>>>> Generating --first-sync Local and Remote lists
->>>>> Generating Local and Remote lists
-  LOCAL    Checking for Diffs                  - ./testdir/
-  REMOTE   Checking for Diffs                  - GDrive:/testdir/
->>>>> No changes on Remote - Skipping ahead
->>>>> Synching Local to Remote
->>>>> rmdirs Remote
->>>>> rmdirs Local
->>>>> Refreshing Local and Remote lsl files
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file='./testwd/filtersfile.txt', first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Using filters-file  <./testwd/filtersfile.txt>
+Storing filters-file hash to <./testwd/filtersfile.txt-MD5>
+>>>>> --first-sync copying any unique Path2 files to Path1
+>>>>> Path1 Checking for Diffs
+>>>>> Path2 Checking for Diffs
+>>>>> No changes on Path2 - Skipping ahead
+>>>>> Synching Path1 to Path2
+>>>>> rmdirs Path1
+>>>>> rmdirs Path2
+>>>>> Refreshing Path1 and Path2 lsl files
 >>>>> Successful run.  All done.
 
-:MSG:	Run with --filters-file alone.  		Should run
+:MSG:	5) Run with --filters-file alone.  		Should run
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt --workdir ./testwd/ --no-datetime-log
 ***** BiDirectional Sync for Cloud Services using rclone *****
-Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
-Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file='./testwd//filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
-Using filters-file  <./testwd//filtersfile.txt>
->>>>> Generating Local and Remote lists
-  LOCAL    Checking for Diffs                  - ./testdir/
-  REMOTE   Checking for Diffs                  - GDrive:/testdir/
->>>>> No changes on Remote - Skipping ahead
->>>>> No changes on Local  - Skipping sync from Local to Remote
->>>>> Refreshing Local and Remote lsl files
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file='./testwd/filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Using filters-file  <./testwd/filtersfile.txt>
+>>>>> Path1 Checking for Diffs
+>>>>> Path2 Checking for Diffs
+>>>>> No changes on Path2 - Skipping ahead
+>>>>> No changes on Path1 or Path2 - Skipping sync from Path1 to Path2
+>>>>> Refreshing Path1 and Path2 lsl files
 >>>>> Successful run.  All done.
 
-:MSG:	push changed filters-file to WORKDIR
-:MSG:	Run with --filters-file alone.  		Should abort
+:MSG:	6) push changed filters-file to WORKDIR
+rclone copyto ./tests/test_filtersfile_checks/filtersfile2.txt ./testwd/filtersfile.txt
+:MSG:	7) Run with --filters-file alone.  		Should abort
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt --workdir ./testwd/ --no-datetime-log
 ***** BiDirectional Sync for Cloud Services using rclone *****
-Synching Remote path  <GDrive:/testdir/>  with Local path  <./testdir/>
-Command line:  <Namespace(Cloud='GDrive:/testdir', LocalPath='./testdir', check_access=False, dry_run=False, filters_file='./testwd//filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
-Using filters-file  <./testwd//filtersfile.txt>
-Filters-file <./testwd//filtersfile.txt> has chanaged (MD5 does not match).  Must run --first-sync.
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file='./testwd/filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Using filters-file  <./testwd/filtersfile.txt>
+Filters-file <./testwd/filtersfile.txt> has chanaged (MD5 does not match).  Must run --first-sync.
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 

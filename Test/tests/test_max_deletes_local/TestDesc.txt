@@ -1,4 +1,0 @@
-test_max_deletes_local
-
-Set up with 9 files.  ChangeCmds delete 5 from local, causing max deletes error.
-Run with --max-deletes 60 to allow sync.
