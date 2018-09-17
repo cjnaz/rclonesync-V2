@@ -68,8 +68,8 @@ def bidirSync():
 
         filters_fileMD5 = filters_file + "-MD5"
 
-        with open(filters_file, 'r') as ifile:
-            current_file_hash = hashlib.md5(ifile.read().replace("\r", "").encode('utf-8')).hexdigest()
+        with open(filters_file, 'rb') as ifile:
+            current_file_hash = hashlib.md5(ifile.read()).hexdigest()
             # If the filters file is written from windows it will have a \r in it.  Py2.7 on Windows discards
             # the \r, as does Py3.6 on Linux, but Py2.7 on Linux includes the \r in the calculated hash, resulting
             # in a different file hash than in other environments.  Removing the \r makes the calculation platform
