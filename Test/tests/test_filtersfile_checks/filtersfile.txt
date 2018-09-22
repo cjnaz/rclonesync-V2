@@ -3,3 +3,9 @@
 
 # Exclude fileZ.txt in root only.  The copy in the subdir should be found and synced.
 - /fileZ.txt
+
+# Checks support for extended alphabets, such as Cyrillic
+- /Расшаренное/**
+- /Lightroom/**
+- /iPad 1/**
+- /Поездки/**
