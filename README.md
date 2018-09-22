@@ -235,6 +235,8 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.2 180921 Changed MD5 hash of the filtersfile for support of extended character sets, such as Cyrillic.  Thanks for the fix @erakli!
+
 - V2.1 180729 Reworked to Path1/Path2, allowing unrestricted sync between local and remote filesystems. Added blocking of syncs of Google
 doc files (size -1).  Google doc file are logged as not syncable, but do not cause the overall rclonesync run to fail.
 
