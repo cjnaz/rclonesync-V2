@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.1 180729"                          # Version number and date code
+__version__ = "V2.2 180921"                          # Version number and date code
 
 
 #==========================================================================================================
