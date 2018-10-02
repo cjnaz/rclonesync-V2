@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.2 180921"                          # Version number and date code
+__version__ = "V2.3 181001"                          # Version number and date code
 
 
 #==========================================================================================================
@@ -22,6 +22,8 @@ import argparse
 import sys
 import re
 import os.path
+import platform
+import shutil
 import subprocess
 from datetime import datetime
 import time
@@ -40,15 +42,15 @@ RTN_CRITICAL = 2                                    # Aborts allow rerunning.  C
 
 def bidirSync():
 
-    def print_msg(path2e, msg, key=''):
-        return "  {:9}{:35} - {}".format(path2e, msg, key)
+    def print_msg(tag, msg, key=''):
+        return "  {:9}{:35} - {}".format(tag, msg, key)
 
  
     if not os.path.exists(workdir):
         os.makedirs(workdir)
 
     global path1_list_file, path2_list_file
-    list_file_base  = workdir + "LSL_" + (path1_base + path2_base).replace(':','_').replace(r'/','_')
+    list_file_base  = workdir + "LSL_" + (path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_')
             # '/home/<user>/.rclonesyncwd/LSL_<path1_base><path2_base>'
     path1_list_file = list_file_base + '_Path1'
     path2_list_file = list_file_base + '_Path2'
@@ -103,10 +105,10 @@ def bidirSync():
     if dry_run:
         switches.append("--dry-run")
         if os.path.exists(path2_list_file):          # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
-            subprocess.call(['cp', path2_list_file, path2_list_file + '_DRYRUN'])
+            shutil.copy(path2_list_file, path2_list_file + '_DRYRUN')
             path2_list_file  += '_DRYRUN'
         if os.path.exists(path1_list_file):
-            subprocess.call(['cp', path1_list_file, path1_list_file + '_DRYRUN'])
+            shutil.copy(path1_list_file, path1_list_file + '_DRYRUN')
             path1_list_file += '_DRYRUN'
 
 
@@ -115,7 +117,7 @@ def bidirSync():
     def rclone_lsl(path, ofile, options=None, linenum=0):
         for x in range(maxTries):
             with open(ofile, "w") as of:
-                process_args = ["rclone", "lsl", path]
+                process_args = [rclone, "lsl", path]
                 if options is not None:
                     process_args.extend(options)
                 if not subprocess.call(process_args, stdout=of):
@@ -126,7 +128,7 @@ def bidirSync():
         
     def rclone_cmd(cmd, p1=None, p2=None, options=None, linenum=0):
         for x in range(maxTries):
-            process_args = ["rclone", cmd]
+            process_args = [rclone, cmd]
             if p1 is not None:
                 process_args.append(p1)
             if p2 is not None:
@@ -497,7 +499,12 @@ def load_list(infile):
         return 1, ""                                                # return False
 
 
-LOCK_FILE = "/tmp/rclonesync_LOCK"
+os_platform = platform.system()                                     # Expecting 'Windows' or 'Linux'
+if os_platform == 'Windows':
+    LOCK_FILE = "C:/tmp/rclonesync_LOCK"
+else:
+    LOCK_FILE = "/tmp/rclonesync_LOCK"    
+
 def request_lock(caller):
     for xx in range(5):
         if os.path.exists(LOCK_FILE):
@@ -521,26 +528,22 @@ def release_lock(caller):
         os.remove(LOCK_FILE)
         return 0
     else:
-        logging.warning("<{}> attempted to remove /tmp/LOCK but the file does not exist.".format(caller))
+        logging.warning("<{}> attempted to remove <{}> but the file does not exist.".format(caller, LOCK_FILE))
         return -1
         
 
 
 if __name__ == '__main__':
 
-    try:
-        clouds = subprocess.check_output(['rclone', 'listremotes'])
-    except subprocess.CalledProcessError as e:
-        print("ERROR  Can't get list of known path1s.  Have you run rclone config?"); exit()
-    except:
-        print("ERROR  rclone not installed?\nError message: {}\n".format(sys.exc_info()[1])); exit()
-    clouds = str(clouds.decode("utf8")).split()     # Required for Python 3 so that clouds can be compared to a string
+    pyversion = sys.version_info[0] + float(sys.version_info[1])/10
+    if pyversion < 2.7:
+        print("ERROR  The Python version must be >= 2.7.  Found version: {}".format(pyversion)); exit()
 
     parser = argparse.ArgumentParser(description="***** BiDirectional Sync for Cloud Services using rclone *****")
     parser.add_argument('Path1',
-                        help="Local path, or cloud service ({}) plus optional path.".format(clouds))
+                        help="Local path, or cloud service with ':' plus optional path.  Type 'rclone listremotes' for list of configured remotes.")
     parser.add_argument('Path2',
-                        help="Local path, or cloud service ({}) plus optional path.".format(clouds))
+                        help="Local path, or cloud service with ':' plus optional path.  Type 'rclone listremotes' for list of configured remotes.")
     parser.add_argument('-1', '--first-sync',
                         help="First run setup.  WARNING: Path2 files may overwrite path1 versions.  Consider using with --dry-run first.  Also asserts --verbose.",
                         action='store_true')
@@ -557,6 +560,9 @@ if __name__ == '__main__':
     parser.add_argument('-f','--filters-file',
                         help="File containing rclone file/path filters (needed for Dropbox).",
                         default=None)
+    parser.add_argument('-r','--rclone',
+                        help="Full path to rclone executable (default is rclone in path)",
+                        default="rclone")
     parser.add_argument('-v', '--verbose',
                         help="Enable event logging with per-file details.",
                         action='store_true')
@@ -585,6 +591,7 @@ if __name__ == '__main__':
     rc_verbose   =  args.rc_verbose
     if rc_verbose == None: rc_verbose = 0
     filters_file =   args.filters_file
+    rclone       =  args.rclone
     dry_run      =  args.dry_run
     force        =  args.force
     workdir      =  args.workdir + '/'
@@ -596,50 +603,64 @@ if __name__ == '__main__':
 
     logging.warning("***** BiDirectional Sync for Cloud Services using rclone *****")
 
-    pathx_FORMAT = re.compile('([\w-]+):(.*)')                  # Handle variations in the Cloud argument -- Cloud: or Cloud:some/path or Cloud:/some/path
-    out = pathx_FORMAT.match(args.Path1)
-    path1_name = path1_path_part = path1_base = ''
-    if out:
-        path1_name = out.group(1) + ':'
-        if path1_name not in clouds:
-            logging.error("ERROR  Path1 argument <{}> not in list of configured Clouds: {}"
-                          .format(path1_name, clouds)); exit()
-        path1_path_part = out.group(2)
-        if path1_path_part:
-            if not path1_path_part.startswith('/'):
-                path1_path_part = '/' + path1_path_part         # For consistency ensure the path part starts and ends with /'s
-            if not path1_path_part.endswith('/'):
-                path1_path_part += '/'
-        path1_base = path1_name + path1_path_part               # 'path1:' or 'path1:/some/path/'
-    else:
-        path1_base = args.Path1
-        if not path1_base.endswith('/'):                        # For consistency ensure the path ends with /
-            path1_base += '/'
-        if not os.path.exists(path1_base):
-            logging.error("ERROR  Path1 parameter <{}> cannot be accessed.  Path error?  Aborting"
-                          .format(path1_base)); exit()
+    try:
+        clouds = subprocess.check_output([rclone, 'listremotes'])
+    except subprocess.CalledProcessError as e:
+        print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
+    except:
+        print("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}\n".format(sys.exc_info()[1])); exit()
+    clouds = str(clouds.decode("utf8")).split()     # Required for Python 3 so that clouds can be compared to a string
 
-    out = pathx_FORMAT.match(args.Path2)
-    path2_name = path2_path_part = path2_base = ''
-    if out:
-        path2_name = out.group(1) + ':'
-        if path2_name not in clouds:
-            logging.error("ERROR  Path2 argument <{}> not in list of configured Clouds: {}"
-                          .format(path2_name, clouds)); exit()
-        path2_path_part = out.group(2)
-        if path2_path_part:
-            if not path2_path_part.startswith('/'):
-                path2_path_part = '/' + path2_path_part
-            if not path2_path_part.endswith('/'):
-                path2_path_part += '/'
-        path2_base = path2_name + path2_path_part
-    else:
-        path2_base = args.Path2
-        if not path2_base.endswith('/'):
-            path2_base += '/'
-        if not os.path.exists(path2_base):
-            logging.error("ERROR  path2 parameter <{}> cannot be accessed.  Path error?  Aborting"
-                          .format(path2_base)); exit()
+
+    def pathparse(path):
+        """Handle variations in a path argument.
+        Cloud:              - Root of the defined cloud
+        Cloud:some/path     - Supported with our without path leading '/'s
+        X:                  - Windows drive letter
+        X:\some\path        - Windows drive letter with absolute or relative path
+        some/path           - Relative path from cwd (and on current drive on Windows)
+        //server/path       - UNC paths are supported
+        On Windows a one-character cloud name is not supported - it will be interprested as a drive letter.
+        """
+
+        _cloud = False
+        if ':' in path:
+            if len(path) == 1:                                  # Handle corner case of ':' only passed in
+                logging.error("ERROR  Path argument <{}> not a legal path".format(path)); exit()
+            if path[1] == ':' and os_platform == 'Windows':     # Windows drive letter case
+                path_base = path
+                if not path_base.endswith('\\'):                # For consistency ensure the path ends with /
+                    path_base += '/'
+            else:                                               # Cloud case with optional path part
+                path_FORMAT = re.compile('([\w-]+):(.*)')
+                out = path_FORMAT.match(path)
+                if out:
+                    _cloud = True
+                    cloud_name = out.group(1) + ':'
+                    if cloud_name not in clouds:
+                        logging.error("ERROR  Path argument <{}> not in list of configured Clouds: {}"
+                                      .format(cloud_name, clouds)); exit()
+                    path_part = out.group(2)
+                    if path_part:
+                        if not path_part.startswith('/'):       # For consistency ensure the cloud path part starts and ends with /'s
+                            path_part = '/' + path_part
+                        if not path_part.endswith('/'):
+                            path_part += '/'
+                    path_base = cloud_name + path_part
+        else:                                                   # Local path (without Windows drive letter)
+            path_base = path
+            if not path_base.endswith('/'):                     # For consistency ensure the path ends with /
+                path_base += '/'
+
+        if not _cloud:
+            if not os.path.exists(path_base):
+                logging.error("ERROR  Local path parameter <{}> cannot be accessed.  Path error?  Aborting"
+                              .format(path_base)); exit()
+
+        return path_base
+
+    path1_base = pathparse(args.Path1)
+    path2_base = pathparse(args.Path2)
 
 
     if verbose or rc_verbose>0 or force or first_sync or dry_run:
@@ -654,9 +675,9 @@ if __name__ == '__main__':
         if status == RTN_CRITICAL:
             logging.error("***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****\n")
             if os.path.exists(path2_list_file):
-                subprocess.call(['mv', path2_list_file, path2_list_file + '_ERROR'])
+                shutil.move(path2_list_file, path2_list_file + '_ERROR')
             if os.path.exists(path1_list_file):
-                subprocess.call(['mv', path1_list_file, path1_list_file + '_ERROR'])
+                shutil.move(path1_list_file, path1_list_file + '_ERROR')
         if status == RTN_ABORT:
             logging.error("***** Error Abort.  Try running rclonesync again. *****\n")
         if status == 0:            

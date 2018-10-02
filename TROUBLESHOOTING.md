@@ -50,7 +50,7 @@ This log shows a Critical failure which requires a --first-sync to recover from 
 
 ## Run rclone commands manually 
 rclonesync uses rclone lsl, copyto, moveto, delete, sync, and rmdir commands.  To solve a problem, try the operation 
-manually from the console, with the rclone's --verbose switch.  Any error messages come right back to you without the big wrapper 
+manually from the console, with rclone's --verbose switch.  Any error messages come right back to you without the big wrapper 
 of rclonesync dealing with the entire sync process.  Learning what rclone is actually doing will aid you greatly in problem solving.
 
 ## Rclone bugs?
@@ -100,16 +100,8 @@ Note that rclonesync currently ignores any Google docs.  They will show up with 
 
 ## Running Python version 2.6?
 
-If rclonesync crashes as follows, you are probably running an unsupported version of Python (seen on a CentOS 6 running Python 2.6.6). 
+rclonesync requires Python 2.7 or higher.  Running on older versions is trapped and reported as an error (prior to V2.3 rclonesync 
+would crash).  
 Do a secondary Python install of Python 2.7.x or 3.x.  See... Google `Python altinstall` on Linux machines (https://docs.python.org/2/using/unix.html) 
-and (https://danieleriksson.net/2017/02/08/how-to-install-latest-python-on-centos/). In the bin list 
-is version enforcement for graceful failure, rather than this crap:
-
-```
-2018-06-12 17:39:44,137/:  ***** BiDirectional Sync for Cloud Services using rclone *****
-Traceback (most recent call last):
-  File "./rclonesync.py", line 472, in <module>
-    logging.error ("ERROR  rclone not installed?\nError message: {}\n".format(sys.exc_info()[1])); exit()
-ValueError: zero length field name in format
-```
+and (https://danieleriksson.net/2017/02/08/how-to-install-latest-python-on-centos/). 
 

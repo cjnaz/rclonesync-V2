@@ -1,9 +1,9 @@
 ===================================================================
-***** Test case <test_dry_run> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_dry_run> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -49,9 +49,9 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Sync with --dry-run
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --dry-run
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --dry-run --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	Sync without --dry-run
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -66,49 +66,49 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
 30c30
-< 2018/07/29 13:45:53 NOTICE: file1.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file1.txt: Not copying as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file1.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file1.txt: Not copying as --dry-run
 32c32
-< 2018/07/29 13:45:53 NOTICE: file10.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file10.txt: Not copying as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file10.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file10.txt: Not copying as --dry-run
 34c34
-< 2018/07/29 13:45:53 NOTICE: file3.txt: Not deleting as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file3.txt: Not deleting as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file3.txt: Not deleting as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file3.txt: Not deleting as --dry-run
 37c37
-< 2018/07/29 13:45:53 NOTICE: file5.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file5.txt: Not copying as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file5.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file5.txt: Not copying as --dry-run
 39c39
-< 2018/07/29 13:45:53 NOTICE: file5.txt: Not moving as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file5.txt: Not moving as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file5.txt: Not moving as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file5.txt: Not moving as --dry-run
 42c42
-< 2018/07/29 13:45:53 NOTICE: file6.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file6.txt: Not copying as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file6.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file6.txt: Not copying as --dry-run
 44,52c44,52
-< 2018/07/29 13:45:53 NOTICE: file7.txt: Not copying as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file2.txt: Not copying as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file11.txt: Not copying as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file3.txt: Not copying as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file1.txt: Not copying as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file5.txt: Not updating modification time as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file10.txt: Not deleting as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file4.txt: Not deleting as --dry-run
-< 2018/07/29 13:45:53 NOTICE: file6.txt: Not deleting as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file11.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file3.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file7.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file1.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file2.txt: Not copying as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file5.txt: Not updating modification time as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file4.txt: Not deleting as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file6.txt: Not deleting as --dry-run
+< 2018/10/01 14:24:38 NOTICE: file10.txt: Not deleting as --dry-run
 ---
-> 2018/07/29 14:37:11 NOTICE: file7.txt: Not copying as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file2.txt: Not copying as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file11.txt: Not copying as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file3.txt: Not copying as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file1.txt: Not copying as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file5.txt: Not updating modification time as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file4.txt: Not deleting as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file6.txt: Not deleting as --dry-run
-> 2018/07/29 14:37:11 NOTICE: file10.txt: Not deleting as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file11.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file3.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file7.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file1.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file2.txt: Not copying as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file5.txt: Not updating modification time as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file10.txt: Not deleting as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file4.txt: Not deleting as --dry-run
+> 2018/10/01 22:50:39 NOTICE: file6.txt: Not deleting as --dry-run
 
 ----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
@@ -117,16 +117,16 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1_DRYRUN>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_dry_run> FAILED WITH 1 ERRORS.
 
 
 ===================================================================
-***** Test case <test_filtersfile_checks> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_filtersfile_checks> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -145,17 +145,17 @@ RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:   1) Place filtersfile in WORKDIR
     rclone copy ./tests/test_filtersfile_checks/filtersfile.txt ./testwd/
     :MSG:	2) Run with --filters-file but with no MD5	Should abort
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	3) Run without --filters-file 				Should be blocked due to prior CRITICAL abort
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose                                          --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	4) Run with --filters-file and --first-sync
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt  --workdir ./testwd/ --no-datetime-log --first-sync
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	5) Run with --filters-file alone.  		Should run
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt  --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	6) push changed filters-file to WORKDIR
     rclone copyto ./tests/test_filtersfile_checks/filtersfile2.txt ./testwd/filtersfile.txt
     :MSG:	7) Run with --filters-file alone.  		Should abort
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./testwd/filtersfile.txt  --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -177,16 +177,16 @@ Match:  <consolelog.txt>
 Match:  <filtersfile.txt>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_filtersfile_checks> PASSED
 
 
 ===================================================================
-***** Test case <test_basic> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_basic> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -207,7 +207,7 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Issue rclonesync command
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -223,16 +223,16 @@ Match:  <consolelog.txt>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_basic> PASSED
 
 
 ===================================================================
-***** Test case <test_check_access> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_check_access> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -249,22 +249,22 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	1) First, see that --check-access passes with the initial setup
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
     rclone delete ./testdir/path2/subdir/RCLONE_TEST
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
     rclone copy ./testdir/path1/subdir/RCLONE_TEST ./testdir/path2/
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --first-sync --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	4) Run sync with --check-access.  Should pass.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
     rclone delete ./testdir/path1/RCLONE_TEST
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --first-sync --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:	7) Run sync with --check-access.  Should pass.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -286,16 +286,16 @@ Match:  <consolelog.txt>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_check_access> PASSED
 
 
 ===================================================================
-***** Test case <test_changes> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_changes> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -341,7 +341,7 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Issue rclonesync command
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -357,16 +357,16 @@ Match:  <consolelog.txt>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_changes> PASSED
 
 
 ===================================================================
-***** Test case <test_filters> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_filters> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -381,13 +381,13 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	Place a new files on the Remote
-    touch ./tests/test_filters/modfiles/filez.txt --date="2025-01-02"
+    touch ./tests/test_filters/modfiles/fileZ.txt --date="2025-01-02"
     rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path2//fileZ.txt
     rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path1//subdir/fileZ.txt
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Issue rclonesync with --filters-file.  Path2-side fileZ.txt is filtered.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --filters-file ./tests/test_filters/filtersfile.txt --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./tests/test_filters/filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -403,16 +403,16 @@ Match:  <consolelog.txt>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_filters> PASSED
 
 
 ===================================================================
-***** Test case <test_max_deletes_path1> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_max_deletes_path1> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -435,9 +435,9 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Sync should fail due to too many local deletes
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:   Change --max-delta limit to 60%, and sync should run.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --max-deletes 60
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --max-deletes 60 --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -453,16 +453,16 @@ Match:  <consolelog.txt>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_max_deletes_path1> PASSED
 
 
 ===================================================================
-***** Test case <test_max_deletes_path2_force> using Path1 <./testdir/path1/> and Path2 <./testdir/path2/> and rclonesync <../rclonesync.py>
+***** Test case <test_max_deletes_path2_force> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=False, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=False, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -485,9 +485,9 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Sync should fail due to too many Path2 deletes
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
     :MSG:   Apply --force switch, and sync should run.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --force
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --force --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
@@ -503,7 +503,7 @@ Match:  <consolelog.txt>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-CLEANING UP testdirs
+CLEANING UP testdirs and workdir
 TEST <test_max_deletes_path2_force> PASSED
 
 

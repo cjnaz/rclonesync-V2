@@ -3,5 +3,5 @@
 # Must force a specific mod date since file mod data is lost through git
 touch :TESTCASEROOT:modfiles/file1.txt --date="2025-01-02"
 
-rclone copy :TESTCASEROOT:modfiles/file1.txt :PATH2:
-rclone copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir/file20.txt
+:RCLONE: copy :TESTCASEROOT:modfiles/file1.txt :PATH2:
+:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir/file20.txt

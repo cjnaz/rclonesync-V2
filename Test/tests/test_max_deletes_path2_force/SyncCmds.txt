@@ -1,5 +1,5 @@
 :MSG:	Sync should fail due to too many Path2 deletes
-:RCSEXEC: :PATH1: :PATH2: --verbose --workdir :WORKDIR: --no-datetime-log
+:RCSEXEC: :PATH1: :PATH2:
 
 :MSG:   Apply --force switch, and sync should run.
-:RCSEXEC: :PATH1: :PATH2: --verbose --workdir :WORKDIR: --no-datetime-log --force
+:RCSEXEC: :PATH1: :PATH2: --force

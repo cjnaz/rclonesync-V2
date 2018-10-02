@@ -1,5 +1,5 @@
 :MSG:	Sync with --dry-run
-:RCSEXEC: :PATH1: :PATH2: --verbose --workdir :WORKDIR: --no-datetime-log --dry-run
+:RCSEXEC: :PATH1: :PATH2: --dry-run
 
 :MSG:	Sync without --dry-run
-:RCSEXEC: :PATH1: :PATH2: --verbose --workdir :WORKDIR: --no-datetime-log
+:RCSEXEC: :PATH1: :PATH2:

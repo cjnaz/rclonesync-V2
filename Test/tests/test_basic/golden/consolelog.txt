@@ -1,8 +1,8 @@
 :MSG:	Issue rclonesync command
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - subdir/file20.txt
   Path1      File size is different            - subdir/file20.txt
