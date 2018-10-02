@@ -5,16 +5,25 @@
 provider and your local filesystem (actually a lot of functionality), but _rclone does not provide a turnkey bidirectional 
 sync capability_.  rclonesync.py provides a bidirectional sync solution using rclone.
 
-**NOTE ON CHANGING TO VERSION 2.1** - V2.1 changes from `Cloud` and `LocalPath` arguments to `Path1` and `Path2` arguments, enabling 
-unrestricted local and cloud syncing.  When changing to V2.1 for efficiency reasons you should reverse the order of filesystem references:  Change `./rclonesync.py GDrive: /path_to_local_root` to `./rclonesync.py /path_to_local_root GDrive:`.  Prior to V2.1, and Cloud changes were pushed to LocalPath (the second argument).  Starting with V2.1, Path2 changes are pushed to Path1 (the first argument).  _This change 
-is only for sync efficiency reasons - your data should not be at risk without this change._
-
 I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a local disk which is Samba-shared on my LAN. 
 I run rclonesync as a Cron job every 30 minutes, or on-demand from the command line.
 
-rclonesync runs on both Python 2.7 and 3.x, and has been validated for Google Drive and Dropbox.  rclonesync has not been 
+rclonesync support:
+- Validated on Google Drive, Dropbox, and Onedrive (thanks @AlexEshoo)
+- Linux support, and V2.3 adds Windows support.
+- Runs on both Python 2.7 and 3.x
+
+rclonesync has not been 
 tested on other services.  If it works, or sorta works, please raise an issue and I'll update these notes.  Run the test suite
 to check for proper operation.
+
+- **NOTE ON CHANGING TO VERSION 2.1** - V2.1 changes from `Cloud` and `LocalPath` arguments to `Path1` and `Path2` arguments, enabling 
+unrestricted local and cloud syncing.  When changing to V2.1 for efficiency reasons you should reverse the order of filesystem 
+references:  Change `./rclonesync.py GDrive: /path_to_local_root` to `./rclonesync.py /path_to_local_root GDrive:`. 
+Prior to V2.1, and Cloud changes were pushed to LocalPath (the second argument).  Starting with V2.1, Path2 changes are pushed 
+to Path1 (the first argument).  _This change 
+is only for sync efficiency reasons - your data should not be at risk without this change._
+
 
 
 ### High level behaviors / operations
@@ -32,17 +41,19 @@ to check for proper operation.
 ```
 $ ./rclonesync.py -h
 usage: rclonesync.py [-h] [-1] [-c] [-D MAX_DELETES] [-F] [-f FILTERS_FILE]
-                     [-v] [--rc-verbose] [-d] [-w WORKDIR] [--no-datetime-log]
-                     [-V]
+                     [-r RCLONE] [-v] [--rc-verbose] [-d] [-w WORKDIR]
+                     [--no-datetime-log] [-V]
                      Path1 Path2
 
 ***** BiDirectional Sync for Cloud Services using rclone *****
 
 positional arguments:
-  Path1                 Local path, or cloud service (['Dropbox:', 'GDrive:',
-                        'gdrive2:']) plus optional path.
-  Path2                 Local path, or cloud service (['Dropbox:', 'GDrive:',
-                        'gdrive2:']) plus optional path.
+  Path1                 Local path, or cloud service with ':' plus optional
+                        path. Type 'rclone listremotes' for list of configured
+                        remotes.
+  Path2                 Local path, or cloud service with ':' plus optional
+                        path. Type 'rclone listremotes' for list of configured
+                        remotes.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -60,6 +71,9 @@ optional arguments:
   -f FILTERS_FILE, --filters-file FILTERS_FILE
                         File containing rclone file/path filters (needed for
                         Dropbox).
+  -r RCLONE, --rclone RCLONE
+                        Full path to rclone executable (default is rclone in
+                        path)
   -v, --verbose         Enable event logging with per-file details.
   --rc-verbose          Enable rclone's verbosity levels (May be specified
                         more than once for more details. Also asserts
@@ -71,7 +85,6 @@ optional arguments:
                         ~user/.rclonesyncwd.
   --no-datetime-log     Disable date-time from log output - used for testing.
   -V, --version         Return rclonesync's version number and exit.
-
 ```	
 
 Typical run log:
@@ -117,25 +130,33 @@ $ ../rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --verbose
 
 ## rclonesync Operations
 
-rclonesync keeps copies of the prior sync file lists of both Path1 and Remote filesystems, and on a new run checks for any changes.
+rclonesync keeps copies of the prior sync file lists of both Path1 and Path2 filesystems, and on a new run checks for any changes.
 Note that on some (all?) cloud storage systems it is not possible to have file timestamps 
 that match between the local and other cloud filesystems.  rclonesync works around this problem by tracking Path1-to-Path1 
 and Path2-to-Path2 deltas, and then applying the changes on the other side. 
 
 ### Notable features / functions / behaviors
 
-- **Path1** and **Path2** arguments may be references to any mix of local directory paths (absolute or relative) or configured remotes/clouds with optional subdirectory paths.  Cloud references are distinguished by having a ':' in the argument.  Path1 may be considered the master, in that any changed files on Path2 are applied to Path1, and then a native `rlcone sync` is used to make Path2 match Path1.  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
+- **Path1** and **Path2** arguments may be references to any mix of local directory paths (absolute or relative), UNC paths 
+(//server/share/path), or configured 
+remotes/clouds with optional subdirectory paths.  Cloud references are distinguished by having a ':' in the argument 
+(see Windows support, below).  Path1 may 
+be considered the master, in that any changed files on Path2 are applied to Path1, and then a native `rclone sync` is used to 
+make Path2 match Path1.  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
 are named based on the Path1 and Path2 arguments so that separate syncs to individual directories within the tree may be set up. 
-In the tables below, understand that the last operation is to do an `rclone sync` if rclonesync had made any changes on the Path1 filesystem.
+In the tables below, understand that the last operation is to do an `rclone sync <Path1> <Path2>` _if_ rclonesync had made any 
+changes on the Path1 filesystem.
 
 - Any empty directories after the sync are deleted on both the Local and Remote filesystems.  (Change pending)
 
 - **--first-sync** - This will effectively make both Path1 and Path2 filesystems contain a matching superset of all files.  Path2 
 files that do not exist in Path1 will be copied to Path1, and the process will then sync the Path1 tree to Path2. 
+**Note that the base directories on both the Path1 and Path2 filesystems 
+must exist, and must contain at least one file, or rclonesync will fail.**  This is required for safety - that rclonesync can
+verify that both paths are valid.  Attempting to rclonesync to an empty directory results in `ERROR    Zero length in prior Path list file`.
+The fix is simply to create the missing directory and place a single file in it and rerun the --first-sync.
 **NOTE that when using --first-sync a newer version of a file on the Path2 filesystem will be overwritten by the Path1 filesystem 
-version.** Carefully evaluate deltas using --dry-run.  **Note** that the base directories on both the Path1 and Path2 filesystems 
-must exist, even if empty, or rclonesync will fail.  The fix is simply to create the missing directory on both sides and rerun the
-rclonesync --first-sync.
+version.** Carefully evaluate deltas using --dry-run.
 
 - **--check-access** - Access check files are an additional safety measure against data loss.  rclonesync will ensure it can 
 find matching `RCLONE_TEST` files in the same places in the Path1 and Path2 filesystems.  Time stamps and file contents 
@@ -152,9 +173,11 @@ either set a different delete percentage limit, eg `--max-deletes 75` (allows up
 
 - **--filters-file** - Using rclone's filter features you can exclude file types or directory sub-trees from the sync. 
 See [rclone Filtering documentation](https://rclone.org/filtering/#filter-from-read-filtering-patterns-from-a-file).) A
-starer `Filters` file is included with rclonesync that contains filters for not-allowed files for syncing with Dropbox, and a filter
+starter `Filters` file is included with rclonesync that contains filters for not-allowed files for syncing with Dropbox, and a filter
 for the rclonesync test engine temporary test tree, `/testdir/`.  **NOTE:** if you make changes to your filters file then 
-existing files on the Path1 and/or Path2 side may magically disappear from view (since they are newly excluded in the LSL runs), which would fool
+rclonesync requires a run with --first-sync.  This is a safety feature, which avoids 
+existing files on the Path1 and/or Path2 side from seeming to disappear from view (since they are newly excluded in the LSL runs), 
+which would fool
 rclonesync into seeing them as deleted (as compared to the prior run LSL files), and then rclonesync would proceed to delete them 
 for real.  To block this from happening rclonesync calculates an MD5 hash of your filters file and stores the hash in a ...MD5 file
 in the same
@@ -200,6 +223,19 @@ will likely want to add `- /testdir/**` to your filters-file so that normal sync
 directories, which may have RCLONE_TEST miscompares in some test cases and thus trip the --check-access system.  The --check-access
 mechanism is hard-coded to ignore RCLONE_TEST files beneath RCloneSync/Test.
 
+### Windows support
+Support for rclonesync on Windows was added in V2.3.  
+- Tested on Windows 10 Pro version 1803 (May'18) and with rclone v1.43.1.
+- Drive letters are allowed, including drive letters mapped to network drives (`rclonesync.py J:\localsync GDrive:`). 
+If a drive letter is omitted the shell current drive is the default.  Drive letters are a single character follows by ':', so cloud names
+must be more than one character long.
+- Absolute paths (with or without a drive letter), and relative paths (with or without a drive letter) are supported.
+- `C:\tmp` must be manually created, and the user must have write privilege to this directory.  The LOCK file is placed here.
+- rclonesync's working directory is created at the user's top level (`C:\Users\<user>\.rclonesyncwd`).
+- rclone must be in the path, or use rclonesync's `--rclone` switch.
+- Note that rclonesync output will show a mix of forward `/` and back '\' slashes.  They are equivalent in Python - not to worry.
+- Be careful of case independent directory and file naming on Windows vs. case dependent Linux!
+
 ### Usual sync checks
 
  Type | Description | Result| Implementation ** 
@@ -219,7 +255,7 @@ Path1 deleted| File no longer exists on Path1| File is deleted | `rclone sync` P
 --------|-----------------|---------|------------------------
 Path1 new AND Path2 new | File is new on Path1 AND new on Path2 | Files renamed to _Path1 and _Path2 | `rclone copyto` Path2 to Path1 as _Path2, `rclone moveto` Path1 as _Path1
 Path2 newer AND Path1 changed | File is newer on Path2 AND also changed (newer/older/size) on Path1 | Files renamed to _Path1 and _Path2 | `rclone copyto` Path2 to Path1 as _Path2, `rclone moveto` Path1 as _Path1
-Path2 newer AND Path1 deleted | File is newer on Path2 AND also deleted on Path1 | Remote version survives  | `rclone copyto` Path2 to Path1
+Path2 newer AND Path1 deleted | File is newer on Path2 AND also deleted on Path1 | Path2 version survives  | `rclone copyto` Path2 to Path1
 Path2 deleted AND Path1 changed | File is deleted on Path2 AND changed (newer/older/size) on Path1 | Path1 version survives |`rclone sync` Path1 to Path2
 Path1 deleted AND Path2 changed | File is deleted on Path1 AND changed (newer/older/size) on Path2 | Path2 version survives  | `rclone copyto` Path2 to Path1
 
@@ -235,6 +271,9 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.3 181001 Added Windows support.  UNC paths (//server/share/path) now supported.  
+Minimum Python V2.7 is now enforced.  Added --rclone switch.
+
 - V2.2 180921 Changed MD5 hash of the filtersfile for support of extended character sets, such as Cyrillic.  Thanks for the fix @erakli!
 
 - V2.1 180729 Reworked to Path1/Path2, allowing unrestricted sync between local and remote filesystems. Added blocking of syncs of Google
@@ -246,7 +285,7 @@ doc files (size -1).  Google doc file are logged as not syncable, but do not cau
 		excludes). See [rclone Filtering documentation](https://rclone.org/filtering/#filter-from-read-filtering-patterns-from-a-file).)
 		Added change detection on the filters file (MD5 hash), forcing a --first-sync in order to avoid doing damage. 
 		Added --max-deletes switch for command line control of the excessive deletes feature.
-		Changed rclonesync's interface to align to Linux command line standards (lower case, hypens between words).  Internally adjusted
+		Changed rclonesync's interface to align to Linux command line standards (lower case, hyphens between words).  Internally adjusted
 		the code to reasonably closely align with Python coding standards in PEP 8.
 		
 - 180611  Bug fix:  A deleted a file on the Remote filesystem results in an rclone delete on the Local filesystem.  If switches to rclone are enabled 
@@ -267,7 +306,7 @@ doc files (size -1).  Google doc file are logged as not syncable, but do not cau
 
 - 171015  Moved tooManyLocalDeletes error message down below the Remote check to provide both Local and Remote change lists to the stdout
 
-- 170917  Added --Force switch - required when the % changes on Local or Remote system are grater than maxDelta.  Safeguard for
+- 170917  Added --Force switch - required when the % changes on Local or Remote system are greater than maxDelta.  Safeguard for
        Local or Remote not online.
        Added --ignore-times to the copy of changed file on Remote to Local.  Was not copying files with matching sizes.
 

@@ -1,8 +1,8 @@
 :MSG:	1) First, see that --check-access passes with the initial setup
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -13,10 +13,10 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 
 :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
 rclone delete ./testdir/path2/subdir/RCLONE_TEST
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
   ERROR    Failed access health test:  <RCLONE_TEST> Path1 count 2, Path2 count 1 - 
   ERROR    Failed access health test:  Path1 key <subdir/RCLONE_TEST> not found in Path2 - 
@@ -24,10 +24,10 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 
 :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
 rclone copy ./testdir/path1/subdir/RCLONE_TEST ./testdir/path2/
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --first-sync --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> --check-access skipped on --first-sync
 >>>>> Path1 Checking for Diffs
@@ -40,10 +40,10 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> Successful run.  All done.
 
 :MSG:	4) Run sync with --check-access.  Should pass.
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -54,20 +54,20 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 
 :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
 rclone delete ./testdir/path1/RCLONE_TEST
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
   ERROR    Failed access health test:  <RCLONE_TEST> Path1 count 1, Path2 count 2 - 
   ERROR    Failed access health test:  Path2 key <RCLONE_TEST> not found in Path1 - 
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 
 :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --first-sync --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
   Path2      --first-sync copying to Path1     - ./testdir/path1/RCLONE_TEST
 >>>>> --check-access skipped on --first-sync
@@ -81,10 +81,10 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> Successful run.  All done.
 
 :MSG:	7) Run sync with --check-access.  Should pass.
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --check-access --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs

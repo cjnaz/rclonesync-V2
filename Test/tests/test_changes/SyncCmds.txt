@@ -1,2 +1,2 @@
 :MSG:	Issue rclonesync command
-:RCSEXEC: :PATH1: :PATH2: --verbose --workdir :WORKDIR: --no-datetime-log
+:RCSEXEC: :PATH1: :PATH2:

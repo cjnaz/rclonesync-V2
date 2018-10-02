@@ -1,8 +1,8 @@
 :MSG:	Sync should fail due to too many Path2 deletes
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
   Path2      File was deleted                  - file1.txt
@@ -15,10 +15,10 @@ Excessive number of deletes (>50%, 5 of 9) found on the Path2 filesystem <./test
 ***** Error Abort.  Try running rclonesync again. *****
 
 :MSG:   Apply --force switch, and sync should run.
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --force
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --force --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=True, max_deletes=50, no_datetime_log=True, rc_verbose=None, verbose=True, workdir='./testwd/')>
+Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=True, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', verbose=True, workdir='./testwd/')>
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
   Path2      File was deleted                  - file1.txt

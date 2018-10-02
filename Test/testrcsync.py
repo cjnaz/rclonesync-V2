@@ -7,9 +7,10 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.1 180729"
+version = "V1.2 181001"
 
 # Revision history
+# 181001  Add support for path to rclone
 # 180729  Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
 # 180701  New
 
@@ -35,7 +36,8 @@ CONSOLELOGFILE = WORKDIR + "consolelog.txt"
 def rcstest():
     path1 = path1base + TESTDIR + "path1/"
     path2 = path2base + TESTDIR + "path2/"
-    print ("***** Test case <{}> using Path1 <{}> and Path2 <{}> and rclonesync <{}>".format(testcase, path1, path2, rcsexec))
+    print ("***** Test case <{}> using Path1 <{}>, Path2 <{}>, <{}>, and <{}>"
+           .format(testcase, path1, path2, rcsexec, rclone))
 
     TESTCASEROOT = "./tests/" + testcase + "/"
     INITIALDIR   = TESTCASEROOT + "initial/"
@@ -50,19 +52,20 @@ def rcstest():
     os.mkdir(WORKDIR)
 
     testdirpath1 = TESTDIR + "path1/"
-    if testdirpath1 in subprocess.check_output(["rclone", "lsf", path1base, "-R"]).decode("utf8"):
-        subprocess.call(["rclone", "purge", path1])
+    if testdirpath1 in subprocess.check_output([rclone, "lsf", path1base, "-R"]).decode("utf8"):
+        subprocess.call([rclone, "purge", path1])
     
     # git tends to change file mod dates.  For test stability, jam initial dates to a fix past date.
     # test cases that changes files (test_changes, for example) will touch specific files to fixed new dates.
     subprocess.call("find " + INITIALDIR + r' -type f -exec touch --date="2000-01-01" {} +', shell=True)
 
-    subprocess.call(["rclone", "copy", INITIALDIR, path1])
-    subprocess.call(["rclone", "sync", path1, path2])
+    subprocess.call([rclone, "copy", INITIALDIR, path1])
+    subprocess.call([rclone, "sync", path1, path2])
     sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
     
     print ("\nDO <rclonesync --first-sync> to set LSL files baseline")
-    subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR, "--no-datetime-log" ])
+    subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR,
+                     "--no-datetime-log", "--rclone", rclone ])
     sys.stdout.flush()
     
 
@@ -74,11 +77,14 @@ def rcstest():
                 if ":MSG:" in line:
                     print ("    {}".format(line))
                 else:
+                    if ":RCSEXEC:" in line:
+                        line += " --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE:"
                     xx = line \
                          .replace(":TESTCASEROOT:", TESTCASEROOT) \
                          .replace(":PATH1:", path1) \
                          .replace(":PATH2:", path2) \
                          .replace(":RCSEXEC:", rcsexec) \
+                         .replace(":RCLONE:", rclone) \
                          .replace(":WORKDIR:", WORKDIR)
                     print ("    {}".format(xx))
                     subprocess.call(xx, shell=True) # using shell=True so that touch commands can have quoted date strings
@@ -95,11 +101,14 @@ def rcstest():
                         print ("    {}".format(line))
                         subprocess.call(["echo", line], stdout=logfile, stderr=logfile)
                     else:
+                        if ":RCSEXEC:" in line:
+                            line += " --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE:"
                         xx = line \
                             .replace(":TESTCASEROOT:", TESTCASEROOT) \
                             .replace(":PATH1:", path1) \
                             .replace(":PATH2:", path2) \
                             .replace(":RCSEXEC:", rcsexec) \
+                            .replace(":RCLONE:", rclone) \
                             .replace(":WORKDIR:", WORKDIR)
                         print ("    {}".format(xx))
                         subprocess.call("echo " + xx, stdout=logfile, stderr=logfile, shell=True)
@@ -152,11 +161,13 @@ def rcstest():
 
 
     if args.no_cleanup:
-        print ("SKIPPING CLEANUP of testdirs")
+        print ("SKIPPING CLEANUP of testdirs and workdir")
     else:
-        print ("CLEANING UP testdirs")
-        subprocess.call(["rclone", "purge", path1])
-        subprocess.call(["rclone", "purge", path2])
+        print ("CLEANING UP testdirs and workdir")
+        subprocess.call([rclone, "purge", path1])
+        subprocess.call([rclone, "purge", path2])
+        shutil.rmtree(WORKDIR)
+
 
     if errcnt > 0:
         print ("TEST <{}> FAILED WITH {} ERRORS.\n\n".format(testcase, errcnt))
@@ -167,20 +178,11 @@ def rcstest():
 
 if __name__ == '__main__':
 
-    try:                        # Get known Clouds
-        clouds = subprocess.check_output(['rclone', 'listremotes'])
-    except subprocess.CalledProcessError as e:
-        logging.error ("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
-    except:
-        logging.error ("ERROR  rclone not installed?\nError message: {}\n".format(sys.exc_info()[1])); exit()
-
-    clouds = str(clouds.decode("utf8")).split()
-
     parser = argparse.ArgumentParser(description="rclonesync test engine")
     parser.add_argument('Path1',
-                        help="'local' or name of cloud service ({})".format(clouds))
+                        help="'local' or name of cloud service with ':'")
     parser.add_argument('Path2',
-                        help="'local' or name of cloud service ({})".format(clouds))
+                        help="'local' or name of cloud service with ':'")
     parser.add_argument('TestCase',
                         help="Test case subdir name (beneath ./tests).  'ALL' to run all tests in the tests subdir")
     parser.add_argument('-g', '--golden',
@@ -192,6 +194,9 @@ if __name__ == '__main__':
     parser.add_argument('--rclonesync',
                         help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC),
                         default=RCSEXEC)
+    parser.add_argument('-r','--rclone',
+                        help="Full path to rclone executable (default is rclone in path)",
+                        default="rclone")
     parser.add_argument('-V', '--version',
                         help="Return version number and exit.",
                         action='version',
@@ -200,7 +205,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
     testcase = args.TestCase
     rcsexec  = args.rclonesync
+    rclone   =  args.rclone
     
+    try:
+        clouds = subprocess.check_output([rclone, 'listremotes'])
+    except subprocess.CalledProcessError as e:
+        print ("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
+    except:
+        print ("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}\n".format(sys.exc_info()[1])); exit()
+    clouds = str(clouds.decode("utf8")).split()
+
     remoteFormat = re.compile('([\w-]+):(.*)')
     if args.Path1 == "local":
         path1base = LOCALTESTBASE
