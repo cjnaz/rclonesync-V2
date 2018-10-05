@@ -17,16 +17,24 @@ rclonesync has not been
 tested on other services.  If it works, or sorta works, please raise an issue and I'll update these notes.  Run the test suite
 to check for proper operation.
 
-- **NOTE ON CHANGING TO VERSION 2.1** - V2.1 changes from `Cloud` and `LocalPath` arguments to `Path1` and `Path2` arguments, enabling 
-unrestricted local and cloud syncing.  When changing to V2.1 for efficiency reasons you should reverse the order of filesystem 
+## Notable changes in the latest release
+V2.4 181004:
+- **_Empty directories are no longer deleted by default.  This is a functional change in the default behavior._**
+The new `--remove-empty-directories` switch may be used to restore the behavior of prior releases (empty directories on
+both paths are deleted).
+- You may now specify the check access filename using the new --check-filename switch.  Prior to V2.4 the check access 
+filename was hard-coded to RCLONE_TEST.
+
+**NOTE ON CHANGING FROM THE ORIGINAL RCloneSync (V1.x) ** - As of V2.1, the interface was changed from `Cloud` and `LocalPath` 
+arguments to `Path1` and `Path2` arguments, enabling 
+unrestricted local and cloud syncing.  When changing to V2 for efficiency reasons you should reverse the order of filesystem 
 references:  Change `./rclonesync.py GDrive: /path_to_local_root` to `./rclonesync.py /path_to_local_root GDrive:`. 
 Prior to V2.1, and Cloud changes were pushed to LocalPath (the second argument).  Starting with V2.1, Path2 changes are pushed 
 to Path1 (the first argument).  _This change 
 is only for sync efficiency reasons - your data should not be at risk without this change._
 
 
-
-### High level behaviors / operations
+## High level behaviors / operations
 -  Keeps `rclone lsl` file lists of the Path1 and Path2 filesystems, and on each run checks for deltas on Path1 and Path2
 -  Applies Path2 deltas to the Path1 filesystem, then `rclone syncs` the Path1 filesystem to the Path2 filesystem
 -  Handles change conflicts nondestructively by creating _Path1 and _Path2 file versions
@@ -40,9 +48,10 @@ is only for sync efficiency reasons - your data should not be at risk without th
 
 ```
 $ ./rclonesync.py -h
-usage: rclonesync.py [-h] [-1] [-c] [-D MAX_DELETES] [-F] [-f FILTERS_FILE]
-                     [-r RCLONE] [-v] [--rc-verbose] [-d] [-w WORKDIR]
-                     [--no-datetime-log] [-V]
+usage: rclonesync.py [-h] [-1] [-c] [--check-filename CHECK_FILENAME]
+                     [-D MAX_DELETES] [-F] [-e] [-f FILTERS_FILE] [-r RCLONE]
+                     [-v] [--rc-verbose] [-d] [-w WORKDIR] [--no-datetime-log]
+                     [-V]
                      Path1 Path2
 
 ***** BiDirectional Sync for Cloud Services using rclone *****
@@ -62,18 +71,23 @@ optional arguments:
                         Also asserts --verbose.
   -c, --check-access    Ensure expected RCLONE_TEST files are found on both
                         path1 and path2 filesystems, else abort.
+  --check-filename CHECK_FILENAME
+                        Filename for --check-access (default is
+                        <RCLONE_TEST>).
   -D MAX_DELETES, --max-deletes MAX_DELETES
                         Safety check for percent maximum deletes allowed
                         (default 50%). If exceeded the rclonesync run will
                         abort. See --force.
   -F, --force           Bypass --max-deletes safety check and run the sync.
                         Also asserts --verbose.
+  -e, --remove-empty-directories
+                        Execute rclone rmdirs as a final cleanup step.
   -f FILTERS_FILE, --filters-file FILTERS_FILE
                         File containing rclone file/path filters (needed for
                         Dropbox).
   -r RCLONE, --rclone RCLONE
                         Full path to rclone executable (default is rclone in
-                        path)
+                        path).
   -v, --verbose         Enable event logging with per-file details.
   --rc-verbose          Enable rclone's verbosity levels (May be specified
                         more than once for more details. Also asserts
@@ -122,8 +136,6 @@ $ ../rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --verbose
 2018-07-28 17:13:43,747:    WARNING    Deleted on Path1 and also changed on Path2 - file6.txt
 2018-07-28 17:13:43,747:    Path2      Copying to Path1                  - ./testdir/path1/file6.txt
 2018-07-28 17:13:46,642:  >>>>> Synching Path1 to Path2
-2018-07-28 17:13:50,715:  >>>>> rmdirs Path1
-2018-07-28 17:13:50,726:  >>>>> rmdirs Path2
 2018-07-28 17:13:51,932:  >>>>> Refreshing Path1 and Path2 lsl files
 2018-07-28 17:13:53,263:  >>>>> Successful run.  All done.
 ```
@@ -147,7 +159,9 @@ are named based on the Path1 and Path2 arguments so that separate syncs to indiv
 In the tables below, understand that the last operation is to do an `rclone sync <Path1> <Path2>` _if_ rclonesync had made any 
 changes on the Path1 filesystem.
 
-- Any empty directories after the sync are deleted on both the Local and Remote filesystems.  (Change pending)
+- Any empty directories after the sync on both the Path1 and Path2 filesystems are **NOT** deleted, by default 
+(changed in V2.4).  If the `--remove-empty-directories` switch is specified, then both paths will have any empty directories
+purged as the last step in the process.
 
 - **--first-sync** - This will effectively make both Path1 and Path2 filesystems contain a matching superset of all files.  Path2 
 files that do not exist in Path1 will be copied to Path1, and the process will then sync the Path1 tree to Path2. 
@@ -161,7 +175,8 @@ version.** Carefully evaluate deltas using --dry-run.
 - **--check-access** - Access check files are an additional safety measure against data loss.  rclonesync will ensure it can 
 find matching `RCLONE_TEST` files in the same places in the Path1 and Path2 filesystems.  Time stamps and file contents 
 are not important, just the names and locations.  Place one or more RCLONE_TEST files in the Path1 or Path2 filesystem and then 
-do either a run without `--check-access` or a `--first-sync` to set matching files on both filesystems.
+do either a run without `--check-access` or a `--first-sync` to set matching files on both filesystems. _Also see the 
+`--check-filename` switch._
 
 - **--max-deletes** - As a safety check, if greater than the --max-deletes percent of files were deleted on either the Path1 or
 Path2 filesystem, then rclonesync will abort with a warning message, without making any changes.  The default --max-deletes is 50%. 
@@ -205,11 +220,12 @@ the <...>__Path1LSL and <...>__Path1LSL files are renamed adding _ERROR, which b
 original files are not found).  Some errors are considered temporary, and re-running the rclonesync is not blocked. 
 Within the code, see usages of `return RTN_CRITICAL` and `return RTN_ABORT`.  `return RTN_CRITICAL` blocks further rclonesync runs.
 
-- **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete files on the Remote server in the last 
+- **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete files on the Path2 server in the last 
 rclonesync step of rclone syncing Path1 to the Path2.  If the file did not exist on Path1 then it would normally be copied to 
 the Path1 filesystem, but with --dry-run enabled those copies didn't happen, and thus on the final `rclone sync` step they don't exist on Path1, 
 which leads to the attempted delete on the Path2, blocked again by --dry-run: `... Not deleting as --dry-run`.  This whole confusing situation is an 
-artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then the threatened deletes on Path2 may be disregarded.
+artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then 
+the threatened deletes on Path2 may be disregarded.
 
 - **Lock file** - When rclonesync is running, a lock file is created (/tmp/rclonesync_LOCK).  If rclonesync should crash or 
 hang the lock file will remain in place and block any further runs of rclonesync.  Delete the lock file as part of 
@@ -270,6 +286,9 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 
 ## Revision history
+
+- V2.4 181004 Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 
+this release:  empty directories are NOT deleted by default, whereas they were deleted in prior releases.
 
 - V2.3 181001 Added Windows support.  UNC paths (//server/share/path) now supported.  
 Minimum Python V2.7 is now enforced.  Added --rclone switch.

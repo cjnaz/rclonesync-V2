@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.3 181001"                          # Version number and date code
+__version__ = "V2.4 181004"                          # Version number and date code
 
 
 #==========================================================================================================
@@ -35,6 +35,7 @@ import hashlib                                      # For checking if the filter
 
 # Configurations and constants
 MAX_DELETE = 50                                     # % deleted allowed, else abort.  Use --force or --max_deletess to override.
+CHK_FILE = 'RCLONE_TEST'
 
 RTN_ABORT = 1                                       # Tokens for return codes based on criticality.
 RTN_CRITICAL = 2                                    # Aborts allow rerunning.  Criticals block further runs.  See Readme.md.
@@ -188,12 +189,11 @@ def bidirSync():
             logging.info(">>>>> Checking Path1 and Path2 rclone filesystems access health")
             path1_chk_list_file = list_file_base + '_Path1_CHK'
             path2_chk_list_file = list_file_base + '_Path2_CHK'
-            CHK_FILE = 'RCLONE_TEST'
 
-            if "testdir" not in path1_base:         # Normally, disregard any RCLONE_TEST files in the test directory tree.
-                xx = ['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ ' + CHK_FILE, '--filter', '- *']
-            else:                                   # If testing, include RCLONE_TEST files within the test directory tree.
-                xx = ['--filter', '- rclonesync/Test/', '--filter', '+ ' + CHK_FILE, '--filter', '- *']
+            if "testdir" not in path1_base:         # Normally, disregard any check files in the test directory tree.
+                xx = ['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- *']
+            else:                                   # If testing, include check files within the test directory tree.
+                xx = ['--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- *']
             
             if rclone_lsl(path1_base, path1_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                 return RTN_ABORT
@@ -214,7 +214,7 @@ def bidirSync():
             check_error = False
             if len(path1_check) < 1 or len(path1_check) != len(path2_check):
                 logging.error(print_msg("ERROR", "Failed access health test:  <{}> Path1 count {}, Path2 count {}"
-                                         .format(CHK_FILE, len(path1_check), len(path2_check)), ""))
+                                         .format(chk_file, len(path1_check), len(path2_check)), ""))
                 check_error = True
 
             for key in path1_check:
@@ -447,6 +447,9 @@ def bidirSync():
         if rclone_cmd('sync', path1_base, path2_base, options=filters + switches + ['--min-size', '0'], linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
 
+
+    # ***** Optional rmdirs for empty directories *****
+    if rmdirs:
         logging.info(">>>>> rmdirs Path1")
         if rclone_cmd('rmdirs', path1_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
             return RTN_CRITICAL
@@ -550,6 +553,9 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--check-access',
                         help="Ensure expected RCLONE_TEST files are found on both path1 and path2 filesystems, else abort.",
                         action='store_true')
+    parser.add_argument('--check-filename',
+                        help="Filename for --check-access (default is <{}>).".format(CHK_FILE),
+                        default=CHK_FILE)
     parser.add_argument('-D', '--max-deletes',
                         help="Safety check for percent maximum deletes allowed (default {}%%).  If exceeded the rclonesync run will abort.  See --force.".format(MAX_DELETE),
                         type=int,
@@ -557,11 +563,14 @@ if __name__ == '__main__':
     parser.add_argument('-F', '--force',
                         help="Bypass --max-deletes safety check and run the sync.  Also asserts --verbose.",
                         action='store_true')
+    parser.add_argument('-e', '--remove-empty-directories',
+                        help="Execute rclone rmdirs as a final cleanup step.",
+                        action='store_true')
     parser.add_argument('-f','--filters-file',
                         help="File containing rclone file/path filters (needed for Dropbox).",
                         default=None)
     parser.add_argument('-r','--rclone',
-                        help="Full path to rclone executable (default is rclone in path)",
+                        help="Full path to rclone executable (default is rclone in path).",
                         default="rclone")
     parser.add_argument('-v', '--verbose',
                         help="Enable event logging with per-file details.",
@@ -586,6 +595,7 @@ if __name__ == '__main__':
 
     first_sync   =  args.first_sync
     check_access =  args.check_access
+    chk_file     =  args.check_filename
     max_deletes  =  args.max_deletes
     verbose      =  args.verbose
     rc_verbose   =  args.rc_verbose
@@ -594,6 +604,7 @@ if __name__ == '__main__':
     rclone       =  args.rclone
     dry_run      =  args.dry_run
     force        =  args.force
+    rmdirs       =  args.remove_empty_directories
     workdir      =  args.workdir + '/'
 
     if not args.no_datetime_log:
