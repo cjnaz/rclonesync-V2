@@ -1,0 +1,11 @@
+test_rmdirs
+
+Test --remove-empty-directories logic.  Without this switch the subdir should not be deleted when empty,
+and deleted with the switch.
+
+After the initial setup sync:
+1) Delete Path1 subdir/file20.txt
+2) rclonesync without --remove-empty-directories
+3) Confirm subdir exists on both paths
+4) rclonesync with --remove-empty-directories
+5) Confirm subdir has been removed on both paths

@@ -1,0 +1,8 @@
+test_check_filename
+
+Test --check-filename .chk_file.  test_check_access is a more complete test of the check-access logic.
+
+1) First, see that --check-access passes with the initial setup
+2) Delete the remote subdir .chk_file, run sync, will fail critical
+3) Put the remote subdir .chk_file back, run --first-sync
+4) Run sync with --check-access.  Should pass.
