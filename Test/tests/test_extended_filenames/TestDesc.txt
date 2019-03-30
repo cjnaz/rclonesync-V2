@@ -1,0 +1,3 @@
+test_extended_filenames
+
+Tests with several files and a subdirectory that contain UTF-8 code points.

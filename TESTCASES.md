@@ -10,7 +10,7 @@ Note that the focus of the tests is on rclonesync.py, not rclone itself.  If dur
 intermittent errors and rclone retries, then these errors will be captured and flagged as an invalid MISCOMPARE. 
 Rerunning the test should allow it to pass.  Consider such failures as noise.
 
-Note also that testrcsync _only_ works on Linux, and does not support Windows.
+Note also that testrcsync _only_ works on Linux, and does not fully support Windows (see below).
 
 ## Usage
 - `./testrcsync.py local local test_basic` runs the test_basic test case using only the local filesystem - synching
@@ -32,10 +32,17 @@ rclonesync's produced LSL* filenames incorporate the Path1 and Path2 names.  Man
 and consider running with `--golden` if a given cloud service is 
 your preference.  Running the tests with a cloud service is WAY slower than local local.
 
+## Windows usage (limited)
+- Testing with Windows is supported by running testrcsync.py from Linux and using the `--Windows-testing` switch.  When set, the script pauses for each command in the test's SyncCmds.txt file, and provides the copy/paste command that is to applied in a Windows Cmd terminal window.  After all sync commands have been applied, testrcsync proceeds with the diff checks.
+- The assumption/requirement is that both the Linux and Windows systems are sharing the same test directories and working directory.
+- There may be differences in the character encoding in the consolelog.txt generated from Windows vs. the golden file generated on Linux, so there will likely be miscompares for this file.  The LSL* files should match, however.  Beyond Compare may be useful for comparing test versus golden consolelog.txt files.
+- If there is more than one sync command to be executed on Windows the consolelog.txt file will have later commands showing up earlier in the log file.  This is a known bug in testresync.py.  Various sys.stdout.flush() attempts did not fix the problem - left as a corner case bug.
+
+
 ```
 $ ./testrcsync.py -h
 usage: testrcsync.py [-h] [-g] [--no-cleanup] [--rclonesync RCLONESYNC]
-                     [-r RCLONE] [-V]
+                     [--Windows-testing] [-r RCLONE] [-V]
                      Path1 Path2 TestCase
 
 rclonesync test engine
@@ -54,11 +61,12 @@ optional arguments:
   --rclonesync RCLONESYNC
                         Full or relative path to rclonesync Python file
                         (default <../rclonesync.py>).
+  --Windows-testing     Disable running rclonesyncs during the SyncCmds phase.
+                        Used for Windows testing.
   -r RCLONE, --rclone RCLONE
                         Full path to rclone executable (default is rclone in
                         path)
   -V, --version         Return version number and exit.
-
 ```
 
 ## Test execution flow:
@@ -68,9 +76,7 @@ optional arguments:
 2. The commands in the ChangeCmds.txt file are applied.  This establishes deltas from the initial sync in step 1.
 3. The commands in the SyncCmds.txt file are applied, with output directed to the consolelog.txt file in the test working directory.
 4. The contents of the test working directory are compared to the contents of the testcase golden directory.
-Note that testcase `test_dry_run` will produce a mismatch for the consolelog.txt file because this test captures rclone --dry-run
-info messages that have timestamps that will mismatch to the golden consolelog.txt.  This is the only expected failure. (rclone has 
-a new --log-format switch for disabling date/time output, currently in beta.)
+Note that testcase `test_dry_run` may produce mismatches in the consolelog.txt file because this test captures rclone --dry-run info messages and rclone sync is not deterministic in the order that it processes changes. This is the only expected failure.
 
 
 ## Setup notes
@@ -126,6 +132,7 @@ Developed on CentOS 7 and tested on Python 2.7.x and Python 3.6.5.  Issues echo,
 will not work on Windows (sorry).
 
 ## Revision history
+- V1.3 190330 - Added limited/partial testing with Windows via `--Windows-testing` switch.
 - V1.2 181001 - Added --rclone switch.  Cleaned up SyncCmds syntax with hard-coded `--verbose --workdir :WORKDIR: --no-datetime-log` 
 for rclonesync calls.
 - V1.1 180728 - Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.

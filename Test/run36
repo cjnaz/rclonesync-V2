@@ -51,51 +51,7 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path2_DRYRUN>
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
-MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-30c30
-< 2018/10/04 22:16:00 NOTICE: file1.txt: Not copying as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file1.txt: Not copying as --dry-run
-32c32
-< 2018/10/04 22:16:00 NOTICE: file10.txt: Not copying as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file10.txt: Not copying as --dry-run
-34c34
-< 2018/10/04 22:16:00 NOTICE: file3.txt: Not deleting as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file3.txt: Not deleting as --dry-run
-37c37
-< 2018/10/04 22:16:00 NOTICE: file5.txt: Not copying as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file5.txt: Not copying as --dry-run
-39c39
-< 2018/10/04 22:16:00 NOTICE: file5.txt: Not moving as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file5.txt: Not moving as --dry-run
-42c42
-< 2018/10/04 22:16:00 NOTICE: file6.txt: Not copying as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file6.txt: Not copying as --dry-run
-44,52c44,52
-< 2018/10/04 22:16:00 NOTICE: file7.txt: Not copying as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file11.txt: Not copying as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file3.txt: Not copying as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file2.txt: Not copying as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file1.txt: Not copying as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file5.txt: Not updating modification time as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file10.txt: Not deleting as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file4.txt: Not deleting as --dry-run
-< 2018/10/04 22:16:00 NOTICE: file6.txt: Not deleting as --dry-run
----
-> 2018/10/04 22:18:12 NOTICE: file11.txt: Not copying as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file2.txt: Not copying as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file3.txt: Not copying as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file1.txt: Not copying as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file7.txt: Not copying as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file5.txt: Not updating modification time as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file6.txt: Not deleting as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file10.txt: Not deleting as --dry-run
-> 2018/10/04 22:18:12 NOTICE: file4.txt: Not deleting as --dry-run
+Match:  <consolelog.txt>
 
 ----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
@@ -105,7 +61,7 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path1_DRYRUN>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
-TEST <test_dry_run> FAILED WITH 1 ERRORS.
+TEST <test_dry_run> PASSED
 
 
 ===================================================================
@@ -376,6 +332,50 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
 TEST <test_changes> PASSED
+
+
+===================================================================
+***** Test case <test_extended_filenames> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+    :MSG:	Place a newer files on the Path1 and Path2
+    touch ./tests/test_extended_filenames/modfiles/file1.txt --date="2025-01-02"
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2//New_top_level_mañana_funcionará.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2//file_enconde_mañana_funcionará.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/mañana_funcionará.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1//filename_contains_ࢺ_p1m.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
+    touch ./tests/test_extended_filenames/modfiles/file1.txt --date="2025-01-03"
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
+    rclone delete ./testdir/path2//filename_contains_ě_.txt
+    rclone delete ./testdir/path2//filename_contains_ࢺ_.txt
+    rclone delete ./testdir/path2//subdir_with_ࢺ_/filename_contains_ě_.txt
+    rclone delete ./testdir/path1/Русский.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/Русский.txt
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	Issue rclonesync command
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (3) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_extended_filenames> PASSED
 
 
 ===================================================================

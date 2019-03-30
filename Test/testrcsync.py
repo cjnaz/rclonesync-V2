@@ -7,9 +7,10 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.2 181001"
+version = "V1.3 190330"
 
 # Revision history
+# 190330  Added hook for running tests with Windows.  See README.md.
 # 181001  Add support for path to rclone
 # 180729  Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
 # 180701  New
@@ -110,9 +111,17 @@ def rcstest():
                             .replace(":RCSEXEC:", rcsexec) \
                             .replace(":RCLONE:", rclone) \
                             .replace(":WORKDIR:", WORKDIR)
-                        print ("    {}".format(xx))
                         subprocess.call("echo " + xx, stdout=logfile, stderr=logfile, shell=True)
-                        subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
+                        # sys.stdout.flush()
+                        if args.Windows_testing:
+                            print ("    {} >> {} 2>&1".format(xx.replace('/','\\'), CONSOLELOGFILE.replace('/','\\')))
+                            if sys.version_info[0] < 3:
+                                raw_input("Hit return after entering above on Windows side. >>")
+                            else:
+                                input("Hit return after entering above on Windows side. >>")
+                        else:
+                            print ("    {}".format(xx))
+                            subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
                     sys.stdout.flush()
 
 
@@ -143,6 +152,15 @@ def rcstest():
             if xx not in goldenfiles:
                 errcnt += 1
                 print ("File found in Results but not in Golden:  <{}>".format(xx))
+
+        if args.Windows_testing:
+            # hack the test result consolelog.txt, swapping to Linux-style slashes
+            with open(CONSOLELOGFILE) as f:
+                s = f.read()
+            s = s.replace("\\\\", "/")
+            s = s.replace("\\", "/")
+            with open(CONSOLELOGFILE, "w") as f:
+                f.write(s)
 
         for xx in goldenfiles:
             if xx in resultsfiles:
@@ -194,6 +212,9 @@ if __name__ == '__main__':
     parser.add_argument('--rclonesync',
                         help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC),
                         default=RCSEXEC)
+    parser.add_argument('--Windows-testing',
+                        help="Disable running rclonesyncs during the SyncCmds phase.  Used for Windows testing.",
+                        action='store_true')
     parser.add_argument('-r','--rclone',
                         help="Full path to rclone executable (default is rclone in path)",
                         default="rclone")
@@ -205,7 +226,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     testcase = args.TestCase
     rcsexec  = args.rclonesync
-    rclone   =  args.rclone
+    rclone   = args.rclone
     
     try:
         clouds = subprocess.check_output([rclone, 'listremotes'])
