@@ -9,21 +9,17 @@ I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a lo
 I run rclonesync as a Cron job every 30 minutes, or on-demand from the command line.
 
 rclonesync support:
-- Validated on Google Drive, Dropbox, and Onedrive (thanks @AlexEshoo)
+- Validated on Google Drive, Dropbox, OwnCloud and Onedrive (thanks @AlexEshoo)
 - Linux support, and V2.3 adds Windows support.
-- Runs on both Python 2.7 and 3.x
+- Runs on both Python 2.7 and 3.x.
 
 rclonesync has not been 
 tested on other services.  If it works, or sorta works, please raise an issue and I'll update these notes.  Run the test suite
 to check for proper operation.
 
 ## Notable changes in the latest release
-V2.4 181004:
-- **_Empty directories are no longer deleted by default.  This is a functional change in the default behavior._**
-The new `--remove-empty-directories` switch may be used to restore the behavior of prior releases (empty directories on
-both paths are deleted).
-- You may now specify the check access filename using the new --check-filename switch.  Prior to V2.4 the check access 
-filename was hard-coded to RCLONE_TEST.
+V2.5 190330:
+- Fixed Windows with Python 2.7 support for extended characters (UTF-8) in file and directory names.  
 
 **NOTE ON CHANGING FROM THE ORIGINAL RCloneSync (V1.x) ** - As of V2.1, the interface was changed from `Cloud` and `LocalPath` 
 arguments to `Path1` and `Path2` arguments, enabling 
@@ -241,7 +237,7 @@ mechanism is hard-coded to ignore RCLONE_TEST files beneath RCloneSync/Test.
 
 ### Windows support
 Support for rclonesync on Windows was added in V2.3.  
-- Tested on Windows 10 Pro version 1803 (May'18) and with rclone v1.43.1.
+- Tested on Windows 10 Pro version 1809 (Oct'18) and with rclone v1.46 release.
 - Drive letters are allowed, including drive letters mapped to network drives (`rclonesync.py J:\localsync GDrive:`). 
 If a drive letter is omitted the shell current drive is the default.  Drive letters are a single character follows by ':', so cloud names
 must be more than one character long.
@@ -251,6 +247,7 @@ must be more than one character long.
 - rclone must be in the path, or use rclonesync's `--rclone` switch.
 - Note that rclonesync output will show a mix of forward `/` and back '\' slashes.  They are equivalent in Python - not to worry.
 - Be careful of case independent directory and file naming on Windows vs. case dependent Linux!
+- If using Windows and Python 2.7 and the rclone remote is defined with non-ASCII (extended) characters then rclonesync will likely fail.  The issue should be resolved by using Python 3.x on Windows, or run from Linux.  The root issue is that the Windows Python 2.7 subprocess module only supports ASCII characters.  rclonesync supports extended characters in directory and filenames, but not for the remote name.  Valentin Lab posted a fix for the Python 2.7 Windows subprocess.py module as win_subprocess.py (https://gist.github.com/vaab/2ad7051fc193167f15f85ef573e54eb9), which has been added to the rclonesync project, with no edits other than noting the source.  When rclonesync.py is run from Windows on Python 2.7, a dummy file `deleteme.txt` is created in the rclonesync working directory (due to a constraint/bug in win_subprocess.py).  This file may be ignored or deleted (it will come back).
 
 ### Usual sync checks
 
@@ -287,6 +284,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.5 190330 Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
 - V2.4 181004 Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 
 this release:  empty directories are NOT deleted by default, whereas they were deleted in prior releases.
 

@@ -1,6 +1,7 @@
 test_dry_run:  2 rclonesync runs, first with --dry-run.
-NOTE:  --dry-run turns on rlcone --verbose, which outputs datetime stamps, which will miscompare
-with the golden results.  Results from this test must be manually checked.
+NOTE:  --dry-run turns on rlcone --verbose, and rclone processes files in a
+non-deterministic order, resulting in miscompares with the golden results.
+Results from this test must be manually checked.
 
 Derived from test_all
  - New on Path2							    file10

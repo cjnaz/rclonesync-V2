@@ -27,29 +27,29 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
      6 file change(s) on Path2:    1 new,    3 newer,    0 older,    2 deleted
 >>>>> Applying changes on Path2 to Path1
   Path2      Copying to Path1                  - ./testdir/path1/file1.txt
-2018/10/04 22:16:00 NOTICE: file1.txt: Not copying as --dry-run
+NOTICE: file1.txt: Not copying as --dry-run
   Path2      Copying to Path1                  - ./testdir/path1/file10.txt
-2018/10/04 22:16:00 NOTICE: file10.txt: Not copying as --dry-run
+NOTICE: file10.txt: Not copying as --dry-run
   Path1      Deleting file                     - ./testdir/path1/file3.txt
-2018/10/04 22:16:00 NOTICE: file3.txt: Not deleting as --dry-run
+NOTICE: file3.txt: Not deleting as --dry-run
   WARNING    Changed in both Path1 and Path2   - file5.txt
   Path2      Copying to Path1                  - ./testdir/path1/file5.txt_Path2
-2018/10/04 22:16:00 NOTICE: file5.txt: Not copying as --dry-run
+NOTICE: file5.txt: Not copying as --dry-run
   Path1      Renaming Path1 copy               - ./testdir/path1/file5.txt_Path1
-2018/10/04 22:16:00 NOTICE: file5.txt: Not moving as --dry-run
+NOTICE: file5.txt: Not moving as --dry-run
   WARNING    Deleted on Path1 and also changed on Path2 - file6.txt
   Path2      Copying to Path1                  - ./testdir/path1/file6.txt
-2018/10/04 22:16:00 NOTICE: file6.txt: Not copying as --dry-run
+NOTICE: file6.txt: Not copying as --dry-run
 >>>>> Synching Path1 to Path2
-2018/10/04 22:16:00 NOTICE: file7.txt: Not copying as --dry-run
-2018/10/04 22:16:00 NOTICE: file11.txt: Not copying as --dry-run
-2018/10/04 22:16:00 NOTICE: file3.txt: Not copying as --dry-run
-2018/10/04 22:16:00 NOTICE: file2.txt: Not copying as --dry-run
-2018/10/04 22:16:00 NOTICE: file1.txt: Not copying as --dry-run
-2018/10/04 22:16:00 NOTICE: file5.txt: Not updating modification time as --dry-run
-2018/10/04 22:16:00 NOTICE: file10.txt: Not deleting as --dry-run
-2018/10/04 22:16:00 NOTICE: file4.txt: Not deleting as --dry-run
-2018/10/04 22:16:00 NOTICE: file6.txt: Not deleting as --dry-run
+NOTICE: file11.txt: Not copying as --dry-run
+NOTICE: file3.txt: Not copying as --dry-run
+NOTICE: file7.txt: Not copying as --dry-run
+NOTICE: file1.txt: Not copying as --dry-run
+NOTICE: file2.txt: Not copying as --dry-run
+NOTICE: file5.txt: Not updating modification time as --dry-run
+NOTICE: file4.txt: Not deleting as --dry-run
+NOTICE: file10.txt: Not deleting as --dry-run
+NOTICE: file6.txt: Not deleting as --dry-run
 >>>>> Refreshing Path1 and Path2 lsl files
 >>>>> Successful run.  All done.
 

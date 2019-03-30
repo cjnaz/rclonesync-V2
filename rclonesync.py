@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.4 181004"                          # Version number and date code
+__version__ = "V2.5 190330"                          # Version number and date code
 
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
 #
-# Chris Nelson, November 2017 - 2018
+# Chris Nelson, November 2017 - 2019
 # Revision and contributions:
 #   Hildo G. Jr.
 #
@@ -22,9 +22,12 @@ import argparse
 import sys
 import re
 import os.path
+import io
 import platform
 import shutil
 import subprocess
+if platform.system() is "Windows" and sys.version_info[0] < 3:
+    import win_subprocess
 from datetime import datetime
 import time
 import logging
@@ -44,7 +47,7 @@ RTN_CRITICAL = 2                                    # Aborts allow rerunning.  C
 def bidirSync():
 
     def print_msg(tag, msg, key=''):
-        return "  {:9}{:35} - {}".format(tag, msg, key)
+        return u"  {:9}{:35} - {}".format(tag, msg, key)
 
  
     if not os.path.exists(workdir):
@@ -83,34 +86,37 @@ def bidirSync():
             with open(filters_fileMD5) as ifile:
                 stored_file_hash = ifile.read()
         elif not first_sync:
-            logging.error("MD5 file not found for filters file <{}>.  Must run --first-sync.".format(filters_file))
+            logging.error(u"MD5 file not found for filters file <{}>.  Must run --first-sync.".format(filters_file))
             return RTN_CRITICAL
 
         if current_file_hash != stored_file_hash and not first_sync:
-            logging.error("Filters-file <{}> has chanaged (MD5 does not match).  Must run --first-sync.".format(filters_file))
+            logging.error(u"Filters-file <{}> has chanaged (MD5 does not match).  Must run --first-sync.".format(filters_file))
             return RTN_CRITICAL
 
         if first_sync:
-            logging.info("Storing filters-file hash to <{}>".format(filters_fileMD5))
+            logging.info(u"Storing filters-file hash to <{}>".format(filters_fileMD5))
             with open(filters_fileMD5, 'w') as ofile:
                 ofile.write(current_file_hash) # + "\n")
 
-        filters.append("--filter-from")
+        filters.append(u"--filter-from")
         filters.append(filters_file)
 
 
     # ***** Set up dry_run and rclone --verbose switches *****
     switches = []
     for x in range(rc_verbose):
-        switches.append("-v")
+        switches.append(u"-v")
     if dry_run:
-        switches.append("--dry-run")
+        switches.append(u"--dry-run")
         if os.path.exists(path2_list_file):          # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
-            shutil.copy(path2_list_file, path2_list_file + '_DRYRUN')
-            path2_list_file  += '_DRYRUN'
+            shutil.copy(path2_list_file, path2_list_file + u'_DRYRUN')
+            path2_list_file  += u'_DRYRUN'
         if os.path.exists(path1_list_file):
-            shutil.copy(path1_list_file, path1_list_file + '_DRYRUN')
-            path1_list_file += '_DRYRUN'
+            shutil.copy(path1_list_file, path1_list_file + u'_DRYRUN')
+            path1_list_file += u'_DRYRUN'
+    if args.no_datetime_log:
+        switches.extend([u'--log-format', '""'])
+    # print (switches)
 
 
     # ***** rclone call wrapper functions with retries *****
@@ -123,8 +129,8 @@ def bidirSync():
                     process_args.extend(options)
                 if not subprocess.call(process_args, stdout=of):
                     return 0
-                logging.warning(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1), path))
-        logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum), path))
+                logging.warning(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
+        logging.error(print_msg(u"ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
         return 1
         
     def rclone_cmd(cmd, p1=None, p2=None, options=None, linenum=0):
@@ -136,10 +142,26 @@ def bidirSync():
                 process_args.append(p2)
             if options is not None:
                 process_args.extend(options)
-            if not subprocess.call(process_args):
-                return 0
-            logging.warning(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
-        logging.error(print_msg("ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
+            # print (process_args)
+            # if not subprocess.call(process_args):     # Prior implementation, replaced with Popen call below - v2.5.
+            #     return 0
+            try:
+                if platform.system() is "Windows" and sys.version_info[0] < 3:
+                    # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
+                    # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
+                    # when file and directory names contain extended characters.  However, win_subprocess 
+                    # requires both shell=True and valid output files.  
+                    with io.open(workdir + "deleteme.txt", "wt") as of:
+                        p = win_subprocess.Popen(process_args, stdout=of, stderr=of, shell=True)
+                else:
+                    p = subprocess.Popen(process_args)
+                p.wait()
+                if p.returncode == 0:
+                    return 0
+            except Exception as e:
+                logging.warning(print_msg(u"WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+                logging.error("message:  <{}>".format(e))
+        logging.error(print_msg(u"ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
         return 1
 
 
@@ -374,7 +396,7 @@ def bidirSync():
                 src  = path2_base + key
                 dest = path1_base + key
                 logging.info(print_msg("Path2", "  Copying to Path1", dest))
-                if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                if rclone_cmd(u'copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
             else:
@@ -473,7 +495,7 @@ def bidirSync():
     return 0
 
 
-LINE_FORMAT = re.compile('\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
+LINE_FORMAT = re.compile(u'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
 def load_list(infile):
     # Format ex:
     #  3009805 2013-09-16 04:13:50.000000000 12 - Wait.mp3
@@ -482,7 +504,7 @@ def load_list(infile):
 
     d = {}
     try:
-        with open(infile, 'r') as f:
+        with io.open(infile, mode='rt', encoding='utf8') as f:
             for line in f:
                 out = LINE_FORMAT.match(line)
                 if out:
@@ -491,14 +513,14 @@ def load_list(infile):
                     _time = out.group(3)
                     microsec = out.group(4)
                     date_time = time.mktime(datetime.strptime(date + ' ' + _time, '%Y-%m-%d %H:%M:%S').timetuple()) + float('.'+ microsec)
-                    filename = out.group(5)
-                    d[filename] = {'size': size, 'datetime': date_time}
+                    filename = out.group(5) #.decode("utf-8")  # cjn
+                    d[filename] = {u'size': size, u'datetime': date_time}
                 else:
-                    logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
-
+                    logging.warning(u"Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
         return 0, collections.OrderedDict(sorted(d.items()))        # return Success and a sorted list
-    except:
-        logging.error("Exception in load_list loading <{}>:  <{}>".format(infile, sys.exc_info()))
+
+    except Exception as e:
+        logging.error(u"Exception in load_list loading <{}>:  <{}>".format(infile, e))
         return 1, ""                                                # return False
 
 
@@ -585,7 +607,7 @@ if __name__ == '__main__':
                         help="Specified working dir - used for testing.  Default is ~user/.rclonesyncwd.",
                         default=os.path.expanduser("~/.rclonesyncwd"))
     parser.add_argument('--no-datetime-log',
-                        help="Disable date-time from log output - used for testing.",
+                        help="Disable date-time from log output - useful for testing.",
                         action='store_true')
     parser.add_argument('-V', '--version',
                         help="Return rclonesync's version number and exit.",
@@ -660,7 +682,7 @@ if __name__ == '__main__':
                     path_base = cloud_name + path_part
         else:                                                   # Local path (without Windows drive letter)
             path_base = path
-            if not path_base.endswith('/'):                     # For consistency ensure the path ends with /
+            if not (path_base.endswith('/') or path_base.endswith('\\')):   # For consistency ensure the path ends with /
                 path_base += '/'
 
         if not _cloud:
