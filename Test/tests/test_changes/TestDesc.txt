@@ -1,4 +1,5 @@
-test_all
+test_changes - Exercise all of the various file change scenarios
+
  - New on Path2							    file10
  - Newer on Path2							file1
  - New on Path1								file11

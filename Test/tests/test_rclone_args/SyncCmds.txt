@@ -1,0 +1,3 @@
+:MSG:	Issue rclonesync command
+
+:RCSEXEC: :PATH1: :PATH2: --rclone-args --transfers 1 --syslog --timeout 0m5s --size-only

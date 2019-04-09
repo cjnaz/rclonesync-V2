@@ -41,8 +41,9 @@ your preference.  Running the tests with a cloud service is WAY slower than loca
 
 ```
 $ ./testrcsync.py -h
-usage: testrcsync.py [-h] [-g] [--no-cleanup] [--rclonesync RCLONESYNC]
-                     [--Windows-testing] [-r RCLONE] [-V]
+usage: testrcsync.py [-h] [-g] [--no-cleanup] [--Windows-testing]
+                     [--rclonesync RCLONESYNC] [-r RCLONE] [--config CONFIG]
+                     [-V]
                      Path1 Path2 TestCase
 
 rclonesync test engine
@@ -58,14 +59,16 @@ optional arguments:
   -g, --golden          Capture output and place in testcase golden subdir
   --no-cleanup          Disable cleanup of Path1 and Path2 testdirs. Useful
                         for debug.
+  --Windows-testing     Disable running rclonesyncs during the SyncCmds phase.
+                        Used for Windows testing.
   --rclonesync RCLONESYNC
                         Full or relative path to rclonesync Python file
                         (default <../rclonesync.py>).
-  --Windows-testing     Disable running rclonesyncs during the SyncCmds phase.
-                        Used for Windows testing.
   -r RCLONE, --rclone RCLONE
-                        Full path to rclone executable (default is rclone in
-                        path)
+                        Path to rclone executable (default is rclone in path
+                        environment var).
+  --config CONFIG       Path to rclone config file (default is typically
+                        ~/.config/rclone/rclone.conf).
   -V, --version         Return version number and exit.
 ```
 
@@ -83,6 +86,7 @@ Note that testcase `test_dry_run` may produce mismatches in the consolelog.txt f
 - rclonesync.py is by default invoked in the directory above testrcsync.py.  An alternate path to rclonesync.py may be specified with the 
 `--rclonesync` switch.
 - The rclone executable is by default determined by the path.  An alternate rclone version may be selected with the `--rclone` switch.
+- The path to the rclone config file may be specified with the `--config` switch.  This setting will also be passed to rclonesync calls.
 - Test cases are in individual directories beneath ./tests (relative to the testrcsync.py directory).  A command line reference to a test 
 is understood to reference a directory beneath ./tests.  Eg, `./testrcsync.py GDrive: local test_basic` refers to the test case in 
 `./tests/test_basic`.
@@ -127,11 +131,14 @@ Note that the substituted `:TESTCASEROOT:`, `:PATH1:`, `:PATH2:`, and `:WORKDIR:
 to include a slash in the usage. `rclone delete :PATH1:subdir/file1.txt` and `rclone delete :PATH1:/subdir/file1.txt` 
 are functionally equivalent.
 
+**New in V1.4:  `:RCEXEC:` lines may include the `--rclone-args` switch to pass arbitrary switches to rclonesync.** See documentation for rclonesync.
+
 ## Parting shots
 Developed on CentOS 7 and tested on Python 2.7.x and Python 3.6.5.  Issues echo, touch and diff subprocess commands that surely 
-will not work on Windows (sorry).
+will not work on Windows (see Windows usage, above).
 
 ## Revision history
+- V1.4 190408 - Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
 - V1.3 190330 - Added limited/partial testing with Windows via `--Windows-testing` switch.
 - V1.2 181001 - Added --rclone switch.  Cleaned up SyncCmds syntax with hard-coded `--verbose --workdir :WORKDIR: --no-datetime-log` 
 for rclonesync calls.
