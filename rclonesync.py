@@ -124,9 +124,11 @@ def bidirSync():
     def rclone_lsl(path, ofile, options=None, linenum=0):
         for x in range(maxTries):
             with open(ofile, "w") as of:
-                process_args = [rclone, "lsl", path]
+                process_args = [rclone, "lsl", path, "--config", rcconfig]
                 if options is not None:
                     process_args.extend(options)
+                if args.rclone_args is not None:
+                    process_args.extend(args.rclone_args)
                 if not subprocess.call(process_args, stdout=of):
                     return 0
                 logging.warning(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
@@ -135,13 +137,15 @@ def bidirSync():
         
     def rclone_cmd(cmd, p1=None, p2=None, options=None, linenum=0):
         for x in range(maxTries):
-            process_args = [rclone, cmd]
+            process_args = [rclone, cmd, "--config", rcconfig]
             if p1 is not None:
                 process_args.append(p1)
             if p2 is not None:
                 process_args.append(p2)
             if options is not None:
                 process_args.extend(options)
+            if args.rclone_args is not None:
+                process_args.extend(args.rclone_args)
             # print (process_args)
             # if not subprocess.call(process_args):     # Prior implementation, replaced with Popen call below - v2.5.
             #     return 0
@@ -592,8 +596,14 @@ if __name__ == '__main__':
                         help="File containing rclone file/path filters (needed for Dropbox).",
                         default=None)
     parser.add_argument('-r','--rclone',
-                        help="Full path to rclone executable (default is rclone in path).",
+                        help="Path to rclone executable (default is rclone in path environment var).",
                         default="rclone")
+    parser.add_argument('--config',
+                        help="Path to rclone config file (default is typically ~/.config/rclone/rclone.conf).",
+                        default=None)
+    parser.add_argument('--rclone-args',
+                        help="Optional argument(s) to be passed to rclone.  Specify this switch and rclone ags at the end of rclonesync command line.",
+                        nargs=argparse.REMAINDER)
     parser.add_argument('-v', '--verbose',
                         help="Enable event logging with per-file details.",
                         action='store_true')
@@ -614,7 +624,7 @@ if __name__ == '__main__':
                         action='version',
                         version='%(prog)s ' + __version__)
     args = parser.parse_args()
-
+    
     first_sync   =  args.first_sync
     check_access =  args.check_access
     chk_file     =  args.check_filename
@@ -636,8 +646,19 @@ if __name__ == '__main__':
 
     logging.warning("***** BiDirectional Sync for Cloud Services using rclone *****")
 
+    rcconfig = args.config
+    if rcconfig is None:
+        try:  # Extract the second line from the two line <rclone config file> output similar to:
+                # Configuration file is stored at:
+                # /home/<me>/.config/rclone/rclone.conf
+            rcconfig = str(subprocess.check_output([rclone, "config", "file"]).decode("utf8")).split(':\n')[1].strip()
+        except subprocess.CalledProcessError as e:
+            print("ERROR  from <rclone config file> - can't get the config file path."); exit()
+    if not os.path.exists(rcconfig):
+        print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
+
     try:
-        clouds = subprocess.check_output([rclone, 'listremotes'])
+        clouds = subprocess.check_output([rclone, "listremotes"])
     except subprocess.CalledProcessError as e:
         print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
     except:
