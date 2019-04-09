@@ -1,0 +1,7 @@
+test_rclone_args
+
+Several args passed.  --size-only changes the operations.
+
+Note that the --size-only param is honored by rclone, but not rclonesync.  rclonesync copies the newer :Path2:file21.txt to :Path1:, and
+rlcone sync does not copy the newer :Path1:file20.txt to :Path2:
+(not sure why --size-only is not hornored for the ChangeCmds Copy commands)

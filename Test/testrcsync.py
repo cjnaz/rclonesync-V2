@@ -7,16 +7,17 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.3 190330"
+version = "V1.4 190408"
 
 # Revision history
-# 190330  Added hook for running tests with Windows.  See README.md.
-# 181001  Add support for path to rclone
-# 180729  Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
-# 180701  New
+# V1.4 190408  Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
+# V1.3 190330  Added hook for running tests with Windows.  See README.md.
+# V1.2 181001  Add support for path to rclone
+# V1.1 180729  Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
+# V1.0 180701  New
 
 # Todos
-#   none
+#   sym links are not supported.
 
 
 import argparse
@@ -53,11 +54,8 @@ def rcstest():
     os.mkdir(WORKDIR)
 
     testdirpath1 = TESTDIR + "path1/"
-    # if testdirpath1 in subprocess.check_output([rclone, "lsf", path1base, "-R", "--config", rcconfig, "--copy-links"]).decode("utf8"):
-    #     # --copy-links added in lsf command to quiet complaints about any symlinks in the test case.
-    #     subprocess.call([rclone, "purge", path1, "--config", rcconfig ]) #, "--copy-links"])
     try:
-        subprocess.call([rclone, "purge", path1, "--config", rcconfig ]) #, "--copy-links"])
+        subprocess.Popen([rclone, "purge", path1, "--config", rcconfig ], stdout=devnull, stderr=devnull)
     except:
         pass
     
@@ -65,16 +63,13 @@ def rcstest():
     # test cases that changes files (test_changes, for example) will touch specific files to fixed new dates.
     subprocess.call("find " + INITIALDIR + r' -type f -exec touch --date="2000-01-01" {} +', shell=True)
 
-    # subprocess.call([rclone, "copy", INITIALDIR, path1])
-    # subprocess.call([rclone, "sync", path1, path2])
-    # print ([rclone, "copy", INITIALDIR, path1, "--config", rcconfig]) #, "--copy-links"])
-    subprocess.call([rclone, "copy", INITIALDIR, path1, "--config", rcconfig, "--links"])
-    subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig, "--links"])
+    subprocess.call([rclone, "copy", INITIALDIR, path1, "--config", rcconfig])
+    subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig])
     sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
     
     print ("\nDO <rclonesync --first-sync> to set LSL files baseline")
     subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR,
-                     "--no-datetime-log", "--rclone", rclone, "--config", rcconfig, "--rclone-args", "--links" ])
+                     "--no-datetime-log", "--rclone", rclone, "--config", rcconfig])
     sys.stdout.flush()
     
 
@@ -87,9 +82,18 @@ def rcstest():
                     print ("    {}".format(line))
                 else:
                     if ":RCSEXEC:" in line:
-                        line += " --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config " + rcconfig
-                        if args.config is not None:
-                            line += "--config" + args.config
+                        _line = line.split()    # Move any --rclone-args after additional switches
+                        beginning = _line
+                        rcargs = []
+                        if "--rclone-args" in line:
+                            rclone_args_index = _line.index("--rclone-args")
+                            beginning = _line[0:rclone_args_index]
+                            rcargs = _line[rclone_args_index:]
+                        line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config", rcconfig] + rcargs)
+                    # if ":RCSEXEC:" in line:
+                    #     line += " --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config " + rcconfig
+                    #     # if args.config is not None:
+                    #     #     line += "--config" + args.config
                     xx = line \
                          .replace(":TESTCASEROOT:", TESTCASEROOT) \
                          .replace(":PATH1:", path1) \
@@ -120,9 +124,7 @@ def rcstest():
                                 rclone_args_index = _line.index("--rclone-args")
                                 beginning = _line[0:rclone_args_index]
                                 rcargs = _line[rclone_args_index:]
-                            # line += " --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE:"
                             line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config", rcconfig] + rcargs)
-                            # print (line)
                         xx = line \
                             .replace(":TESTCASEROOT:", TESTCASEROOT) \
                             .replace(":PATH1:", path1) \
@@ -235,7 +237,7 @@ if __name__ == '__main__':
                         help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC),
                         default=RCSEXEC)
     parser.add_argument('-r','--rclone',
-                        help="Full path to rclone executable (default is rclone in path)",
+                        help="Path to rclone executable (default is rclone in path environment var).",
                         default="rclone")
     parser.add_argument('--config',
                         help="Path to rclone config file (default is typically ~/.config/rclone/rclone.conf).",
@@ -260,11 +262,6 @@ if __name__ == '__main__':
             print("ERROR  from <rclone config file> - can't get the config file path."); exit()
     if not os.path.exists(rcconfig):
         print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
-
-    # if args.config is not None:
-    #     rcconfig = ["--config", args.rclone_config]
-    # else
-    #     rcconfig = []
     
     try:
         clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig])

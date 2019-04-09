@@ -9,7 +9,7 @@ I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a lo
 I run rclonesync as a Cron job every 30 minutes, or on-demand from the command line.
 
 rclonesync support:
-- Validated on Google Drive, Dropbox, OwnCloud and Onedrive (thanks @AlexEshoo)
+- Validated on Google Drive, Dropbox, OwnCloud and OneDrive (thanks @AlexEshoo)
 - Linux support, and V2.3 adds Windows support.
 - Runs on both Python 2.7 and 3.x.
 
@@ -18,16 +18,9 @@ tested on other services.  If it works, or sorta works, please raise an issue an
 to check for proper operation.
 
 ## Notable changes in the latest release
-V2.5 190330:
-- Fixed Windows with Python 2.7 support for extended characters (UTF-8) in file and directory names.  
-
-**NOTE ON CHANGING FROM THE ORIGINAL RCloneSync (V1.x) ** - As of V2.1, the interface was changed from `Cloud` and `LocalPath` 
-arguments to `Path1` and `Path2` arguments, enabling 
-unrestricted local and cloud syncing.  When changing to V2 for efficiency reasons you should reverse the order of filesystem 
-references:  Change `./rclonesync.py GDrive: /path_to_local_root` to `./rclonesync.py /path_to_local_root GDrive:`. 
-Prior to V2.1, and Cloud changes were pushed to LocalPath (the second argument).  Starting with V2.1, Path2 changes are pushed 
-to Path1 (the first argument).  _This change 
-is only for sync efficiency reasons - your data should not be at risk without this change._
+V2.6 190408:
+- Added `--config` switch, allowing the path to the config file to be specified.
+- Added `--rclone-args` switch, allowing arbitrary rclone switches to be inserted in the embedded rclone calls.  Note that functionality and compatibility of the many rclone switches has not been tested in the rclonesync process flow.  
 
 
 ## High level behaviors / operations
@@ -46,8 +39,8 @@ is only for sync efficiency reasons - your data should not be at risk without th
 $ ./rclonesync.py -h
 usage: rclonesync.py [-h] [-1] [-c] [--check-filename CHECK_FILENAME]
                      [-D MAX_DELETES] [-F] [-e] [-f FILTERS_FILE] [-r RCLONE]
-                     [-v] [--rc-verbose] [-d] [-w WORKDIR] [--no-datetime-log]
-                     [-V]
+                     [--config CONFIG] [--rclone-args ...] [-v] [--rc-verbose]
+                     [-d] [-w WORKDIR] [--no-datetime-log] [-V]
                      Path1 Path2
 
 ***** BiDirectional Sync for Cloud Services using rclone *****
@@ -82,8 +75,13 @@ optional arguments:
                         File containing rclone file/path filters (needed for
                         Dropbox).
   -r RCLONE, --rclone RCLONE
-                        Full path to rclone executable (default is rclone in
-                        path).
+                        Path to rclone executable (default is rclone in path
+                        environment var).
+  --config CONFIG       Path to rclone config file (default is typically
+                        ~/.config/rclone/rclone.conf).
+  --rclone-args ...     Optional argument(s) to be passed to rclone. Specify
+                        this switch and rclone ags at the end of rclonesync
+                        command line.
   -v, --verbose         Enable event logging with per-file details.
   --rc-verbose          Enable rclone's verbosity levels (May be specified
                         more than once for more details. Also asserts
@@ -93,7 +91,8 @@ optional arguments:
   -w WORKDIR, --workdir WORKDIR
                         Specified working dir - used for testing. Default is
                         ~user/.rclonesyncwd.
-  --no-datetime-log     Disable date-time from log output - used for testing.
+  --no-datetime-log     Disable date-time from log output - useful for
+                        testing.
   -V, --version         Return rclonesync's version number and exit.
 ```	
 
@@ -196,6 +195,8 @@ place as your filters file.  On each rclonesync run with --filters-file set, rcl
 filters file and compares it to the hash stored in the ...MD5 file.  If they don't match the run aborts with a CRITICAL error and
 thus forces you to do a --first-sync, likely avoiding a disaster.
 
+- **--rclone-args** - Arbitrary rclone switches may be specified on the rclonesync.py command line by placing `--rclone-args` as the last argument in the rclonesync.py call, followed by one or more switches to be passed in the rclone calls.  For example:  `../rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --rclone-args --drive-skip-gdocs -v -v --timeout 0m10s`.  (rclonesync.py is coded to skip Google doc files without the example switch.)  Note that the interaction of the various rclone switches with the rclonesync.py process flow has not be tested.  The specified switches are passed on all rclone calls (lsl, copy, copyto, move, moveto, delete, sync, rmdirs), although some switches may not be appropriate for some rclone commands. Initial testing shows problems with the `--copy-links` and `--links` switches.
+
 - **Google Doc files** - Google docs exist as virtual files on Google Drive, and cannot be transferred to other filesystems natively.
 rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
 deletes, or syncs.  See TROUBLESHOOTING.md for more info.
@@ -284,6 +285,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.6 190408 Added --config and --rclone-args switches.
 - V2.5 190330 Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
 - V2.4 181004 Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 
 this release:  empty directories are NOT deleted by default, whereas they were deleted in prior releases.
