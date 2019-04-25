@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.6 190408"                          # Version number and date code
+__version__ = "V2.6 190425"                          # Version number and date code
 
 
 #==========================================================================================================
@@ -658,7 +658,7 @@ if __name__ == '__main__':
         print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
 
     try:
-        clouds = subprocess.check_output([rclone, "listremotes"])
+        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig])
     except subprocess.CalledProcessError as e:
         print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
     except:
