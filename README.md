@@ -9,7 +9,7 @@ I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a lo
 I run rclonesync as a Cron job every 30 minutes, or on-demand from the command line.
 
 rclonesync support:
-- Validated on Google Drive, Dropbox, OwnCloud and OneDrive (thanks @AlexEshoo)
+- Validated on Google Drive, Dropbox, OwnCloud, OneDrive (thanks @AlexEshoo), Box (thanks @darlac).
 - Linux support, and V2.3 adds Windows support.
 - Runs on both Python 2.7 and 3.x.
 
@@ -18,9 +18,9 @@ tested on other services.  If it works, or sorta works, please raise an issue an
 to check for proper operation.
 
 ## Notable changes in the latest release
-V2.6 190408:
-- Added `--config` switch, allowing the path to the config file to be specified.
-- Added `--rclone-args` switch, allowing arbitrary rclone switches to be inserted in the embedded rclone calls.  Note that functionality and compatibility of the many rclone switches has not been tested in the rclonesync process flow.  
+V2.7 190429:
+- Changed the lock filename to include the Path1 and Path2 terms.  This effectively allows concurrent / parallel rclonesync runs on non-overlapping file systems / clouds.  **NOTE** that concurrent rclonesync runs are allowed, **but** be very cautious that there is no overlap in the paths. 
+- Added rclone sync exit codes - 0: Pass, 1: Error abort, 2: Critical error abort.
 
 
 ## High level behaviors / operations
@@ -224,11 +224,13 @@ which leads to the attempted delete on the Path2, blocked again by --dry-run: `.
 artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then 
 the threatened deletes on Path2 may be disregarded.
 
-- **Lock file** - When rclonesync is running, a lock file is created (/tmp/rclonesync_LOCK).  If rclonesync should crash or 
-hang the lock file will remain in place and block any further runs of rclonesync.  Delete the lock file as part of 
-debugging the situation.  The lock file effectively blocks follow-on CRON scheduled runs when the prior invocation 
+- **Lock file** - When rclonesync is running, a lock file is created (/tmp/rclonesync_LOCK_path1_path2).  If rclonesync should crash or 
+hang the lock file will remain in place and block any further runs of rclonesync _for the same paths_.  Delete the lock file as part of 
+debugging the situation.  The lock file effectively blocks follow-on (i.e., CRON scheduled) runs when the prior invocation 
 is taking a long time.  The lock file contains the job command line and time, which may help in debug.  If rclonesync crashes with a Python
-traceback please open an issue.
+traceback please open an issue.  **NOTE** that while concurrent rclonesync runs are allowed, **be very cautious** that there is no overlap in the trees being synched between concurrent runs, lest there be replicated files, deleted files, and general mayhem - _you have been warned_.
+
+- **Return codes** - rclonesync returns `0` to the calling script on a successful run, `1` for a non-critical failing run (a rerun may be successful), and `2` for a critically aborted run (requires a --first-sync to recover).
 
 - **Test features** - V2.0 adds a companion testrcsync.py script.  The --workdir and --no-datetime-log switches were added to rclonesync
 to support testing.  See the TESTCASES.md file.  You 
@@ -285,6 +287,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.7 190429 Added paths-specific lock filename and exit codes.
 - V2.6 190408 Added --config and --rclone-args switches.
 - V2.5 190330 Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
 - V2.4 181004 Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 

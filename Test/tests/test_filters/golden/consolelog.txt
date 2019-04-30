@@ -1,6 +1,7 @@
 :MSG:	Issue rclonesync with --filters-file.  Path2-side fileZ.txt is filtered.
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./tests/test_filters/filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file='./tests/test_filters/filtersfile.txt', first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 Using filters-file  <./tests/test_filters/filtersfile.txt>
@@ -11,5 +12,6 @@ Using filters-file  <./tests/test_filters/filtersfile.txt>
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> Synching Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 

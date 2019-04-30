@@ -52,10 +52,12 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-49a50
-> NOTICE: file6.txt: Not deleting as --dry-run
-52d52
-< NOTICE: file6.txt: Not deleting as --dry-run
+45,46d44
+< NOTICE: file7.txt: Not copying as --dry-run
+< NOTICE: file2.txt: Not copying as --dry-run
+49a48,49
+> NOTICE: file7.txt: Not copying as --dry-run
+> NOTICE: file2.txt: Not copying as --dry-run
 
 ----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
