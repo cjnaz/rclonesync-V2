@@ -652,7 +652,7 @@ if __name__ == '__main__':
         print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
 
     try:
-        clouds = subprocess.check_output([rclone, "listremotes"])
+        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig])
     except subprocess.CalledProcessError as e:
         print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
     except:

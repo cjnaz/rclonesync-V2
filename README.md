@@ -287,7 +287,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
-- V2.7 190429 Added paths-specific lock filename and exit codes.
+- V2.7 190429 Added paths-specific lock filename and exit codes.  Corrected listremotes subprocess call (thanks @JasperJuergensen).
 - V2.6 190408 Added --config and --rclone-args switches.
 - V2.5 190330 Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
 - V2.4 181004 Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 
