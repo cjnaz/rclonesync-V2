@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.6 190408"                          # Version number and date code
+__version__ = "V2.7 190429"                          # Version number and date code
 
 
 #==========================================================================================================
@@ -528,36 +528,30 @@ def load_list(infile):
         return 1, ""                                                # return False
 
 
-os_platform = platform.system()                                     # Expecting 'Windows' or 'Linux'
-if os_platform == 'Windows':
-    LOCK_FILE = "C:/tmp/rclonesync_LOCK"
-else:
-    LOCK_FILE = "/tmp/rclonesync_LOCK"    
-
-def request_lock(caller):
+def request_lock(caller, lock_file):
     for xx in range(5):
-        if os.path.exists(LOCK_FILE):
-            with open(LOCK_FILE) as fd:
+        if os.path.exists(lock_file):
+            with open(lock_file) as fd:
                 locked_by = fd.read()
-                logging.debug("{}.  Waiting a sec.".format(locked_by[:-1]))   # remove the \n
+                logging.info("Lock file exists - Waiting a sec: <{}>\n<{}>".format(lock_file, locked_by[:-1]))   # remove the \n
             time.sleep(1)
         else:  
-            with open(LOCK_FILE, 'w') as fd:
+            with open(lock_file, 'w') as fd:
                 fd.write("Locked by {} at {}\n".format(caller, time.asctime(time.localtime())))
-                logging.debug("LOCKed by {} at {}.".format(caller, time.asctime(time.localtime())))
+                logging.info("Lock file created: <{}>".format(lock_file))
             return 0
-    logging.warning("Timed out waiting for LOCK file to be cleared.  {}".format(locked_by))
+    logging.warning("Timed out waiting for lock file to be cleared: <{}>".format(lock_file))
     return -1
 
-def release_lock(caller):
-    if os.path.exists(LOCK_FILE):
-        with open(LOCK_FILE) as fd:
+def release_lock(lock_file):
+    if os.path.exists(lock_file):
+        with open(lock_file) as fd:
             locked_by = fd.read()
-            logging.debug("Removed lock file:  {}.".format(locked_by))
-        os.remove(LOCK_FILE)
+            logging.info("Lock file removed: <{}>".format(lock_file))
+        os.remove(lock_file)
         return 0
     else:
-        logging.warning("<{}> attempted to remove <{}> but the file does not exist.".format(caller, LOCK_FILE))
+        logging.warning("Attempted to remove lock file but the file does not exist: <{}>".format(lock_file))
         return -1
         
 
@@ -671,7 +665,7 @@ if __name__ == '__main__':
         Cloud:              - Root of the defined cloud
         Cloud:some/path     - Supported with our without path leading '/'s
         X:                  - Windows drive letter
-        X:\some\path        - Windows drive letter with absolute or relative path
+        X:\\some\\path      - Windows drive letter with absolute or relative path
         some/path           - Relative path from cwd (and on current drive on Windows)
         //server/path       - UNC paths are supported
         On Windows a one-character cloud name is not supported - it will be interprested as a drive letter.
@@ -686,7 +680,7 @@ if __name__ == '__main__':
                 if not path_base.endswith('\\'):                # For consistency ensure the path ends with /
                     path_base += '/'
             else:                                               # Cloud case with optional path part
-                path_FORMAT = re.compile('([\w-]+):(.*)')
+                path_FORMAT = re.compile(r'([\w-]+):(.*)')
                 out = path_FORMAT.match(path)
                 if out:
                     _cloud = True
@@ -724,17 +718,30 @@ if __name__ == '__main__':
         logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events
 
 
-    if request_lock(sys.argv) == 0:
+    lock_file_part = (path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_')
+    os_platform = platform.system()                             # Expecting 'Windows' or 'Linux'
+    if os_platform == 'Windows':
+        lock_file = "C:/tmp/rclonesync_LOCK_" + lock_file_part
+    else:
+        lock_file = "/tmp/rclonesync_LOCK_" + lock_file_part
+
+
+    if request_lock(sys.argv, lock_file) == 0:
         status = bidirSync()
+        release_lock(lock_file)
         if status == RTN_CRITICAL:
             logging.error("***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****\n")
             if os.path.exists(path2_list_file):
                 shutil.move(path2_list_file, path2_list_file + '_ERROR')
             if os.path.exists(path1_list_file):
                 shutil.move(path1_list_file, path1_list_file + '_ERROR')
+            exit (2)
         if status == RTN_ABORT:
             logging.error("***** Error Abort.  Try running rclonesync again. *****\n")
+            exit (1)
         if status == 0:            
             logging.warning(">>>>> Successful run.  All done.\n")
-        release_lock(sys.argv)
-    else:  logging.warning("***** Prior lock file in place, aborting.  Try running rclonesync again. *****\n")
+            exit (0)
+    else:
+        logging.warning("***** Prior lock file in place, aborting.  Try running rclonesync again. *****\n")
+        exit (1)

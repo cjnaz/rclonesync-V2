@@ -1,6 +1,7 @@
 :MSG:	1) First, see that --check-access passes with the initial setup
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
@@ -9,23 +10,27 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> No changes on Path1 or Path2 - Skipping sync from Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
 rclone delete ./testdir/path2/subdir/RCLONE_TEST
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
   ERROR    Failed access health test:  <RCLONE_TEST> Path1 count 2, Path2 count 1 - 
   ERROR    Failed access health test:  Path1 key <subdir/RCLONE_TEST> not found in Path2 - 
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 
 :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
 rclone copy ./testdir/path1/subdir/RCLONE_TEST ./testdir/path2/
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
@@ -35,11 +40,13 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> Synching Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 :MSG:	4) Run sync with --check-access.  Should pass.
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
@@ -48,22 +55,26 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> No changes on Path1 or Path2 - Skipping sync from Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
 rclone delete ./testdir/path1/RCLONE_TEST
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
   ERROR    Failed access health test:  <RCLONE_TEST> Path1 count 1, Path2 count 2 - 
   ERROR    Failed access health test:  Path2 key <RCLONE_TEST> not found in Path1 - 
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 
 :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> --first-sync copying any unique Path2 files to Path1
@@ -74,11 +85,13 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> Synching Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 :MSG:	7) Run sync with --check-access.  Should pass.
 ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 ***** BiDirectional Sync for Cloud Services using rclone *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=True, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
@@ -87,5 +100,6 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> No changes on Path1 or Path2 - Skipping sync from Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
