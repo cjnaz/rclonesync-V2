@@ -28,6 +28,7 @@ import shutil
 import subprocess
 if platform.system() is "Windows" and sys.version_info[0] < 3:
     import win_subprocess
+import tempfile
 from datetime import datetime
 import time
 import logging
@@ -706,7 +707,9 @@ if __name__ == '__main__':
                               .format(path_base)); exit()
 
         return path_base
-
+	
+    os_platform = platform.system()                             # Expecting 'Windows' or 'Linux'
+	
     path1_base = pathparse(args.Path1)
     path2_base = pathparse(args.Path2)
 
@@ -719,9 +722,9 @@ if __name__ == '__main__':
 
 
     lock_file_part = (path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_')
-    os_platform = platform.system()                             # Expecting 'Windows' or 'Linux'
+    
     if os_platform == 'Windows':
-        lock_file = "C:/tmp/rclonesync_LOCK_" + lock_file_part
+        lock_file = tempfile.gettempdir() + "/rclonesync_LOCK_" + lock_file_part
     else:
         lock_file = "/tmp/rclonesync_LOCK_" + lock_file_part
 
