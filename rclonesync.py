@@ -29,6 +29,7 @@ import subprocess
 if platform.system() is "Windows" and sys.version_info[0] < 3:
     import win_subprocess
 from datetime import datetime
+import tempfile
 import time
 import logging
 import inspect                                      # For getting the line number for error messages.
@@ -718,13 +719,8 @@ if __name__ == '__main__':
         logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events
 
 
-    lock_file_part = (path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_')
-    os_platform = platform.system()                             # Expecting 'Windows' or 'Linux'
-    if os_platform == 'Windows':
-        lock_file = "C:/tmp/rclonesync_LOCK_" + lock_file_part
-    else:
-        lock_file = "/tmp/rclonesync_LOCK_" + lock_file_part
-
+    lock_file = os.path.join(tempfile.gettempdir(), 'rclonesync_LOCK_' + (
+        path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_'))
 
     if request_lock(sys.argv, lock_file) == 0:
         status = bidirSync()
