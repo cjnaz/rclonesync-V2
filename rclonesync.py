@@ -60,7 +60,8 @@ def bidirSync():
     path1_list_file = list_file_base + '_Path1'
     path2_list_file = list_file_base + '_Path2'
 
-    logging.warning("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
+    # logging.warning("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
+    logging.info("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
     logging.info("Command line:  <{}>".format(args))
 
 
@@ -105,7 +106,7 @@ def bidirSync():
 
     # ***** Set up dry_run and rclone --verbose switches *****
     switches = []
-    for x in range(rc_verbose):
+    for _ in range(rc_verbose):
         switches.append(u"-v")
     if dry_run:
         switches.append(u"--dry-run")
@@ -132,7 +133,8 @@ def bidirSync():
                     process_args.extend(args.rclone_args)
                 if not subprocess.call(process_args, stdout=of):
                     return 0
-                logging.warning(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
+                # logging.warning(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
+                logging.info(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
         logging.error(print_msg(u"ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
         return 1
         
@@ -164,7 +166,8 @@ def bidirSync():
                 if p.returncode == 0:
                     return 0
             except Exception as e:
-                logging.warning(print_msg(u"WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+                # logging.warning(print_msg(u"WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+                logging.info(print_msg(u"WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
                 logging.error("message:  <{}>".format(e))
         logging.error(print_msg(u"ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
         return 1
@@ -326,7 +329,8 @@ def bidirSync():
             if path1_deltas[key]['newer']:    newers += 1
             if path1_deltas[key]['older']:    olders += 1
             if path1_deltas[key]['deleted']:  deletes += 1
-        logging.warning("  {:4} file change(s) on Path1: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path1_deltas), news, newers, olders, deletes))
+        # logging.warning("  {:4} file change(s) on Path1: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path1_deltas), news, newers, olders, deletes))
+        logging.info("  {:4} file change(s) on Path1: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path1_deltas), news, newers, olders, deletes))
 
 
     # ***** Check for Path2 deltas relative to the prior sync *****
@@ -367,7 +371,8 @@ def bidirSync():
             if path2_deltas[key]['newer']:    newers += 1
             if path2_deltas[key]['older']:    olders += 1
             if path2_deltas[key]['deleted']:  deletes += 1
-        logging.warning("  {:4} file change(s) on Path2: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path2_deltas), news, newers, olders, deletes))
+        # logging.warning("  {:4} file change(s) on Path2: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path2_deltas), news, newers, olders, deletes))
+        logging.info("  {:4} file change(s) on Path2: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path2_deltas), news, newers, olders, deletes))
 
 
     # ***** Check for too many deleted files - possible error condition and don't want to start deleting on the other side !!! *****
@@ -500,7 +505,8 @@ def bidirSync():
     return 0
 
 
-LINE_FORMAT = re.compile(u'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
+# LINE_FORMAT = re.compile(u'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
+LINE_FORMAT = re.compile(r'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
 def load_list(infile):
     # Format ex:
     #  3009805 2013-09-16 04:13:50.000000000 12 - Wait.mp3
@@ -530,7 +536,7 @@ def load_list(infile):
 
 
 def request_lock(caller, lock_file):
-    for xx in range(5):
+    for _ in range(5):
         if os.path.exists(lock_file):
             with open(lock_file) as fd:
                 locked_by = fd.read()
@@ -546,9 +552,9 @@ def request_lock(caller, lock_file):
 
 def release_lock(lock_file):
     if os.path.exists(lock_file):
-        with open(lock_file) as fd:
-            locked_by = fd.read()
-            logging.info("Lock file removed: <{}>".format(lock_file))
+        # with open(lock_file) as fd:
+        #     locked_by = fd.read()
+        logging.info("Lock file removed: <{}>".format(lock_file))
         os.remove(lock_file)
         return 0
     else:
@@ -639,7 +645,14 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(format='%(message)s')
 
-    logging.warning("***** BiDirectional Sync for Cloud Services using rclone *****")
+    if verbose or rc_verbose>0 or force or first_sync or dry_run:
+        verbose = True
+        logging.getLogger().setLevel(logging.INFO)              # Log each file transaction
+    else:
+        logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events
+
+    # logging.warning("***** BiDirectional Sync for Cloud Services using rclone *****")
+    logging.info("***** BiDirectional Sync for Cloud Services using rclone *****")
 
     rcconfig = args.config
     if rcconfig is None:
@@ -713,25 +726,8 @@ if __name__ == '__main__':
     path2_base = pathparse(args.Path2)
 
 
-    if verbose or rc_verbose>0 or force or first_sync or dry_run:
-        verbose = True
-        logging.getLogger().setLevel(logging.INFO)              # Log each file transaction
-    else:
-        logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events
-
-
-<<<<<<< HEAD
     lock_file = os.path.join(tempfile.gettempdir(), 'rclonesync_LOCK_' + (
         path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_'))
-=======
-    lock_file_part = (path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_')
-    
-    if os_platform == 'Windows':
-        lock_file = "C:/tmp/rclonesync_LOCK_" + lock_file_part
-    else:
-        lock_file = "/tmp/rclonesync_LOCK_" + lock_file_part
-
->>>>>>> 0d4a0061c760445673b509db7fcfcd87d8058b32
 
     if request_lock(sys.argv, lock_file) == 0:
         status = bidirSync()
@@ -747,7 +743,8 @@ if __name__ == '__main__':
             logging.error("***** Error Abort.  Try running rclonesync again. *****\n")
             exit (1)
         if status == 0:            
-            logging.warning(">>>>> Successful run.  All done.\n")
+            # logging.warning(">>>>> Successful run.  All done.\n")
+            logging.info(">>>>> Successful run.  All done.\n")
             exit (0)
     else:
         logging.warning("***** Prior lock file in place, aborting.  Try running rclonesync again. *****\n")
