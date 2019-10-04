@@ -39,9 +39,6 @@ to check for proper operation.
 ## Notable changes in the latest release
 V2.8 191003:
 - Fixed Windows bug (issues #27), tempfile handling (issue #28), and changed non-verbose logging output to no-output (issues #31).
-V2.7 190429:
-- Changed the lock filename to include the Path1 and Path2 terms.  This effectively allows concurrent / parallel rclonesync runs on non-overlapping file systems / clouds.  **NOTE** that concurrent rclonesync runs are allowed, **but** be very cautious that there is no overlap in the paths. 
-- Added rclone sync exit codes - 0: Pass, 1: Error abort, 2: Critical error abort.
 
 
 ## High level behaviors / operations
