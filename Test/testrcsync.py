@@ -7,9 +7,11 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.4 190408"
+version = "V1.5 191003"
 
 # Revision history
+# V1.5 191003  Force sorted order of ALL testcases.  Force sorted order of 
+#   results compare.  Deleted --config switch for Windows testing.  Fixed cleanup bug.
 # V1.4 190408  Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
 # V1.3 190330  Added hook for running tests with Windows.  See README.md.
 # V1.2 181001  Add support for path to rclone
@@ -43,17 +45,19 @@ def rcstest():
 
     TESTCASEROOT = "./tests/" + testcase + "/"
     INITIALDIR   = TESTCASEROOT + "initial/"
-    MODFILESDIR  = TESTCASEROOT + "modfiles/"
+    # MODFILESDIR  = TESTCASEROOT + "modfiles/"
     GOLDENDIR    = TESTCASEROOT + "golden/"
     CHANGECMDS   = TESTCASEROOT + "/ChangeCmds.txt"         # File of commands for changes from initial setup state for a test
     SYNCCMD      = TESTCASEROOT + "/SyncCmds.txt"           # File of rclonesync (and other) commands
 
     print ("CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2")
+    # subprocess.call([rclone, "purge", path1, "--config", rcconfig])
+    # subprocess.call([rclone, "purge", path2, "--config", rcconfig])
     if os.path.exists(WORKDIR):
         shutil.rmtree(WORKDIR)
     os.mkdir(WORKDIR)
 
-    testdirpath1 = TESTDIR + "path1/"
+    # testdirpath1 = TESTDIR + "path1/"
     try:
         subprocess.Popen([rclone, "purge", path1, "--config", rcconfig ], stdout=devnull, stderr=devnull)
     except:
@@ -135,6 +139,7 @@ def rcstest():
                         subprocess.call("echo " + xx, stdout=logfile, stderr=logfile, shell=True)
                         # sys.stdout.flush()
                         if args.Windows_testing:
+                            xx = xx.replace("--config","").replace(rcconfig,"")     # Must use Windows-side user default config file
                             print ("    {} >> {} 2>&1".format(xx.replace('/','\\'), CONSOLELOGFILE.replace('/','\\')))
                             if sys.version_info[0] < 3:
                                 raw_input("Hit return after entering above on Windows side. >>")
@@ -145,6 +150,8 @@ def rcstest():
                             subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
                     sys.stdout.flush()
 
+    if os.path.exists(WORKDIR + "deleteme.txt"):    # Remnant from Windows and Python2.7
+        os.remove (WORKDIR + "deleteme.txt")        # Delete it so that it doesn't mess up the file compare.
 
     errcnt = 0
     if args.golden:
@@ -154,8 +161,8 @@ def rcstest():
         shutil.copytree(WORKDIR, GOLDENDIR)
     else:
         print ("\nCOMPARE RESULTS files to the testcase golden directory")
-        goldenfiles =  os.listdir(GOLDENDIR)
-        resultsfiles = os.listdir(WORKDIR)
+        goldenfiles =  sorted(os.listdir(GOLDENDIR))
+        resultsfiles = sorted(os.listdir(WORKDIR))
         sys.stdout.flush()
 
         print ("----------------------------------------------------------")
@@ -271,7 +278,7 @@ if __name__ == '__main__':
         print ("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}\n".format(sys.exc_info()[1])); exit()
     clouds = str(clouds.decode("utf8")).split()
 
-    remoteFormat = re.compile('([\w-]+):(.*)')
+    remoteFormat = re.compile(r'([\w-]+):(.*)')
     if args.Path1 == "local":
         path1base = LOCALTESTBASE
     else:
@@ -301,7 +308,7 @@ if __name__ == '__main__':
         else:
             print ("ERROR  TestCase directory <{}> not found".format(testcase)); exit()
     else:
-        for directory in os.listdir("./tests"):
+        for directory in sorted(os.listdir("./tests")):
             print ("===================================================================")
             testcase = directory
             rcstest()

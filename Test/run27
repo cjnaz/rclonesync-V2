@@ -1,127 +1,4 @@
 ===================================================================
-***** Test case <test_dry_run> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
-CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
-
-DO <rclonesync --first-sync> to set LSL files baseline
-RUN CHANGECMDS to apply changes from test case initial state
-    :MSG:	New on Path2							file10
-    touch ./tests/test_dry_run/modfiles/file10.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file10.txt ./testdir/path2/
-    :MSG:	Newer on Path2							file1
-    touch ./tests/test_dry_run/modfiles/file1.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file1.txt ./testdir/path2/
-    :MSG:	New on Path1							file11
-    touch ./tests/test_dry_run/modfiles/file11.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file11.txt ./testdir/path1/
-    :MSG:	Newer on Path1							file2
-    touch ./tests/test_dry_run/modfiles/file2.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file2.txt ./testdir/path1/
-    :MSG:	Deleted on Path2						file3
-    rclone delete ./testdir/path2//file3.txt
-    :MSG:	Deleted on Path1						file4
-    rclone delete ./testdir/path1//file4.txt
-    :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
-    touch ./tests/test_dry_run/modfiles/file5R.txt --date="2025-01-02"
-    rclone copyto ./tests/test_dry_run//modfiles/file5R.txt ./testdir/path2//file5.txt
-    touch ./tests/test_dry_run/modfiles/file5L.txt --date="2025-03-04"
-    rclone copyto ./tests/test_dry_run//modfiles/file5L.txt ./testdir/path1//file5.txt
-    :MSG:	Newer on Path2 and deleted on Path1	file6
-    touch ./tests/test_dry_run/modfiles/file6.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file6.txt ./testdir/path2/
-    rclone delete ./testdir/path1//file6.txt
-    :MSG:	Newer on Path1 and deleted on Path2	file7
-    touch ./tests/test_dry_run/modfiles/file7.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file7.txt ./testdir/path1/
-    rclone delete ./testdir/path2//file7.txt
-
-RUN SYNCCMDS (console output captured to consolelog.txt)
-    :MSG:	Sync with --dry-run
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --dry-run  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	Sync without --dry-run
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-
-COMPARE RESULTS files to the testcase golden directory
-----------------------------------------------------------
-Number of results files (5) match
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2_DRYRUN>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
-
-----------------------------------------------------------
-MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-45,46d44
-< NOTICE: file7.txt: Not copying as --dry-run
-< NOTICE: file2.txt: Not copying as --dry-run
-48a47,48
-> NOTICE: file7.txt: Not copying as --dry-run
-> NOTICE: file2.txt: Not copying as --dry-run
-51d50
-< NOTICE: file10.txt: Not deleting as --dry-run
-53a53
-> NOTICE: file10.txt: Not deleting as --dry-run
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1_DRYRUN>
-
-----------------------------------------------------------
-CLEANING UP testdirs and workdir
-TEST <test_dry_run> FAILED WITH 1 ERRORS.
-
-
-===================================================================
-***** Test case <test_filtersfile_checks> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
-CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
-
-DO <rclonesync --first-sync> to set LSL files baseline
-RUN CHANGECMDS to apply changes from test case initial state
-
-RUN SYNCCMDS (console output captured to consolelog.txt)
-    :MSG:   1) Place filtersfile in WORKDIR
-    rclone copy ./tests/test_filtersfile_checks/filtersfile.txt ./testwd/
-    :MSG:	2) Run with --filters-file but with no MD5	Should abort
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	3) Run without --filters-file 				Should be blocked due to prior CRITICAL abort
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	4) Run with --filters-file and --first-sync
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	5) Run with --filters-file alone.  		Should run
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	6) push changed filters-file to WORKDIR
-    rclone copyto ./tests/test_filtersfile_checks/filtersfile2.txt ./testwd/filtersfile.txt
-    :MSG:	7) Run with --filters-file alone.  		Should abort
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-
-COMPARE RESULTS files to the testcase golden directory
-----------------------------------------------------------
-Number of results files (5) match
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
-
-----------------------------------------------------------
-Match:  <filtersfile.txt-MD5>
-
-----------------------------------------------------------
-Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <filtersfile.txt>
-
-----------------------------------------------------------
-CLEANING UP testdirs and workdir
-TEST <test_filtersfile_checks> PASSED
-
-
-===================================================================
 ***** Test case <test_basic> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 
@@ -141,184 +18,17 @@ COMPARE RESULTS files to the testcase golden directory
 Number of results files (3) match
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
 TEST <test_basic> PASSED
-
-
-===================================================================
-***** Test case <test_rmdirs> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
-CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
-
-DO <rclonesync --first-sync> to set LSL files baseline
-RUN CHANGECMDS to apply changes from test case initial state
-
-RUN SYNCCMDS (console output captured to consolelog.txt)
-    :MSG:	1) Delete Path1 subdir/file20.txt
-    rclone delete ./testdir/path1//subdir/file20.txt
-    :MSG:	2) rclonesync without --remove-empty-directories
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	3) Confirm subdir exists on both paths
-    rclone lsf --dirs-only -R ./testdir/path1/
-    rclone lsf --dirs-only -R ./testdir/path2/
-    :MSG:	4) rclonesync with --remove-empty-directories
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --remove-empty-directories  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	5) Confirm subdir has been removed on both paths
-    rclone lsf --dirs-only -R ./testdir/path1/
-    rclone lsf --dirs-only -R ./testdir/path2/
-
-COMPARE RESULTS files to the testcase golden directory
-----------------------------------------------------------
-Number of results files (3) match
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
-
-----------------------------------------------------------
-Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
-
-----------------------------------------------------------
-CLEANING UP testdirs and workdir
-TEST <test_rmdirs> PASSED
-
-
-===================================================================
-***** Test case <test_check_access> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
-CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
-
-DO <rclonesync --first-sync> to set LSL files baseline
-RUN CHANGECMDS to apply changes from test case initial state
-
-RUN SYNCCMDS (console output captured to consolelog.txt)
-    :MSG:	1) First, see that --check-access passes with the initial setup
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
-    rclone delete ./testdir/path2/subdir/RCLONE_TEST
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
-    rclone copy ./testdir/path1/subdir/RCLONE_TEST ./testdir/path2/
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	4) Run sync with --check-access.  Should pass.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
-    rclone delete ./testdir/path1/RCLONE_TEST
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	7) Run sync with --check-access.  Should pass.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-
-COMPARE RESULTS files to the testcase golden directory
-----------------------------------------------------------
-Number of results files (5) match
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
-
-----------------------------------------------------------
-Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
-
-----------------------------------------------------------
-CLEANING UP testdirs and workdir
-TEST <test_check_access> PASSED
-
-
-===================================================================
-***** Test case <test_check_filename> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
-CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
-
-DO <rclonesync --first-sync> to set LSL files baseline
-RUN CHANGECMDS to apply changes from test case initial state
-
-RUN SYNCCMDS (console output captured to consolelog.txt)
-    :MSG:	1) First, see that --check-access passes with the initial setup
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	2) Delete the remote subdir .chk_file, run sync, will fail critical
-    rclone delete ./testdir/path2/subdir/.chk_file
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	3) Put the remote subdir .chk_file back, run --first-sync
-    rclone copy ./testdir/path1/subdir/.chk_file ./testdir/path2/
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-    :MSG:	4) Run sync with --check-access.  Should pass.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-
-COMPARE RESULTS files to the testcase golden directory
-----------------------------------------------------------
-Number of results files (5) match
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
-
-----------------------------------------------------------
-Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
-
-----------------------------------------------------------
-CLEANING UP testdirs and workdir
-TEST <test_check_filename> PASSED
-
-
-===================================================================
-***** Test case <test_rclone_args> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
-CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
-
-DO <rclonesync --first-sync> to set LSL files baseline
-RUN CHANGECMDS to apply changes from test case initial state
-    :MSG:	Place a newer files on the Path1 and Path2
-    touch ./tests/test_rclone_args/modfiles/* --date="2025-01-02"
-    rclone copy ./tests/test_rclone_args/modfiles/file1.txt ./testdir/path1/
-    rclone copy ./tests/test_rclone_args/modfiles/file2.txt ./testdir/path2/
-    rclone copy ./tests/test_rclone_args/modfiles/file20.txt ./testdir/path1/subdir
-    rclone copy ./tests/test_rclone_args/modfiles/file21.txt ./testdir/path2/subdir
-
-RUN SYNCCMDS (console output captured to consolelog.txt)
-    :MSG:	Issue rclonesync command
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf --rclone-args --transfers 1 --syslog --timeout 0m5s --size-only
-
-COMPARE RESULTS files to the testcase golden directory
-----------------------------------------------------------
-Number of results files (3) match
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
-
-----------------------------------------------------------
-Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
-
-----------------------------------------------------------
-CLEANING UP testdirs and workdir
-TEST <test_rclone_args> PASSED
 
 
 ===================================================================
@@ -366,17 +76,187 @@ COMPARE RESULTS files to the testcase golden directory
 Number of results files (3) match
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
 
 ----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_changes> PASSED
+
+
+===================================================================
+***** Test case <test_check_access> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	1) First, see that --check-access passes with the initial setup
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
+    rclone delete ./testdir/path2/subdir/RCLONE_TEST
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
+    rclone copy ./testdir/path1/subdir/RCLONE_TEST ./testdir/path2/
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	4) Run sync with --check-access.  Should pass.
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
+    rclone delete ./testdir/path1/RCLONE_TEST
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	7) Run sync with --check-access.  Should pass.
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (5) match
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
 CLEANING UP testdirs and workdir
-TEST <test_changes> PASSED
+TEST <test_check_access> PASSED
+
+
+===================================================================
+***** Test case <test_check_filename> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	1) First, see that --check-access passes with the initial setup
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	2) Delete the remote subdir .chk_file, run sync, will fail critical
+    rclone delete ./testdir/path2/subdir/.chk_file
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	3) Put the remote subdir .chk_file back, run --first-sync
+    rclone copy ./testdir/path1/subdir/.chk_file ./testdir/path2/
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	4) Run sync with --check-access.  Should pass.
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (5) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_check_filename> PASSED
+
+
+===================================================================
+***** Test case <test_dry_run> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+    :MSG:	New on Path2							file10
+    touch ./tests/test_dry_run/modfiles/file10.txt --date="2025-01-02"
+    rclone copy ./tests/test_dry_run//modfiles/file10.txt ./testdir/path2/
+    :MSG:	Newer on Path2							file1
+    touch ./tests/test_dry_run/modfiles/file1.txt --date="2025-01-02"
+    rclone copy ./tests/test_dry_run//modfiles/file1.txt ./testdir/path2/
+    :MSG:	New on Path1							file11
+    touch ./tests/test_dry_run/modfiles/file11.txt --date="2025-01-02"
+    rclone copy ./tests/test_dry_run//modfiles/file11.txt ./testdir/path1/
+    :MSG:	Newer on Path1							file2
+    touch ./tests/test_dry_run/modfiles/file2.txt --date="2025-01-02"
+    rclone copy ./tests/test_dry_run//modfiles/file2.txt ./testdir/path1/
+    :MSG:	Deleted on Path2						file3
+    rclone delete ./testdir/path2//file3.txt
+    :MSG:	Deleted on Path1						file4
+    rclone delete ./testdir/path1//file4.txt
+    :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
+    touch ./tests/test_dry_run/modfiles/file5R.txt --date="2025-01-02"
+    rclone copyto ./tests/test_dry_run//modfiles/file5R.txt ./testdir/path2//file5.txt
+    touch ./tests/test_dry_run/modfiles/file5L.txt --date="2025-03-04"
+    rclone copyto ./tests/test_dry_run//modfiles/file5L.txt ./testdir/path1//file5.txt
+    :MSG:	Newer on Path2 and deleted on Path1	file6
+    touch ./tests/test_dry_run/modfiles/file6.txt --date="2025-01-02"
+    rclone copy ./tests/test_dry_run//modfiles/file6.txt ./testdir/path2/
+    rclone delete ./testdir/path1//file6.txt
+    :MSG:	Newer on Path1 and deleted on Path2	file7
+    touch ./tests/test_dry_run/modfiles/file7.txt --date="2025-01-02"
+    rclone copy ./tests/test_dry_run//modfiles/file7.txt ./testdir/path1/
+    rclone delete ./testdir/path2//file7.txt
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	Sync with --dry-run
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --dry-run  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	Sync without --dry-run
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (5) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_DRYRUN>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_DRYRUN>
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
+45,46d44
+< NOTICE: file7.txt: Not copying as --dry-run
+< NOTICE: file2.txt: Not copying as --dry-run
+48a47
+> NOTICE: file7.txt: Not copying as --dry-run
+49a49
+> NOTICE: file2.txt: Not copying as --dry-run
+52d51
+< NOTICE: file4.txt: Not deleting as --dry-run
+53a53
+> NOTICE: file4.txt: Not deleting as --dry-run
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_dry_run> FAILED WITH 1 ERRORS.
 
 
 ===================================================================
@@ -410,13 +290,13 @@ COMPARE RESULTS files to the testcase golden directory
 Number of results files (3) match
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
@@ -443,17 +323,64 @@ COMPARE RESULTS files to the testcase golden directory
 Number of results files (3) match
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
 
 ----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+CLEANING UP testdirs and workdir
+TEST <test_filters> PASSED
+
+
+===================================================================
+***** Test case <test_filtersfile_checks> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:   1) Place filtersfile in WORKDIR
+    rclone copy ./tests/test_filtersfile_checks/filtersfile.txt ./testwd/
+    :MSG:	2) Run with --filters-file but with no MD5	Should abort
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	3) Run without --filters-file 				Should be blocked due to prior CRITICAL abort
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	4) Run with --filters-file and --first-sync
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	5) Run with --filters-file alone.  		Should run
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	6) push changed filters-file to WORKDIR
+    rclone copyto ./tests/test_filtersfile_checks/filtersfile2.txt ./testwd/filtersfile.txt
+    :MSG:	7) Run with --filters-file alone.  		Should abort
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (5) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+Match:  <filtersfile.txt>
+
+----------------------------------------------------------
+Match:  <filtersfile.txt-MD5>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
-TEST <test_filters> PASSED
+TEST <test_filtersfile_checks> PASSED
 
 
 ===================================================================
@@ -480,13 +407,13 @@ COMPARE RESULTS files to the testcase golden directory
 Number of results files (3) match
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
-
-----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
@@ -517,16 +444,90 @@ COMPARE RESULTS files to the testcase golden directory
 Number of results files (3) match
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
 
 ----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_max_deletes_path2_force> PASSED
+
+
+===================================================================
+***** Test case <test_rclone_args> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+    :MSG:	Place a newer files on the Path1 and Path2
+    touch ./tests/test_rclone_args/modfiles/* --date="2025-01-02"
+    rclone copy ./tests/test_rclone_args/modfiles/file1.txt ./testdir/path1/
+    rclone copy ./tests/test_rclone_args/modfiles/file2.txt ./testdir/path2/
+    rclone copy ./tests/test_rclone_args/modfiles/file20.txt ./testdir/path1/subdir
+    rclone copy ./tests/test_rclone_args/modfiles/file21.txt ./testdir/path2/subdir
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	Issue rclonesync command
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf --rclone-args --transfers 1 --syslog --timeout 0m5s --size-only
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (3) match
+
+----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
 CLEANING UP testdirs and workdir
-TEST <test_max_deletes_path2_force> PASSED
+TEST <test_rclone_args> PASSED
+
+
+===================================================================
+***** Test case <test_rmdirs> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	1) Delete Path1 subdir/file20.txt
+    rclone delete ./testdir/path1//subdir/file20.txt
+    :MSG:	2) rclonesync without --remove-empty-directories
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	3) Confirm subdir exists on both paths
+    rclone lsf --dirs-only -R ./testdir/path1/
+    rclone lsf --dirs-only -R ./testdir/path2/
+    :MSG:	4) rclonesync with --remove-empty-directories
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --remove-empty-directories  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	5) Confirm subdir has been removed on both paths
+    rclone lsf --dirs-only -R ./testdir/path1/
+    rclone lsf --dirs-only -R ./testdir/path2/
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (3) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_rmdirs> PASSED
 
 
