@@ -9,7 +9,7 @@ __version__ = "V2.7 190429"                          # Version number and date c
 #
 # Chris Nelson, November 2017 - 2019
 # Revision and contributions:
-#   Hildo G. Jr.
+#   Hildo G. Jr., e2t, kalemas, and silenceleaf
 #
 # See README.md for revision history
 #

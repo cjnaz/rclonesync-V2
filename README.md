@@ -17,7 +17,28 @@ rclonesync has not been
 tested on other services.  If it works, or sorta works, please raise an issue and I'll update these notes.  Run the test suite
 to check for proper operation.
 
+## Installation, setup, getting started
+- Install [rclone](https://rclone.org/) and setup your remotes.  Ensure the location is included in your executables search path (PATH environment variable), else see rclonesync's `--rclone` switch.
+- Place the rclonesync.py script on your system.  Place it in a directory within your PATH environment variable, or run it with a full path reference.  On Linux, make sure the file mode is set to executable (`chmod +x rclonesync.py`).  On Windows and if using Python 2.7, read about the win_subprocess.py module below in the Windows support section. 
+- Create the rclonesync working directory at `~/.rclonesyncwd` (Linux) or `C:\Users\<your loginname>\.rclonesyncwd` (Windows),  Set up a filters file in this directory, if needed.
+- Run rclonesync with the `--first-sync` switch, specifying the paths to the local and remote sync directory roots.
+- For successive sync runs, leave off the `--first-sync` switch.
+- Consider setting up the --check-access feature for safety, and the `--filters-file` feature for excluding unnecessary files and directories from the sync.
+- On Linux, consider setting up a crontab entry.  The following runs a sync every 5 minutes between a local directory and an OwnCloud server, with output logged to a runlog file:
+```
+# Minute (0-59)
+#      Hour (0-23)
+#           Day of Month (1-31)
+#                Month (1-12 or Jan-Dec)
+#                     Day of Week (0-6 or Sun-Sat)
+#                         Command
+  */5  *    *    *    *   ~/scripts/rclonesync.py /mnt/share/myoc owncloud: --check-access --filters-file ~/.rclonesyncwd/Filters  >> ~/scripts/owncloud_runlog 2>&1
+
+```
+
 ## Notable changes in the latest release
+V2.8 191003:
+- Fixed Windows bug (issues #27), tempfile handling (issue #28), and changed non-verbose logging output to no-output (issues #31).
 V2.7 190429:
 - Changed the lock filename to include the Path1 and Path2 terms.  This effectively allows concurrent / parallel rclonesync runs on non-overlapping file systems / clouds.  **NOTE** that concurrent rclonesync runs are allowed, **but** be very cautious that there is no overlap in the paths. 
 - Added rclone sync exit codes - 0: Pass, 1: Error abort, 2: Critical error abort.
@@ -98,7 +119,7 @@ optional arguments:
 
 Typical run log:
 ```
-$ ../rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --verbose
+$ ./rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --verbose
 2018-07-28 17:13:25,912:  ***** BiDirectional Sync for Cloud Services using rclone *****
 2018-07-28 17:13:25,913:  Synching Path1  <./testdir/path1/>  with Path2  <GDrive:/testdir/path2/>
 2018-07-28 17:13:25,913:  Command line:  <Namespace(Path1='./testdir/path1/', Path2='GDrive:testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=False, rc_verbose=None, verbose=True, workdir='./testwd/')>
@@ -224,7 +245,7 @@ which leads to the attempted delete on the Path2, blocked again by --dry-run: `.
 artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then 
 the threatened deletes on Path2 may be disregarded.
 
-- **Lock file** - When rclonesync is running, a lock file is created (/tmp/rclonesync_LOCK_path1_path2).  If rclonesync should crash or 
+- **Lock file** - When rclonesync is running, a lock file is created (typically on Linux at /tmp/rclonesync_LOCK_path1_path2).  If rclonesync should crash or 
 hang the lock file will remain in place and block any further runs of rclonesync _for the same paths_.  Delete the lock file as part of 
 debugging the situation.  The lock file effectively blocks follow-on (i.e., CRON scheduled) runs when the prior invocation 
 is taking a long time.  The lock file contains the job command line and time, which may help in debug.  If rclonesync crashes with a Python
@@ -245,7 +266,6 @@ Support for rclonesync on Windows was added in V2.3.
 If a drive letter is omitted the shell current drive is the default.  Drive letters are a single character follows by ':', so cloud names
 must be more than one character long.
 - Absolute paths (with or without a drive letter), and relative paths (with or without a drive letter) are supported.
-- `C:\tmp` must be manually created, and the user must have write privilege to this directory.  The LOCK file is placed here.
 - rclonesync's working directory is created at the user's top level (`C:\Users\<user>\.rclonesyncwd`).
 - rclone must be in the path, or use rclonesync's `--rclone` switch.
 - Note that rclonesync output will show a mix of forward `/` and back '\' slashes.  They are equivalent in Python - not to worry.
@@ -287,6 +307,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.8 101003 Fixed Windows platform detect bug (#27), utilized Python's tempfile directory feature (#28), and made non-verbose logging completely quiet (#31).
 - V2.7 190429 Added paths-specific lock filename and exit codes.  Corrected listremotes subprocess call (thanks @JasperJuergensen).
 - V2.6 190408 Added --config and --rclone-args switches.
 - V2.5 190330 Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
