@@ -19,7 +19,7 @@ to check for proper operation.
 
 ## Installation, setup, getting started
 - Install [rclone](https://rclone.org/) and setup your remotes.  Ensure the location is included in your executables search path (PATH environment variable), else see rclonesync's `--rclone` switch.
-- Place the rclonesync.py script on your system.  Place it in a directory within your PATH environment variable, or run it with a full path reference.  On Linux, make sure the file mode is set to executable (`chmod +x rclonesync.py`).  On Windows and if using Python 2.7, read about the win_subprocess.py module below in the Windows support section. 
+- Place the rclonesync.py script on your system.  Place it in a directory within your PATH environment variable, or run it with a full path reference.  On Linux, make sure the file mode is set to executable (`chmod +x rclonesync.py`).  On Windows and if using Python 2.7, read about the win_subprocess.py module below in the Windows support section.  Place win_subprocess.py in the same directory as the rclonesync.py script. 
 - Create the rclonesync working directory at `~/.rclonesyncwd` (Linux) or `C:\Users\<your loginname>\.rclonesyncwd` (Windows),  Set up a filters file in this directory, if needed.
 - Run rclonesync with the `--first-sync` switch, specifying the paths to the local and remote sync directory roots.
 - For successive sync runs, leave off the `--first-sync` switch.
