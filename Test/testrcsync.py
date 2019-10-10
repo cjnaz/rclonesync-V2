@@ -58,11 +58,18 @@ def rcstest():
     os.mkdir(WORKDIR)
 
     # testdirpath1 = TESTDIR + "path1/"
-    try:
-        subprocess.Popen([rclone, "purge", path1, "--config", rcconfig ], stdout=devnull, stderr=devnull)
-    except:
-        pass
-    
+    # try:
+    #     subprocess.Popen([rclone, "purge", path1, "--config", rcconfig ], stdout=devnull, stderr=devnull)
+    # except:
+    #     pass
+    FNULL = open(os.devnull, 'w')
+    # subprocess.call(['echo', 'foo'], stdout=FNULL, stderr=subprocess.STDOUT)
+    subprocess.call([rclone, "purge", path1, "--config", rcconfig ], stdout=FNULL, stderr=FNULL)
+    subprocess.call([rclone, "purge", path2, "--config", rcconfig ], stdout=FNULL, stderr=FNULL)
+
+    # raw_input ("Hello")
+
+
     # git tends to change file mod dates.  For test stability, jam initial dates to a fix past date.
     # test cases that changes files (test_changes, for example) will touch specific files to fixed new dates.
     subprocess.call("find " + INITIALDIR + r' -type f -exec touch --date="2000-01-01" {} +', shell=True)
@@ -70,11 +77,13 @@ def rcstest():
     subprocess.call([rclone, "copy", INITIALDIR, path1, "--config", rcconfig])
     subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig])
     sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
-    
+    # raw_input ("hello")
     print ("\nDO <rclonesync --first-sync> to set LSL files baseline")
     subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR,
                      "--no-datetime-log", "--rclone", rclone, "--config", rcconfig])
     sys.stdout.flush()
+    # raw_input ("hello")
+    
     
 
     print ("RUN CHANGECMDS to apply changes from test case initial state")
