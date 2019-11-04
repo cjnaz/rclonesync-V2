@@ -2,3 +2,5 @@ Test/testwd/
 Test/testdir/
 .vscode/
 win_subprocess.pyc
+win32_unicode_argv.pyc
+Test/wincmd.bat

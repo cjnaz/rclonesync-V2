@@ -5,7 +5,7 @@ CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	Place a newer files on the Path1 and Path2
-    touch ./tests/test_basic/modfiles/file1.txt --date="2025-01-02"
+    touch ./tests/test_basic/modfiles/file1.txt --date="2001-01-02"
     rclone copy ./tests/test_basic/modfiles/file1.txt ./testdir/path2/
     rclone copyto ./tests/test_basic/modfiles/file1.txt ./testdir/path1/subdir/file20.txt
 
@@ -38,34 +38,34 @@ CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	New on Path2							file10
-    touch ./tests/test_changes/modfiles/file10.txt --date="2025-01-02"
-    rclone copy ./tests/test_changes//modfiles/file10.txt ./testdir/path2/
+    touch ./tests/test_changes/modfiles/file10.txt --date="2001-01-02"
+    rclone copy ./tests/test_changes/modfiles/file10.txt ./testdir/path2/
     :MSG:	Newer on Path2							file1
-    touch ./tests/test_changes/modfiles/file1.txt --date="2025-01-02"
-    rclone copy ./tests/test_changes//modfiles/file1.txt ./testdir/path2/
+    touch ./tests/test_changes/modfiles/file1.txt --date="2001-01-02"
+    rclone copy ./tests/test_changes/modfiles/file1.txt ./testdir/path2/
     :MSG:	New on Path1							file11
-    touch ./tests/test_changes/modfiles/file11.txt --date="2025-01-02"
-    rclone copy ./tests/test_changes//modfiles/file11.txt ./testdir/path1/
+    touch ./tests/test_changes/modfiles/file11.txt --date="2001-01-02"
+    rclone copy ./tests/test_changes/modfiles/file11.txt ./testdir/path1/
     :MSG:	Newer on Path1							file2
-    touch ./tests/test_changes/modfiles/file2.txt --date="2025-01-02"
-    rclone copy ./tests/test_changes//modfiles/file2.txt ./testdir/path1/
+    touch ./tests/test_changes/modfiles/file2.txt --date="2001-01-02"
+    rclone copy ./tests/test_changes/modfiles/file2.txt ./testdir/path1/
     :MSG:	Deleted on Path2						file3
-    rclone delete ./testdir/path2//file3.txt
+    rclone delete ./testdir/path2/file3.txt
     :MSG:	Deleted on Path1						file4
-    rclone delete ./testdir/path1//file4.txt
+    rclone delete ./testdir/path1/file4.txt
     :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
-    touch ./tests/test_changes/modfiles/file5R.txt --date="2025-01-02"
-    rclone copyto ./tests/test_changes//modfiles/file5R.txt ./testdir/path2//file5.txt
-    touch ./tests/test_changes/modfiles/file5L.txt --date="2025-03-04"
-    rclone copyto ./tests/test_changes//modfiles/file5L.txt ./testdir/path1//file5.txt
+    touch ./tests/test_changes/modfiles/file5R.txt --date="2001-01-02"
+    rclone copyto ./tests/test_changes/modfiles/file5R.txt ./testdir/path2/file5.txt
+    touch ./tests/test_changes/modfiles/file5L.txt --date="2001-03-04"
+    rclone copyto ./tests/test_changes/modfiles/file5L.txt ./testdir/path1/file5.txt
     :MSG:	Newer on Path2 and deleted on Path1	file6
-    touch ./tests/test_changes/modfiles/file6.txt --date="2025-01-02"
-    rclone copy ./tests/test_changes//modfiles/file6.txt ./testdir/path2/
-    rclone delete ./testdir/path1//file6.txt
+    touch ./tests/test_changes/modfiles/file6.txt --date="2001-01-02"
+    rclone copy ./tests/test_changes/modfiles/file6.txt ./testdir/path2/
+    rclone delete ./testdir/path1/file6.txt
     :MSG:	Newer on Path1 and deleted on Path2	file7
-    touch ./tests/test_changes/modfiles/file7.txt --date="2025-01-02"
-    rclone copy ./tests/test_changes//modfiles/file7.txt ./testdir/path1/
-    rclone delete ./testdir/path2//file7.txt
+    touch ./tests/test_changes/modfiles/file7.txt --date="2001-01-02"
+    rclone copy ./tests/test_changes/modfiles/file7.txt ./testdir/path1/
+    rclone delete ./testdir/path2/file7.txt
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Issue rclonesync command
@@ -189,34 +189,34 @@ CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	New on Path2							file10
-    touch ./tests/test_dry_run/modfiles/file10.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file10.txt ./testdir/path2/
+    touch ./tests/test_dry_run/modfiles/file10.txt --date="2001-01-02"
+    rclone copy ./tests/test_dry_run/modfiles/file10.txt ./testdir/path2/
     :MSG:	Newer on Path2							file1
-    touch ./tests/test_dry_run/modfiles/file1.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file1.txt ./testdir/path2/
+    touch ./tests/test_dry_run/modfiles/file1.txt --date="2001-01-02"
+    rclone copy ./tests/test_dry_run/modfiles/file1.txt ./testdir/path2/
     :MSG:	New on Path1							file11
-    touch ./tests/test_dry_run/modfiles/file11.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file11.txt ./testdir/path1/
+    touch ./tests/test_dry_run/modfiles/file11.txt --date="2001-01-02"
+    rclone copy ./tests/test_dry_run/modfiles/file11.txt ./testdir/path1/
     :MSG:	Newer on Path1							file2
-    touch ./tests/test_dry_run/modfiles/file2.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file2.txt ./testdir/path1/
+    touch ./tests/test_dry_run/modfiles/file2.txt --date="2001-01-02"
+    rclone copy ./tests/test_dry_run/modfiles/file2.txt ./testdir/path1/
     :MSG:	Deleted on Path2						file3
-    rclone delete ./testdir/path2//file3.txt
+    rclone delete ./testdir/path2/file3.txt
     :MSG:	Deleted on Path1						file4
-    rclone delete ./testdir/path1//file4.txt
+    rclone delete ./testdir/path1/file4.txt
     :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
-    touch ./tests/test_dry_run/modfiles/file5R.txt --date="2025-01-02"
-    rclone copyto ./tests/test_dry_run//modfiles/file5R.txt ./testdir/path2//file5.txt
-    touch ./tests/test_dry_run/modfiles/file5L.txt --date="2025-03-04"
-    rclone copyto ./tests/test_dry_run//modfiles/file5L.txt ./testdir/path1//file5.txt
+    touch ./tests/test_dry_run/modfiles/file5R.txt --date="2001-01-02"
+    rclone copyto ./tests/test_dry_run/modfiles/file5R.txt ./testdir/path2/file5.txt
+    touch ./tests/test_dry_run/modfiles/file5L.txt --date="2001-03-04"
+    rclone copyto ./tests/test_dry_run/modfiles/file5L.txt ./testdir/path1/file5.txt
     :MSG:	Newer on Path2 and deleted on Path1	file6
-    touch ./tests/test_dry_run/modfiles/file6.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file6.txt ./testdir/path2/
-    rclone delete ./testdir/path1//file6.txt
+    touch ./tests/test_dry_run/modfiles/file6.txt --date="2001-01-02"
+    rclone copy ./tests/test_dry_run/modfiles/file6.txt ./testdir/path2/
+    rclone delete ./testdir/path1/file6.txt
     :MSG:	Newer on Path1 and deleted on Path2	file7
-    touch ./tests/test_dry_run/modfiles/file7.txt --date="2025-01-02"
-    rclone copy ./tests/test_dry_run//modfiles/file7.txt ./testdir/path1/
-    rclone delete ./testdir/path2//file7.txt
+    touch ./tests/test_dry_run/modfiles/file7.txt --date="2001-01-02"
+    rclone copy ./tests/test_dry_run/modfiles/file7.txt ./testdir/path1/
+    rclone delete ./testdir/path2/file7.txt
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Sync with --dry-run
@@ -242,16 +242,73 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path2_DRYRUN>
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-45,46d44
+46,47d45
+< NOTICE: file1.txt: Not copying as --dry-run
 < NOTICE: file7.txt: Not copying as --dry-run
-< NOTICE: file2.txt: Not copying as --dry-run
-47a46,47
-> NOTICE: file2.txt: Not copying as --dry-run
+48a47,48
 > NOTICE: file7.txt: Not copying as --dry-run
+> NOTICE: file1.txt: Not copying as --dry-run
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
 TEST <test_dry_run> FAILED WITH 1 ERRORS.
+
+
+===================================================================
+***** Test case <test_extended_char_paths> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	--first-sync of subdirs with extended chars
+    ../rclonesync.py ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:   Place new files with extended chars on each side
+    touch ./tests/test_extended_char_paths/modfiles/file1.txt --date="2001-01-02"
+    rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path1/測試_Русский_ě_áñ/測試_file1p1
+    rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path2/測試_Русский_ě_áñ/測試_file1p2
+    :MSG:   Regular sync of subdirs with extended chars
+    ../rclonesync.py ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	Test --check-filename with extended chars
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    rclone delete ./testdir/path1/測試_Русский_ě_áñ/測試_checkfile
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:   Test --filters-file path with extended chars
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path1/fileZ.txt
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (7) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ__Path2>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_extended_char_paths> PASSED
 
 
 ===================================================================
@@ -261,20 +318,23 @@ CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	Place a newer files on the Path1 and Path2
-    touch ./tests/test_extended_filenames/modfiles/file1.txt --date="2025-01-02"
-    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2//New_top_level_mañana_funcionará.txt
-    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2//file_enconde_mañana_funcionará.txt
+    touch ./tests/test_extended_filenames/modfiles/file1.txt --date="2001-01-02"
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/New_top_level_mañana_funcionará.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/file_enconde_mañana_funcionará.txt
     rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/mañana_funcionará.txt
     rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
-    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1//filename_contains_ࢺ_p1m.txt
-    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
-    touch ./tests/test_extended_filenames/modfiles/file1.txt --date="2025-01-03"
-    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
-    rclone delete ./testdir/path2//filename_contains_ě_.txt
-    rclone delete ./testdir/path2//filename_contains_ࢺ_.txt
-    rclone delete ./testdir/path2//subdir_with_ࢺ_/filename_contains_ě_.txt
-    rclone delete ./testdir/path1/Русский.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/filename_contains_ࢺ_p1m.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/file_with_測試_.txt
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/test.txt
     rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/Русский.txt
+    :MSG:	Place a new file on both Path1 and Path2
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path2/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
+    touch ./tests/test_extended_filenames/modfiles/file1.txt --date="2001-01-03"
+    rclone copyto ./tests/test_extended_filenames/modfiles/file1.txt ./testdir/path1/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
+    :MSG:	Delete files on both Path1 and Path2
+    rclone delete ./testdir/path2/filename_contains_ࢺ_.txt
+    rclone delete ./testdir/path2/subdir_with_ࢺ_/filename_contains_ě_.txt
+    rclone delete ./testdir/path1/Русский.txt
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Issue rclonesync command
@@ -305,9 +365,9 @@ CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	Place a new files on the Remote
-    touch ./tests/test_filters/modfiles/fileZ.txt --date="2025-01-02"
-    rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path2//fileZ.txt
-    rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path1//subdir/fileZ.txt
+    touch ./tests/test_filters/modfiles/fileZ.txt --date="2001-01-02"
+    rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path2/fileZ.txt
+    rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path1/subdir/fileZ.txt
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	Issue rclonesync with --filters-file.  Path2-side fileZ.txt is filtered.
@@ -459,7 +519,7 @@ CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and
 DO <rclonesync --first-sync> to set LSL files baseline
 RUN CHANGECMDS to apply changes from test case initial state
     :MSG:	Place a newer files on the Path1 and Path2
-    touch ./tests/test_rclone_args/modfiles/* --date="2025-01-02"
+    touch ./tests/test_rclone_args/modfiles/* --date="2001-01-02"
     rclone copy ./tests/test_rclone_args/modfiles/file1.txt ./testdir/path1/
     rclone copy ./tests/test_rclone_args/modfiles/file2.txt ./testdir/path2/
     rclone copy ./tests/test_rclone_args/modfiles/file20.txt ./testdir/path1/subdir
@@ -496,7 +556,7 @@ RUN CHANGECMDS to apply changes from test case initial state
 
 RUN SYNCCMDS (console output captured to consolelog.txt)
     :MSG:	1) Delete Path1 subdir/file20.txt
-    rclone delete ./testdir/path1//subdir/file20.txt
+    rclone delete ./testdir/path1/subdir/file20.txt
     :MSG:	2) rclonesync without --remove-empty-directories
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
     :MSG:	3) Confirm subdir exists on both paths

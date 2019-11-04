@@ -9,11 +9,10 @@
       279 2000-01-01 00:00:00.000000000 filename_contains_ě_.txt
        20 2001-01-02 00:00:00.000000000 filename_contains_ࢺ_p1m.txt
        20 2001-01-02 00:00:00.000000000 Русский.txt
-        0 2000-01-01 00:00:00.000000000 subdir_with_測試_/file1.txt
-       20 2001-01-02 00:00:00.000000000 subdir_with_測試_/file_with_測試_.txt
-       20 2001-01-02 00:00:00.000000000 subdir_with_測試_/test.txt
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/file_with_測試_.txt
        20 2001-01-03 00:00:00.000000000 subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path1
        20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path2
       279 2000-01-01 00:00:00.000000000 subdir_with_ࢺ_/filename_contains_ࢺ_.txt
        20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
        20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/mañana_funcionará.txt
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/test.txt

@@ -1,38 +1,37 @@
-
 :MSG:	New on Path2							file10
-touch :TESTCASEROOT:modfiles/file10.txt --date="2025-01-02"
-:RCLONE: copy :TESTCASEROOT:/modfiles/file10.txt :PATH2:
+touch :TESTCASEROOT:modfiles/file10.txt --date="2001-01-02"
+:RCLONE: copy :TESTCASEROOT:modfiles/file10.txt :PATH2:
 
 :MSG:	Newer on Path2							file1
-touch :TESTCASEROOT:modfiles/file1.txt --date="2025-01-02"
-:RCLONE: copy :TESTCASEROOT:/modfiles/file1.txt :PATH2:
+touch :TESTCASEROOT:modfiles/file1.txt --date="2001-01-02"
+:RCLONE: copy :TESTCASEROOT:modfiles/file1.txt :PATH2:
 
 :MSG:	New on Path1							file11
-touch :TESTCASEROOT:modfiles/file11.txt --date="2025-01-02"
-:RCLONE: copy :TESTCASEROOT:/modfiles/file11.txt :PATH1:
+touch :TESTCASEROOT:modfiles/file11.txt --date="2001-01-02"
+:RCLONE: copy :TESTCASEROOT:modfiles/file11.txt :PATH1:
 
 :MSG:	Newer on Path1							file2
-touch :TESTCASEROOT:modfiles/file2.txt --date="2025-01-02"
-:RCLONE: copy :TESTCASEROOT:/modfiles/file2.txt :PATH1:
+touch :TESTCASEROOT:modfiles/file2.txt --date="2001-01-02"
+:RCLONE: copy :TESTCASEROOT:modfiles/file2.txt :PATH1:
 
 :MSG:	Deleted on Path2						file3
-:RCLONE: delete :PATH2:/file3.txt
+:RCLONE: delete :PATH2:file3.txt
 
 :MSG:	Deleted on Path1						file4	
-:RCLONE: delete :PATH1:/file4.txt
+:RCLONE: delete :PATH1:file4.txt
 
 :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
-touch :TESTCASEROOT:modfiles/file5R.txt --date="2025-01-02"
-:RCLONE: copyto :TESTCASEROOT:/modfiles/file5R.txt :PATH2:/file5.txt
-touch :TESTCASEROOT:modfiles/file5L.txt --date="2025-03-04"
-:RCLONE: copyto :TESTCASEROOT:/modfiles/file5L.txt :PATH1:/file5.txt
+touch :TESTCASEROOT:modfiles/file5R.txt --date="2001-01-02"
+:RCLONE: copyto :TESTCASEROOT:modfiles/file5R.txt :PATH2:file5.txt
+touch :TESTCASEROOT:modfiles/file5L.txt --date="2001-03-04"
+:RCLONE: copyto :TESTCASEROOT:modfiles/file5L.txt :PATH1:file5.txt
 
 :MSG:	Newer on Path2 and deleted on Path1	file6
-touch :TESTCASEROOT:modfiles/file6.txt --date="2025-01-02"
-:RCLONE: copy :TESTCASEROOT:/modfiles/file6.txt :PATH2:
-:RCLONE: delete :PATH1:/file6.txt
+touch :TESTCASEROOT:modfiles/file6.txt --date="2001-01-02"
+:RCLONE: copy :TESTCASEROOT:modfiles/file6.txt :PATH2:
+:RCLONE: delete :PATH1:file6.txt
 
 :MSG:	Newer on Path1 and deleted on Path2	file7
-touch :TESTCASEROOT:modfiles/file7.txt --date="2025-01-02"
-:RCLONE: copy :TESTCASEROOT:/modfiles/file7.txt :PATH1:
-:RCLONE: delete :PATH2:/file7.txt
+touch :TESTCASEROOT:modfiles/file7.txt --date="2001-01-02"
+:RCLONE: copy :TESTCASEROOT:modfiles/file7.txt :PATH1:
+:RCLONE: delete :PATH2:file7.txt

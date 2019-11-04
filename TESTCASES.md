@@ -33,12 +33,12 @@ and consider running with `--golden` if a given cloud service is
 your preference.  Running the tests with a cloud service is WAY slower than `local local`.
 
 ## Windows usage (limited)
-- Testing with Windows is supported by running testrcsync.py from Linux and using the `--Windows-testing` switch.  When set, the script pauses for each command in the test's SyncCmds.txt file, and provides the copy/paste command that is to applied in a Windows Cmd terminal window.  After all sync commands have been applied, testrcsync proceeds with the diff checks.
+- Testing with Windows is supported by running testrcsync.py from Linux and using the `--Windows-testing` switch.  When set, the script pauses for each rclonesync command in the test's SyncCmds.txt file, and provides a `wincmd.bat` Windows batch file to be run in a Windows Cmd terminal window.  After all sync commands have been applied, testrcsync proceeds with the diff checks.
 - The assumption/requirement is that both the Linux and Windows systems are sharing the same test directories and working directory.
-- There may be differences in the character encoding in the consolelog.txt generated from Windows vs. the golden file generated on Linux, so there will likely be miscompares for this file.  The LSL* files should match, however.  Beyond Compare may be useful for comparing test versus golden consolelog.txt files.
-- If there is more than one sync command to be executed on Windows the consolelog.txt file will have later commands showing up earlier in the log file.  This is a known bug in testresync.py.  Various sys.stdout.flush() attempts did not fix the problem - left as a corner case bug.
-- The Windows user's default rclone config file (typically at C:\Users\<username>\.conifg\rclone\rclone.conf) will be used.  testrcsync's --config switch value is not printed to the copy/paste output.
-- Expected differences in the consolelog.txt, as compared to golden files created from Linux include 1) Difference in the command line config setting (`config=None` on Windows), and 2) Difference in the lockfile path.
+- There will be differences in Windows vs. Linux path styles which will mismatch with the golden consolelog.txt file.  Other Expected differences in the consolelog.txt include 1) Difference in the command line config setting (`config=None` on Windows), and 2) Difference in the lockfile path.  The LSL* files should match, however.  Beyond Compare may be useful for comparing test versus golden consolelog.txt files.
+- With both Linux and Windows writing to the consolelog.txt file, the output gets out of sync and sometimes gets partially clobbered.  This is a known bug in testresync.py.  Various sys.stdout.flush() attempts did not fix the problem - left as a corner case bug.
+- The Windows user's default rclone config file (typically at C:\Users\<username>\.conifg\rclone\rclone.conf) will be used.  testrcsync's --config switch value is not printed to the wincmd.bat output.
+
 Testcase test_rclone_args will fail on Windows since the --syslog switch is not supported on rclone Windows.
 
 
@@ -137,10 +137,11 @@ are functionally equivalent.
 **New in V1.4:  `:RCEXEC:` lines may include the `--rclone-args` switch to pass arbitrary switches to rclonesync.** See documentation for rclonesync.
 
 ## Parting shots
-Developed on CentOS 7 and tested on Python 2.7.x and Python 3.6.5.  Issues echo, touch and diff subprocess commands that surely 
+Developed on CentOS 7 and tested on Python 2.7.x and Python 3.8.0.  Issues echo, touch and diff subprocess commands that surely 
 will not work on Windows (see Windows usage, above).
 
 ## Revision history
+- V1.6 191103 - Unicode enhancements, including on the rclonesync command line
 - V1.5 191003 - Force sorted order of ALL testcases.  Force sorted order of results compare.  Deleted --config switch for Windows testing.  Fixed cleanup bug.
 - V1.4 190408 - Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
 - V1.3 190330 - Added limited/partial testing with Windows via `--Windows-testing` switch.

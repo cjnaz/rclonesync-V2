@@ -1,7 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """BiDirectional Sync using rclone"""
 
-__version__ = "V2.8 191003"                          # Version number and date code
+from __future__ import unicode_literals  # This sets py2.7 default string literal to unicode from str.  No 'u' required on strings.
+from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
+
+
+__version__ = "V2.9 191103"                          # Version number and date code
 
 
 #==========================================================================================================
@@ -15,6 +20,7 @@ __version__ = "V2.8 191003"                          # Version number and date c
 #
 # Known bugs:
 #   remove size compare since its not used
+#   Add file compares based on hashes
 #
 #==========================================================================================================
 
@@ -26,8 +32,6 @@ import io
 import platform
 import shutil
 import subprocess
-if platform.system() is "Windows" and sys.version_info[0] < 3:
-    import win_subprocess
 from datetime import datetime
 import tempfile
 import time
@@ -38,7 +42,25 @@ import hashlib                                      # For checking if the filter
 
 
 # Configurations and constants
-MAX_DELETE = 50                                     # % deleted allowed, else abort.  Use --force or --max_deletess to override.
+is_Windows = False
+is_Linux = False
+if sys.platform == "win32":
+    is_Windows = True
+if "linux" in sys.platform:  # <linux2> on Py2, <linux> on Py3
+    is_Linux = True
+is_Py27 = False
+is_Py3x = False
+if sys.version_info[0] == 2 and sys.version_info[1] == 7:
+    is_Py27 = True
+if sys.version_info[0] == 3:
+    is_Py3x = True
+is_Windows_Py27 = is_Windows and is_Py27
+
+if is_Windows_Py27:
+    import win_subprocess                           # Win Py27 subprocess only supports ASCII in subprocess calls.
+    import win32_unicode_argv                       # Win Py27 only supports ASCII on command line.
+
+MAX_DELETE = 50                                     # % deleted allowed, else abort.  Use --force or --max_deletes to override.
 CHK_FILE = 'RCLONE_TEST'
 
 RTN_ABORT = 1                                       # Tokens for return codes based on criticality.
@@ -48,7 +70,7 @@ RTN_CRITICAL = 2                                    # Aborts allow rerunning.  C
 def bidirSync():
 
     def print_msg(tag, msg, key=''):
-        return u"  {:9}{:35} - {}".format(tag, msg, key)
+        return "  {:9}{:35} - {}".format(tag, msg, key)
 
  
     if not os.path.exists(workdir):
@@ -60,9 +82,30 @@ def bidirSync():
     path1_list_file = list_file_base + '_Path1'
     path2_list_file = list_file_base + '_Path2'
 
-    # logging.warning("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
     logging.info("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
-    logging.info("Command line:  <{}>".format(args))
+
+
+    args_string = ''                            # Build call args string for consistency across Linux/Windows/Py27/Py3x
+    for arg in sorted(args.__dict__):
+        argvalue = getattr(args, arg)
+        if type(argvalue) is str and is_Py27:
+            argvalue = argvalue.decode("utf-8")
+        if type(argvalue) is int:
+            argvalue = str(argvalue)
+        if type(argvalue) is bool:
+            if argvalue is False:
+                argvalue = "False"
+            else:
+                argvalue = "True"
+        if type(argvalue) is list:              # --rclone-args case
+            rcargs = '=['
+            for item in argvalue:
+                rcargs += item + ' '
+            argvalue = rcargs[:-1] + ']'
+        if argvalue is None:
+            argvalue = "None"
+        args_string += arg + '=' + argvalue + ', '
+    logging.info ("Command args: <{}>".format(args_string[:-2]))
 
 
     # ***** Handle filters_file, if provided *****
@@ -76,70 +119,75 @@ def bidirSync():
 
         filters_fileMD5 = filters_file + "-MD5"
 
-        with open(filters_file, 'rb') as ifile:
-            current_file_hash = hashlib.md5(ifile.read()).hexdigest()
-            # If the filters file is written from windows it will have a \r in it.  Py2.7 on Windows discards
-            # the \r, as does Py3.6 on Linux, but Py2.7 on Linux includes the \r in the calculated hash, resulting
-            # in a different file hash than in other environments.  Removing the \r makes the calculation platform
-            # agnostic.
+        with io.open(filters_file, 'rb') as ifile:
+            if is_Py27:
+                current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest())
+            else:
+                current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest(), encoding='utf-8')
 
         stored_file_hash = ''
         if os.path.exists(filters_fileMD5):
-            with open(filters_fileMD5) as ifile:
+            with io.open(filters_fileMD5, mode="rb") as ifile:
                 stored_file_hash = ifile.read()
         elif not first_sync:
-            logging.error(u"MD5 file not found for filters file <{}>.  Must run --first-sync.".format(filters_file))
+            logging.error("MD5 file not found for filters file <{}>.  Must run --first-sync.".format(filters_file))
             return RTN_CRITICAL
 
         if current_file_hash != stored_file_hash and not first_sync:
-            logging.error(u"Filters-file <{}> has chanaged (MD5 does not match).  Must run --first-sync.".format(filters_file))
+            logging.error("Filters-file <{}> has chanaged (MD5 does not match).  Must run --first-sync.".format(filters_file))
             return RTN_CRITICAL
 
         if first_sync:
-            logging.info(u"Storing filters-file hash to <{}>".format(filters_fileMD5))
-            with open(filters_fileMD5, 'w') as ofile:
-                ofile.write(current_file_hash) # + "\n")
+            logging.info("Storing filters-file hash to <{}>".format(filters_fileMD5))
+            with io.open(filters_fileMD5, 'wb') as ofile:
+                ofile.write(current_file_hash)
 
-        filters.append(u"--filter-from")
+        filters.append("--filter-from")
         filters.append(filters_file)
 
 
     # ***** Set up dry_run and rclone --verbose switches *****
     switches = []
     for _ in range(rc_verbose):
-        switches.append(u"-v")
+        switches.append("-v")
     if dry_run:
-        switches.append(u"--dry-run")
+        switches.append("--dry-run")
         if os.path.exists(path2_list_file):          # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
-            shutil.copy(path2_list_file, path2_list_file + u'_DRYRUN')
-            path2_list_file  += u'_DRYRUN'
+            shutil.copy(path2_list_file, path2_list_file + '_DRYRUN')
+            path2_list_file  += '_DRYRUN'
         if os.path.exists(path1_list_file):
-            shutil.copy(path1_list_file, path1_list_file + u'_DRYRUN')
-            path1_list_file += u'_DRYRUN'
+            shutil.copy(path1_list_file, path1_list_file + '_DRYRUN')
+            path1_list_file += '_DRYRUN'
     if args.no_datetime_log:
-        switches.extend([u'--log-format', '""'])
+        switches.extend(['--log-format', '""'])
     # print (switches)
 
 
     # ***** rclone call wrapper functions with retries *****
-    maxTries=3
+    MAXTRIES=3
     def rclone_lsl(path, ofile, options=None, linenum=0):
-        for x in range(maxTries):
-            with open(ofile, "w") as of:
+        for x in range(MAXTRIES):
+            with io.open(ofile, "wt", encoding='utf8') as of:
                 process_args = [rclone, "lsl", path, "--config", rcconfig]
                 if options is not None:
                     process_args.extend(options)
                 if args.rclone_args is not None:
                     process_args.extend(args.rclone_args)
-                if not subprocess.call(process_args, stdout=of):
-                    return 0
-                # logging.warning(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
-                logging.info(print_msg(u"WARNING", "rclone lsl try {} failed.".format(x+1)))
-        logging.error(print_msg(u"ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
+                if is_Windows_Py27:
+                    p = win_subprocess.Popen(process_args, stdout=of, shell=True)
+                    out, err = p.communicate()
+                    if not err:
+                        return(0)
+                else:
+                    if not subprocess.call(process_args, stdout=of):
+                        return 0
+
+                logging.info(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1)))
+        logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
         return 1
-        
+
     def rclone_cmd(cmd, p1=None, p2=None, options=None, linenum=0):
-        for x in range(maxTries):
+        for x in range(MAXTRIES):
             process_args = [rclone, cmd, "--config", rcconfig]
             if p1 is not None:
                 process_args.append(p1)
@@ -149,11 +197,8 @@ def bidirSync():
                 process_args.extend(options)
             if args.rclone_args is not None:
                 process_args.extend(args.rclone_args)
-            # print (process_args)
-            # if not subprocess.call(process_args):     # Prior implementation, replaced with Popen call below - v2.5.
-            #     return 0
             try:
-                if platform.system() is "Windows" and sys.version_info[0] < 3:
+                if is_Windows_Py27:
                     # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
                     # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
                     # when file and directory names contain extended characters.  However, win_subprocess 
@@ -166,10 +211,10 @@ def bidirSync():
                 if p.returncode == 0:
                     return 0
             except Exception as e:
-                # logging.warning(print_msg(u"WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
-                logging.info(print_msg(u"WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
-                logging.error("message:  <{}>".format(e))
-        logging.error(print_msg(u"ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
+                # logging.warning(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+                logging.info(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+                logging.info("message:  <{}>".format(e))
+        logging.error(print_msg("ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
         return 1
 
 
@@ -329,7 +374,6 @@ def bidirSync():
             if path1_deltas[key]['newer']:    newers += 1
             if path1_deltas[key]['older']:    olders += 1
             if path1_deltas[key]['deleted']:  deletes += 1
-        # logging.warning("  {:4} file change(s) on Path1: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path1_deltas), news, newers, olders, deletes))
         logging.info("  {:4} file change(s) on Path1: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path1_deltas), news, newers, olders, deletes))
 
 
@@ -371,7 +415,6 @@ def bidirSync():
             if path2_deltas[key]['newer']:    newers += 1
             if path2_deltas[key]['older']:    olders += 1
             if path2_deltas[key]['deleted']:  deletes += 1
-        # logging.warning("  {:4} file change(s) on Path2: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path2_deltas), news, newers, olders, deletes))
         logging.info("  {:4} file change(s) on Path2: {:4} new, {:4} newer, {:4} older, {:4} deleted".format(len(path2_deltas), news, newers, olders, deletes))
 
 
@@ -406,7 +449,7 @@ def bidirSync():
                 src  = path2_base + key
                 dest = path1_base + key
                 logging.info(print_msg("Path2", "  Copying to Path1", dest))
-                if rclone_cmd(u'copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
             else:
@@ -524,26 +567,26 @@ def load_list(infile):
                     _time = out.group(3)
                     microsec = out.group(4)
                     date_time = time.mktime(datetime.strptime(date + ' ' + _time, '%Y-%m-%d %H:%M:%S').timetuple()) + float('.'+ microsec)
-                    filename = out.group(5) #.decode("utf-8")  # cjn
-                    d[filename] = {u'size': size, u'datetime': date_time}
+                    filename = out.group(5)
+                    d[filename] = {'size': size, 'datetime': date_time}
                 else:
-                    logging.warning(u"Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
+                    logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
         return 0, collections.OrderedDict(sorted(d.items()))        # return Success and a sorted list
 
     except Exception as e:
-        logging.error(u"Exception in load_list loading <{}>:  <{}>".format(infile, e))
+        logging.error("Exception in load_list loading <{}>:  <{}>".format(infile, e))
         return 1, ""                                                # return False
 
 
 def request_lock(caller, lock_file):
     for _ in range(5):
         if os.path.exists(lock_file):
-            with open(lock_file) as fd:
+            with io.open(lock_file, mode='rt', encoding='utf8',errors="replace") as fd:
                 locked_by = fd.read()
                 logging.info("Lock file exists - Waiting a sec: <{}>\n<{}>".format(lock_file, locked_by[:-1]))   # remove the \n
             time.sleep(1)
         else:  
-            with open(lock_file, 'w') as fd:
+            with io.open(lock_file, mode='wt', encoding='utf8') as fd:
                 fd.write("Locked by {} at {}\n".format(caller, time.asctime(time.localtime())))
                 logging.info("Lock file created: <{}>".format(lock_file))
             return 0
@@ -552,8 +595,6 @@ def request_lock(caller, lock_file):
 
 def release_lock(lock_file):
     if os.path.exists(lock_file):
-        # with open(lock_file) as fd:
-        #     locked_by = fd.read()
         logging.info("Lock file removed: <{}>".format(lock_file))
         os.remove(lock_file)
         return 0
@@ -564,11 +605,10 @@ def release_lock(lock_file):
 
 
 if __name__ == '__main__':
-
     pyversion = sys.version_info[0] + float(sys.version_info[1])/10
     if pyversion < 2.7:
         print("ERROR  The Python version must be >= 2.7.  Found version: {}".format(pyversion)); exit()
-
+    
     parser = argparse.ArgumentParser(description="***** BiDirectional Sync for Cloud Services using rclone *****")
     parser.add_argument('Path1',
                         help="Local path, or cloud service with ':' plus optional path.  Type 'rclone listremotes' for list of configured remotes.")
@@ -629,16 +669,20 @@ if __name__ == '__main__':
     first_sync   =  args.first_sync
     check_access =  args.check_access
     chk_file     =  args.check_filename
+    if is_Linux and is_Py27:                # Already unicode on Linux Py3 and Win Py2 with win32_unicode_argv module 
+        chk_file     =  chk_file.decode("utf-8")
     max_deletes  =  args.max_deletes
     verbose      =  args.verbose
     rc_verbose   =  args.rc_verbose
     if rc_verbose == None: rc_verbose = 0
-    filters_file =   args.filters_file
+    filters_file =  args.filters_file
+    if args.filters_file is not None and is_Linux and is_Py27:  # As with chk_file
+        filters_file =  filters_file.decode("utf-8")
     rclone       =  args.rclone
     dry_run      =  args.dry_run
     force        =  args.force
     rmdirs       =  args.remove_empty_directories
-    workdir      =  args.workdir + '/'
+    workdir      =  args.workdir
 
     if not args.no_datetime_log:
         logging.basicConfig(format='%(asctime)s:  %(message)s') # /%(levelname)s/%(module)s/%(funcName)s
@@ -651,7 +695,21 @@ if __name__ == '__main__':
     else:
         logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events
 
-    # logging.warning("***** BiDirectional Sync for Cloud Services using rclone *****")
+    if is_Windows:
+        chcp = subprocess.check_output(["chcp"], shell=True).decode("utf-8")
+        err = False
+        py_encode_env = ''
+        if "PYTHONIOENCODING" in os.environ:
+            py_encode_env = os.environ["PYTHONIOENCODING"]
+        if "65001" not in chcp:
+            print ("ERROR  In the Windows CMD shell execute <chcp 65001> to enable support for UTF-8.")
+            err = True
+        if py_encode_env.lower().replace('-','') != "utf8":
+            print ("ERROR  In the Windows CMD shell execute <set PYTHONIOENCODING=UTF-8> to enable support for UTF-8.")
+            err = True
+        if err:
+            exit()
+
     logging.info("***** BiDirectional Sync for Cloud Services using rclone *****")
 
     rcconfig = args.config
@@ -666,14 +724,11 @@ if __name__ == '__main__':
         print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
 
     try:
-        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig])
+        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig]).decode("utf8").split()
     except subprocess.CalledProcessError as e:
         print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
     except:
         print("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}\n".format(sys.exc_info()[1])); exit()
-    clouds = str(clouds.decode("utf8")).split()     # Required for Python 3 so that clouds can be compared to a string
-
-    os_platform = platform.system()                             # Expecting 'Windows' or 'Linux'
 
     def pathparse(path):
         """Handle variations in a path argument.
@@ -685,14 +740,17 @@ if __name__ == '__main__':
         //server/path       - UNC paths are supported
         On Windows a one-character cloud name is not supported - it will be interprested as a drive letter.
         """
-
+        
+        if is_Linux and is_Py27:
+            path = path.decode("utf-8")
+        
         _cloud = False
         if ':' in path:
             if len(path) == 1:                                  # Handle corner case of ':' only passed in
                 logging.error("ERROR  Path argument <{}> not a legal path".format(path)); exit()
-            if path[1] == ':' and os_platform == 'Windows':     # Windows drive letter case
+            if path[1] == ':' and is_Windows:                   # Windows drive letter case
                 path_base = path
-                if not path_base.endswith('\\'):                # For consistency ensure the path ends with /
+                if not path_base.endswith('\\'):                # For consistency ensure the path ends with '/'
                     path_base += '/'
             else:                                               # Cloud case with optional path part
                 path_FORMAT = re.compile(r'([\w-]+):(.*)')
@@ -707,12 +765,12 @@ if __name__ == '__main__':
                     if path_part:
                         if not path_part.startswith('/'):       # For consistency ensure the cloud path part starts and ends with /'s
                             path_part = '/' + path_part
-                        if not path_part.endswith('/'):
+                        if not (path_part.endswith('/') or path_part.endswith('\\')):    # 2nd check is for Windows paths
                             path_part += '/'
                     path_base = cloud_name + path_part
         else:                                                   # Local path (without Windows drive letter)
             path_base = path
-            if not (path_base.endswith('/') or path_base.endswith('\\')):   # For consistency ensure the path ends with /
+            if not (path_base.endswith('/') or path_base.endswith('\\')):
                 path_base += '/'
 
         if not _cloud:
@@ -742,8 +800,7 @@ if __name__ == '__main__':
         if status == RTN_ABORT:
             logging.error("***** Error Abort.  Try running rclonesync again. *****\n")
             exit (1)
-        if status == 0:            
-            # logging.warning(">>>>> Successful run.  All done.\n")
+        if status == 0:
             logging.info(">>>>> Successful run.  All done.\n")
             exit (0)
     else:

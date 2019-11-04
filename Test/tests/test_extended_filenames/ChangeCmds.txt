@@ -10,8 +10,8 @@ touch :TESTCASEROOT:modfiles/file1.txt --date="2001-01-02"
 :RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH2:subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
 :RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:filename_contains_ࢺ_p1m.txt
 
-:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir_with_測試_/file_with_測試_.txt
-:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir_with_測試_/test.txt
+:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir_with_ࢺ_/file_with_測試_.txt
+:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir_with_ࢺ_/test.txt
 
 :RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH2:Русский.txt
 
