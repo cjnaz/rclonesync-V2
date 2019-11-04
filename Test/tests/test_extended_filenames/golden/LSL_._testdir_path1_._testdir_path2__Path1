@@ -1,15 +1,18 @@
-       20 2025-01-02 00:00:00.000000000 New_top_level_mañana_funcionará.txt
+       20 2001-01-02 00:00:00.000000000 New_top_level_mañana_funcionará.txt
       110 2000-01-01 00:00:00.000000000 RCLONE_TEST
         0 2000-01-01 00:00:00.000000000 file1 - Copy (2).txt
         0 2000-01-01 00:00:00.000000000 file1 - Copy (3).txt
         0 2000-01-01 00:00:00.000000000 file1 - Copy (4).txt
         0 2000-01-01 00:00:00.000000000 file1 - Copy.txt
         0 2000-01-01 00:00:00.000000000 file1.txt
-       20 2025-01-02 00:00:00.000000000 file_enconde_mañana_funcionará.txt
-       20 2025-01-02 00:00:00.000000000 filename_contains_ࢺ_p1m.txt
-       20 2025-01-03 00:00:00.000000000 Русский.txt
-       20 2025-01-03 00:00:00.000000000 subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path1
-       20 2025-01-02 00:00:00.000000000 subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path2
+       20 2001-01-02 00:00:00.000000000 file_enconde_mañana_funcionará.txt
+      279 2000-01-01 00:00:00.000000000 filename_contains_ě_.txt
+       20 2001-01-02 00:00:00.000000000 filename_contains_ࢺ_p1m.txt
+       20 2001-01-02 00:00:00.000000000 Русский.txt
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/file_with_測試_.txt
+       20 2001-01-03 00:00:00.000000000 subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path1
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path2
       279 2000-01-01 00:00:00.000000000 subdir_with_ࢺ_/filename_contains_ࢺ_.txt
-       20 2025-01-02 00:00:00.000000000 subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
-       20 2025-01-02 00:00:00.000000000 subdir_with_ࢺ_/mañana_funcionará.txt
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/mañana_funcionará.txt
+       20 2001-01-02 00:00:00.000000000 subdir_with_ࢺ_/test.txt

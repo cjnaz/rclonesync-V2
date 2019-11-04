@@ -1,4 +1,4 @@
 :MSG:	Place a new files on the Remote
-touch :TESTCASEROOT:modfiles/fileZ.txt --date="2025-01-02"
-:RCLONE: copyto :TESTCASEROOT:modfiles/fileZ.txt :PATH2:/fileZ.txt
-:RCLONE: copyto :TESTCASEROOT:modfiles/fileZ.txt :PATH1:/subdir/fileZ.txt
+touch :TESTCASEROOT:modfiles/fileZ.txt --date="2001-01-02"
+:RCLONE: copyto :TESTCASEROOT:/modfiles/fileZ.txt :PATH2:/fileZ.txt
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileZ.txt :PATH1:subdir/fileZ.txt

@@ -3,17 +3,18 @@
 ***** BiDirectional Sync for Cloud Services using rclone *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', check_access=False, check_filename='RCLONE_TEST', config='/home/cjn/.config/rclone/rclone.conf', dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone='rclone', rclone_args=None, remove_empty_directories=False, verbose=True, workdir='./testwd/')>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=True, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File was deleted                  - Русский.txt
   Path1      File is new                       - filename_contains_ࢺ_p1m.txt
+  Path1      File is new                       - subdir_with_ࢺ_/file_with_測試_.txt
   Path1      File is new                       - subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
   Path1      File is new                       - subdir_with_ࢺ_/mañana_funcionará.txt
-     4 file change(s) on Path1:    3 new,    0 newer,    0 older,    1 deleted
+  Path1      File is new                       - subdir_with_ࢺ_/test.txt
+     6 file change(s) on Path1:    5 new,    0 newer,    0 older,    1 deleted
 >>>>> Path2 Checking for Diffs
   Path2      File is newer                     - file_enconde_mañana_funcionará.txt
   Path2      File size is different            - file_enconde_mañana_funcionará.txt
-  Path2      File was deleted                  - filename_contains_ě_.txt
   Path2      File was deleted                  - filename_contains_ࢺ_.txt
   Path2      File was deleted                  - subdir_with_ࢺ_/filename_contains_ě_.txt
   Path2      File is newer                     - Русский.txt
@@ -21,11 +22,10 @@ Command line:  <Namespace(Path1='./testdir/path1/', Path2='./testdir/path2/', ch
   Path2      File is new                       - New_top_level_mañana_funcionará.txt
   Path2      File is new                       - subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
   Path2      File is new                       - subdir_with_ࢺ_/filename_contains_ࢺ_p2s.txt
-     8 file change(s) on Path2:    3 new,    2 newer,    0 older,    3 deleted
+     7 file change(s) on Path2:    3 new,    2 newer,    0 older,    2 deleted
 >>>>> Applying changes on Path2 to Path1
   Path2      Copying to Path1                  - ./testdir/path1/New_top_level_mañana_funcionará.txt
   Path2      Copying to Path1                  - ./testdir/path1/file_enconde_mañana_funcionará.txt
-  Path1      Deleting file                     - ./testdir/path1/filename_contains_ě_.txt
   Path1      Deleting file                     - ./testdir/path1/filename_contains_ࢺ_.txt
   WARNING    Changed in both Path1 and Path2   - subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt
   Path2      Copying to Path1                  - ./testdir/path1/subdir_with_ࢺ_/filechangedbothpaths_ࢺ_.txt_Path2

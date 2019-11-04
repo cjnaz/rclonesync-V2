@@ -1,7 +1,7 @@
 :MSG:	Place a newer files on the Path1 and Path2
 
 # Must force a specific mod date since file mod data is lost through git
-touch :TESTCASEROOT:modfiles/file1.txt --date="2025-01-02"
+touch :TESTCASEROOT:modfiles/file1.txt --date="2001-01-02"
 
 :RCLONE: copy :TESTCASEROOT:modfiles/file1.txt :PATH2:
 :RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:subdir/file20.txt

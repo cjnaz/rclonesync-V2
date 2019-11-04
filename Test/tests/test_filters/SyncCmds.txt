@@ -1,6 +1,5 @@
 # This first line has a --first-sync to force building the filters file -MD5.  Uncomment and run once to reset the stored MD5.
 #:RCSEXEC: :PATH1: :PATH2: --filters-file :TESTCASEROOT:filtersfile.txt --first-sync
 
-:MSG:	Issue rclonesync with --filters-file.  Path2-side fileZ.txt is filtered.  
-
+:MSG:	Issue rclonesync with --filters-file.  Path2-side fileZ.txt is filtered.
 :RCSEXEC: :PATH1: :PATH2: --filters-file :TESTCASEROOT:filtersfile.txt

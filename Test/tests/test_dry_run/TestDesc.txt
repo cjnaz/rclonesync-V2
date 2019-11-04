@@ -3,7 +3,7 @@ NOTE:  --dry-run turns on rlcone --verbose, and rclone processes files in a
 non-deterministic order, resulting in miscompares with the golden results.
 Results from this test must be manually checked.
 
-Derived from test_all
+Derived from test_changes
  - New on Path2							    file10
  - Newer on Path2							file1
  - New on Path1								file11

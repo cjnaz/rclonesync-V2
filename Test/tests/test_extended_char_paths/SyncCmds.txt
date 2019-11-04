@@ -1,0 +1,25 @@
+:MSG:	--first-sync of subdirs with extended chars
+:RCSEXEC: :PATH1:測試_Русский_ě_áñ :PATH2:測試_Русский_ě_áñ --first-sync
+
+:MSG:   Place new files with extended chars on each side
+# Must force a specific mod date since file mod data is lost through git
+touch :TESTCASEROOT:modfiles/file1.txt --date="2001-01-02"
+:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:測試_Русский_ě_áñ/測試_file1p1
+:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH2:測試_Русский_ě_áñ/測試_file1p2
+
+:MSG:   Regular sync of subdirs with extended chars
+:RCSEXEC: :PATH1:測試_Русский_ě_áñ :PATH2:測試_Русский_ě_áñ
+
+
+:MSG:	Test --check-filename with extended chars
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:RCLONE: delete :PATH1:測試_Русский_ě_áñ/測試_checkfile
+:RCSEXEC: :PATH1: :PATH2: --check-access --check-filename 測試_checkfile
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:RCSEXEC: :PATH1: :PATH2: --check-access --check-filename 測試_checkfile
+
+
+:MSG:   Test --filters-file path with extended chars
+:RCSEXEC: :PATH1: :PATH2: --filters-file :TESTCASEROOT:modfiles/測試_filters/測試_filtersfile.txt --first-sync
+:RCLONE: copyto :TESTCASEROOT:modfiles/file1.txt :PATH1:fileZ.txt
+:RCSEXEC: :PATH1: :PATH2: --filters-file :TESTCASEROOT:modfiles/測試_filters/測試_filtersfile.txt

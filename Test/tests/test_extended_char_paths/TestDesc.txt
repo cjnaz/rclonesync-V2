@@ -1,0 +1,12 @@
+test_extended_char_paths
+
+Tests handling of extended chars in:
+	Path1, Path2
+	--check-filename
+	--filters-file (path and filename)
+
+Not tested:
+	--rclone   - Could be done by creating a symbolic link to rclone in the workdir, but not portable to Windows
+	--config   - Ditto
+	--workdir  - Currently hardcoded in testrcsync.py
+
