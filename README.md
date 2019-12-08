@@ -308,6 +308,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.9.1 191208 Fixed workdir bug issue #39.
 - V2.9 191103 Support Unicode in command line args.  Support Python 3 on Windows.
 - V2.8 191003 Fixed Windows platform detect bug (#27), utilized Python's tempfile directory feature (#28), and made non-verbose logging completely quiet (#31).
 - V2.7 190429 Added paths-specific lock filename and exit codes.  Corrected listremotes subprocess call (thanks @JasperJuergensen).

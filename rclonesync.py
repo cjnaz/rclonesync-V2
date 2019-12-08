@@ -6,7 +6,7 @@ from __future__ import unicode_literals  # This sets py2.7 default string litera
 from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
 
 
-__version__ = "V2.9 191103"                          # Version number and date code
+__version__ = "V2.9.1 191208"                         # Version number and date code
 
 
 #==========================================================================================================
@@ -682,7 +682,10 @@ if __name__ == '__main__':
     dry_run      =  args.dry_run
     force        =  args.force
     rmdirs       =  args.remove_empty_directories
+
     workdir      =  args.workdir
+    if not (workdir.endswith('/') or workdir.endswith('\\')):   # 2nd check is for Windows paths
+        workdir += '/'
 
     if not args.no_datetime_log:
         logging.basicConfig(format='%(asctime)s:  %(message)s') # /%(levelname)s/%(module)s/%(funcName)s
