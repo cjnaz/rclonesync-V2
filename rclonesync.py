@@ -6,7 +6,7 @@ from __future__ import unicode_literals  # This sets py2.7 default string litera
 from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
 
 
-__version__ = "V2.9.1 191208"                         # Version number and date code
+__version__ = "V2.10 200331"                         # Version number and date code
 
 
 #==========================================================================================================
@@ -39,6 +39,7 @@ import logging
 import inspect                                      # For getting the line number for error messages.
 import collections                                  # For dictionary sorting.
 import hashlib                                      # For checking if the filter file changed and force --first_sync.
+import signal                                       # For keyboard interrupt handler
 
 
 # Configurations and constants
@@ -601,8 +602,17 @@ def release_lock(lock_file):
     else:
         logging.warning("Attempted to remove lock file but the file does not exist: <{}>".format(lock_file))
         return -1
-        
 
+def keyboardInterruptHandler(signal, frame):
+    logging.error("***** KeyboardInterrupt Critical Error Abort - Must run --first-sync to recover.  See README.md *****\n")
+    if os.path.exists(path2_list_file):
+        shutil.move(path2_list_file, path2_list_file + '_ERROR')
+    if os.path.exists(path1_list_file):
+        shutil.move(path1_list_file, path1_list_file + '_ERROR')
+    release_lock(lock_file)
+    exit (2)
+signal.signal(signal.SIGINT, keyboardInterruptHandler)
+    
 
 if __name__ == '__main__':
     pyversion = sys.version_info[0] + float(sys.version_info[1])/10
@@ -766,8 +776,8 @@ if __name__ == '__main__':
                                       .format(cloud_name, clouds)); exit()
                     path_part = out.group(2)
                     if path_part:
-                        if not path_part.startswith('/'):       # For consistency ensure the cloud path part starts and ends with /'s
-                            path_part = '/' + path_part
+                        # if not path_part.startswith('/'):       # For consistency ensure the cloud path part starts and ends with /'s
+                        #     path_part = '/' + path_part
                         if not (path_part.endswith('/') or path_part.endswith('\\')):    # 2nd check is for Windows paths
                             path_part += '/'
                     path_base = cloud_name + path_part
