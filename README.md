@@ -37,10 +37,12 @@ to check for proper operation.
 ```
 
 ## Notable changes in the latest release
-V2.9 191103:
-- Added extended character support for all fields on the command line - issue #35.  For example:  `rclonesync.py /home/<me>/測試_Русский_ě_áñ GDrive:測試_Русский_ě_áñ`.
-- NOTE:   As of V2.9, it is required that the Windows CMD shell be properly configured for Unicode support, even if you only use ASCII.  Execute both `chcp 65001` and `set PYTHONIOENCODING=UTF-8` in the command shell before attempting to run rclonesync.  If these are not set properly rclonesync will post an error and exit.
-- Tested in Windows 10 with Python 3.8.
+V2.10 200411
+- Added verbose level 2 (debug) with rclone command log (issue #46) - Enable with `-vv` or `-v -v`.  Issued rclone commands submitted to subprocess are logged as a list.
+- Removed '/' after remote: name in support of SFTP remotes (issue #46) - SFTP remotes support path references either relative to the user's home directory or absolute full paths.  For all other remote types (that I am aware of) the remote:path is always relative to the remote's config'd base directory.  In rclonesync versions prior to V2.10, `remote:path` was being incorrectly munged to `remote:/path/` (an absolute path relative to the root of the filesystem on SFTP remotes).  As of this version it is now munged to `remote:path/`.  The training slash is benign, and added for coding consistency.
+- Added error trap for all files changed (such as for system timezone change, issue #32) - This error trap logic is added to cover the case when such as when the system timezone has been changed, resulting in timestamps on all files seen as changed.  A `--first-sync` or `--force` is needed to recover.  Be careful - perhaps check with `--dry-run`!
+- Added trap of keyboard interrupt / SIGINT and lock file removal - A `--first-sync` is required since the state of the filesystems is unknown.
+- Added log of rclonesync version number in the verbose sync header text.
 
 
 ## High level behaviors / operations
@@ -201,6 +203,8 @@ This safety check is intended to block rclonesync from deleting all of the files
 due to a temporary network access issue, or if the user had inadvertently deleted the files on one side or the other.  To force the sync 
 either set a different delete percentage limit, eg `--max-deletes 75` (allows up to 75% deletion), or use `--force` to bypass the check.
 
+- **All files changed check** - Added in V2.10, if _all_ prior existing files on either of the filesystems have changed (e.g. timestamps have changed due to changing the system's timezone) then rclonesync will abort without making any changes.  Any new files are not considered for this check.  A `--force` may be used for forcing the sync (which ever side has what appear to be newer files wins).  Alternately, a `--first-sync` may be issued (Path1 versions will be pushed to Path2).  Consider the situation carefully, and perhaps use `--dry-run` before you commit to the changes.
+
 - **--filters-file** - Using rclone's filter features you can exclude file types or directory sub-trees from the sync. 
 See [rclone Filtering documentation](https://rclone.org/filtering/#filter-from-read-filtering-patterns-from-a-file).) A
 starter `Filters` file is included with rclonesync that contains filters for not-allowed files for syncing with Dropbox, and a filter
@@ -221,7 +225,7 @@ thus forces you to do a --first-sync, likely avoiding a disaster.
 rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
 deletes, or syncs.  See TROUBLESHOOTING.md for more info.
 
-- **Verbosity controls** - `--verbose` enables rclonesync's logging of each check and action (as shown in the typical run log, above). 
+- **Verbosity controls** - `--verbose` enables rclonesync's logging of each check and action (as shown in the typical run log, above). Specifying `--verbose --verbose` turns on debug level logging and notably logging of the issued rclone commands. 
 rclone's verbosity levels may also be enabled using the `--rc-verbose` switch.  rclone supports additional verbosity levels which may be 
 enabled by providing the `--rc-verbose` switch more than once.  Turning on rclone's verbosity using `--rc-verbose` will also turn on
 rclonesync's `--verbose` switch.  **Note** that rclonesync's log messages have '-'s in the date stamp (2018-06-11), while rclone's 
@@ -308,6 +312,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
+- V2.10 200411 Added verbose level 2 (debug) with rclone command log (issue #46); Removed '/' after remote: name in support of SFTP remotes (issue #46); Added error trap for all files changed (such as for system timezone change, issue #32); Added trap of keyboard interrupt / SIGINT and lock file removal; Added log of rclonesync version number.
 - V2.9.1 191208 Fixed workdir bug issue #39.
 - V2.9 191103 Support Unicode in command line args.  Support Python 3 on Windows.
 - V2.8 191003 Fixed Windows platform detect bug (#27), utilized Python's tempfile directory feature (#28), and made non-verbose logging completely quiet (#31).
