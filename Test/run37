@@ -1,4 +1,43 @@
 ===================================================================
+***** Test case <test_all_changed> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:	Change timestamp on all files except RCLONE_TEST
+    touch ./testdir/path1/file* --date="2005-01-02"
+    touch ./testdir/path1/subdir/file* --date="2005-01-02"
+    :MSG:	Sync should pass
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	Change timestamp on all files including RCLONE_TEST
+    touch ./testdir/path1/* --date="2004-01-02"
+    touch ./testdir/path1/subdir/* --date="2004-01-02"
+    :MSG:	Sync should fail
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	Sync with --force should pass
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --force  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (3) match
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_all_changed> PASSED
+
+
+===================================================================
 ***** Test case <test_basic> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
 CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
 
@@ -242,12 +281,18 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path2_DRYRUN>
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-46,47d45
+45d44
+< NOTICE: file11.txt: Not copying as --dry-run
+46a46
+> NOTICE: file11.txt: Not copying as --dry-run
+48d47
 < NOTICE: file1.txt: Not copying as --dry-run
-< NOTICE: file7.txt: Not copying as --dry-run
-48a47,48
-> NOTICE: file7.txt: Not copying as --dry-run
+49a49
 > NOTICE: file1.txt: Not copying as --dry-run
+52d51
+< NOTICE: file6.txt: Not deleting as --dry-run
+53a53
+> NOTICE: file6.txt: Not deleting as --dry-run
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir

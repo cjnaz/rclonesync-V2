@@ -1,0 +1,10 @@
+test_all_changed
+
+Check trap for all files changed logic
+
+Setup initial state
+Change timestamp on all files except RCLONE_TEST
+Sync should pass
+Change timestamp on all files including RCLONE_TEST
+Sync should fail
+Sync with --force should pass

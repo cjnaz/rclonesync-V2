@@ -1,0 +1,16 @@
+:MSG:	Change timestamp on all files except RCLONE_TEST
+touch :PATH1:file* --date="2005-01-02"
+touch :PATH1:subdir/file* --date="2005-01-02"
+
+:MSG:	Sync should pass
+:RCSEXEC: :PATH1: :PATH2:
+
+:MSG:	Change timestamp on all files including RCLONE_TEST
+touch :PATH1:* --date="2004-01-02"
+touch :PATH1:subdir/* --date="2004-01-02"
+
+:MSG:	Sync should fail
+:RCSEXEC: :PATH1: :PATH2:
+
+:MSG:	Sync with --force should pass
+:RCSEXEC: :PATH1: :PATH2: --force

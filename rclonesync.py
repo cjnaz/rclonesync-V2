@@ -6,21 +6,26 @@ from __future__ import unicode_literals  # This sets py2.7 default string litera
 from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
 
 
-__version__ = "V2.10 200331"                         # Version number and date code
+__version__ = "V2.10 200411"                         # Version number and date code
 
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
 #
-# Chris Nelson, November 2017 - 2019
+# Chris Nelson, November 2017 - 2020
 # Revision and contributions:
 #   Hildo G. Jr., e2t, kalemas, and silenceleaf
 #
 # See README.md for revision history
 #
 # Known bugs:
-#   remove size compare since its not used
-#   Add file compares based on hashes
+#   remove size compare since its not used - NO
+#   Add file compares based on hashes - NO
+#   Add debug verbose level with rclone command print - DONE
+#   Add print of rclonesync version# on verbose - DONE
+#   Add trap for too many newer files on both paths ?? Issue 32 - DONE
+#   Removed '/' after remote: name in support of SFTP remotes
+#   Trapped keyboard interrupt.  Lock file removed.  Must run --first-sync to recover since filesystem state is unknown.
 #
 #==========================================================================================================
 
@@ -167,13 +172,14 @@ def bidirSync():
     # ***** rclone call wrapper functions with retries *****
     MAXTRIES=3
     def rclone_lsl(path, ofile, options=None, linenum=0):
+        process_args = [rclone, "lsl", path, "--config", rcconfig]
+        if options is not None:
+            process_args.extend(options)
+        if args.rclone_args is not None:
+            process_args.extend(args.rclone_args)
+        logging.debug("    rclone command:  {}".format(process_args))
         for x in range(MAXTRIES):
             with io.open(ofile, "wt", encoding='utf8') as of:
-                process_args = [rclone, "lsl", path, "--config", rcconfig]
-                if options is not None:
-                    process_args.extend(options)
-                if args.rclone_args is not None:
-                    process_args.extend(args.rclone_args)
                 if is_Windows_Py27:
                     p = win_subprocess.Popen(process_args, stdout=of, shell=True)
                     out, err = p.communicate()
@@ -182,22 +188,22 @@ def bidirSync():
                 else:
                     if not subprocess.call(process_args, stdout=of):
                         return 0
-
                 logging.info(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1)))
         logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
         return 1
 
     def rclone_cmd(cmd, p1=None, p2=None, options=None, linenum=0):
+        process_args = [rclone, cmd, "--config", rcconfig]
+        if p1 is not None:
+            process_args.append(p1)
+        if p2 is not None:
+            process_args.append(p2)
+        if options is not None:
+            process_args.extend(options)
+        if args.rclone_args is not None:
+            process_args.extend(args.rclone_args)
+        logging.debug("    rclone command:  {}".format(process_args))
         for x in range(MAXTRIES):
-            process_args = [rclone, cmd, "--config", rcconfig]
-            if p1 is not None:
-                process_args.append(p1)
-            if p2 is not None:
-                process_args.append(p2)
-            if options is not None:
-                process_args.extend(options)
-            if args.rclone_args is not None:
-                process_args.extend(args.rclone_args)
             try:
                 if is_Windows_Py27:
                     # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
@@ -341,6 +347,7 @@ def bidirSync():
     logging.info(">>>>> Path1 Checking for Diffs")
     path1_deltas = {}
     path1_deleted = 0
+    path1_found_same = False
     for key in path1_prior:
         _newer=False; _older=False; _size=False; _deleted=False
         if key not in path1_now:
@@ -361,6 +368,8 @@ def bidirSync():
 
         if _newer or _older or _size or _deleted:
             path1_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
+        else:
+            path1_found_same = True
 
     for key in path1_now:
         if key not in path1_prior:
@@ -382,6 +391,7 @@ def bidirSync():
     logging.info(">>>>> Path2 Checking for Diffs")
     path2_deltas = {}
     path2_deleted = 0
+    path2_found_same = False
     for key in path2_prior:
         _newer=False; _older=False; _size=False; _deleted=False
         if key not in path2_now:
@@ -402,6 +412,8 @@ def bidirSync():
 
         if _newer or _older or _size or _deleted:
             path2_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
+        else:
+            path2_found_same = True
 
     for key in path2_now:
         if key not in path2_prior:
@@ -434,6 +446,16 @@ def bidirSync():
 
     if too_many_path1_deletes or too_many_path2_deletes:
         return RTN_ABORT
+    
+    # ***** Check for all files changed, such as all dates changed due to DST change, to avoid errant copy everything.  See README.md. *****
+    if not force and not path1_found_same:
+        logging.error("All Path1 prior files were found to be changed.  Something is possibly wrong - Aborting.  Run with --force if desired.")
+        return RTN_ABORT
+        
+    if not force and not path2_found_same:
+        logging.error("All Path2 prior files were found to be changed.  Something is possibly wrong - Aborting.  Run with --force if desired.")
+        return RTN_ABORT
+        
 
 
     # ***** Update Path1 with all the changes on Path2 *****
@@ -555,7 +577,7 @@ def load_list(infile):
     # Format ex:
     #  3009805 2013-09-16 04:13:50.000000000 12 - Wait.mp3
     #   541087 2017-06-19 21:23:28.610000000 DSC02478.JPG
-    #    size  <----- datetime (epoch) ----> key
+    #     size <----- datetime (epoch) ----> key
 
     d = {}
     try:
@@ -656,8 +678,8 @@ if __name__ == '__main__':
                         help="Optional argument(s) to be passed to rclone.  Specify this switch and rclone ags at the end of rclonesync command line.",
                         nargs=argparse.REMAINDER)
     parser.add_argument('-v', '--verbose',
-                        help="Enable event logging with per-file details.",
-                        action='store_true')
+                        help="Enable event logging with per-file details.  Specify once for info and twice for debug detail.",
+                        action='count', default=0)
     parser.add_argument('--rc-verbose',
                         help="Enable rclone's verbosity levels (May be specified more than once for more details.  Also asserts --verbose.)",
                         action='count')
@@ -702,8 +724,10 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(format='%(message)s')
 
-    if verbose or rc_verbose>0 or force or first_sync or dry_run:
-        verbose = True
+    if verbose >= 2:
+        logging.getLogger().setLevel(logging.DEBUG)             # Log debug detail
+    elif verbose>0 or rc_verbose>0 or force or first_sync or dry_run:
+        # verbose = True
         logging.getLogger().setLevel(logging.INFO)              # Log each file transaction
     else:
         logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events
@@ -723,7 +747,7 @@ if __name__ == '__main__':
         if err:
             exit()
 
-    logging.info("***** BiDirectional Sync for Cloud Services using rclone *****")
+    logging.info("***** BiDirectional Sync for Cloud Services using rclone ({}) *****".format(__version__))
 
     rcconfig = args.config
     if rcconfig is None:

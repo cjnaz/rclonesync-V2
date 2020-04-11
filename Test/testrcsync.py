@@ -10,11 +10,10 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-
-
-version = "V1.6 191103"
+version = "V1.7 200411"
 
 # Revision history
+# V1.7 200411  Added Python version (2 or 3) to --Windows-testing
 # V1.6 191103  Unicode enhancements, including on the rclonesync command line
 # V1.5 191003  Force sorted order of ALL testcases.  Force sorted order of 
 #   results compare.  Deleted --config switch for Windows testing.  Fixed cleanup bug.
@@ -38,6 +37,14 @@ import subprocess
 import shutil
 import filecmp
 
+if "linux" not in sys.platform:  # <linux2> on Py2, <linux> on Py3
+    print ("This program only works on Linux systems, not Windows.")
+    exit()
+if "PYTHONIOENCODING" not in os.environ:
+    print ("Environment var PYTHONIOENCODING is not set (needed for output redirection).  Do 'export PYTHONIOENCODING=\'utf-8\''.")
+    exit()
+
+
 RCSEXEC = "../rclonesync.py"
 LOCALTESTBASE = "./"
 TESTDIR = "testdir/"
@@ -52,50 +59,34 @@ def rcstest():
 
     TESTCASEROOT = "./tests/" + testcase + "/"
     INITIALDIR   = TESTCASEROOT + "initial/"
-    # MODFILESDIR  = TESTCASEROOT + "modfiles/"
     GOLDENDIR    = TESTCASEROOT + "golden/"
     CHANGECMDS   = TESTCASEROOT + "/ChangeCmds.txt"         # File of commands for changes from initial setup state for a test
     SYNCCMD      = TESTCASEROOT + "/SyncCmds.txt"           # File of rclonesync (and other) commands
 
     print ("CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2")
-    # subprocess.call([rclone, "purge", path1, "--config", rcconfig])
-    # subprocess.call([rclone, "purge", path2, "--config", rcconfig])
     if os.path.exists(WORKDIR):
         shutil.rmtree(WORKDIR)
     os.mkdir(WORKDIR)
 
-    # testdirpath1 = TESTDIR + "path1/"
-    # try:
-    #     subprocess.Popen([rclone, "purge", path1, "--config", rcconfig ], stdout=devnull, stderr=devnull)
-    # except:
-    #     pass
     FNULL = open(os.devnull, 'w')
-    # subprocess.call(['echo', 'foo'], stdout=FNULL, stderr=subprocess.STDOUT)
     subprocess.call([rclone, "purge", path1, "--config", rcconfig ], stdout=FNULL, stderr=FNULL)
     subprocess.call([rclone, "purge", path2, "--config", rcconfig ], stdout=FNULL, stderr=FNULL)
 
-    # raw_input ("Hello")
 
-
-    # git tends to change file mod dates.  For test stability, jam initial dates to a fix past date.
+    # git tends to change file mod dates.  For test stability, jam initial dates to a fixed past date.
     # test cases that changes files (test_changes, for example) will touch specific files to fixed new dates.
     subprocess.call("find " + INITIALDIR + r' -type f -exec touch --date="2000-01-01" {} +', shell=True)
 
     subprocess.call([rclone, "copy", INITIALDIR, path1, "--config", rcconfig])
     subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig])
     sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
-    # raw_input ("hello")
     print ("\nDO <rclonesync --first-sync> to set LSL files baseline")
     subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR,
                      "--no-datetime-log", "--rclone", rclone, "--config", rcconfig])
     sys.stdout.flush()
-    # raw_input ("hello")
-    
     
 
     print ("RUN CHANGECMDS to apply changes from test case initial state")
-        # with io.open(file, mode='rt', encoding='utf8',errors="replace") as inf:   # use io.open for unicode support (??)
-
     with io.open(CHANGECMDS, mode='rt', encoding='utf8', errors="replace") as ifile:
         for line in ifile:
             line = line[0:line.find('#')].lstrip().rstrip() # Throw away comment and any leading & trailing whitespace.
@@ -112,10 +103,6 @@ def rcstest():
                             beginning = _line[0:rclone_args_index]
                             rcargs = _line[rclone_args_index:]
                         line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config", rcconfig] + rcargs)
-                    # if ":RCSEXEC:" in line:
-                    #     line += " --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config " + rcconfig
-                    #     # if args.config is not None:
-                    #     #     line += "--config" + args.config
                     xx = line \
                          .replace(":/", ":") \
                          .replace(":TESTCASEROOT:", TESTCASEROOT) \
@@ -164,19 +151,13 @@ def rcstest():
                         if args.Windows_testing and ":RCSEXEC:" in line:
                             xx = xx.replace("--config","").replace(rcconfig,"").replace('/','\\')     # Must use Windows-side user default config file
                             print ("    {}".format(xx))
-                            # os.remove("wincmd.bat")
                             with io.open("wincmd.bat", mode='wt', encoding='utf-8') as wincmd_bat:
-                                # print ("    {} >> {} 2>&1".format(xx.replace('/','\\'), CONSOLELOGFILE.replace('/','\\')))
-                                # wincmd_bat.write("    {} >> {} 2>&1".format(xx, CONSOLELOGFILE.replace('/','\\')))
-                                wincmd_bat.write("    {} >> {} 2>&1 & del wincmd.bat".format(xx, CONSOLELOGFILE.replace('/','\\')))
+                                wincmd_bat.write("    py -{} {} >> {} 2>&1 & del wincmd.bat".format(args.Windows_testing, xx, CONSOLELOGFILE.replace('/','\\')))
                                 wincmd_bat.flush()
                                 os.fsync(wincmd_bat.fileno())
-                            # subprocess.call("cat wincmd.bat", shell=True)
                             if sys.version_info[0] < 3:
-                                # raw_input("Hit return after entering above on Windows side. >>")
                                 raw_input("Hit return after running <wincmd.bat> on Windows side. >>")
                             else:
-                                # input("Hit return after entering above on Windows side. >>")
                                 input("Hit return after running <wincmd.bat> on Windows side. >>")
                         else:
                             print ("    {}".format(xx))
@@ -199,7 +180,6 @@ def rcstest():
             xxx = ""
             for file in dirlist:
                 xxx += file + ', '
-                # xxx += file.decode('utf-8') + ', '
             return xxx[:-2]
 
         goldenfiles =  sorted(os.listdir(GOLDENDIR))
@@ -222,7 +202,7 @@ def rcstest():
                 errcnt += 1
                 print ("File found in Results but not in Golden:  <{}>".format(xx))
 
-        if args.Windows_testing:
+        if args.Windows_testing is not None:
             # hack the test result consolelog.txt, swapping to Linux-style slashes
             with io.open(CONSOLELOGFILE, encoding='utf-8') as f:
                 s = f.read()
@@ -279,8 +259,8 @@ if __name__ == '__main__':
                         help="Disable cleanup of Path1 and Path2 testdirs.  Useful for debug.",
                         action='store_true')
     parser.add_argument('--Windows-testing',
-                        help="Disable running rclonesyncs during the SyncCmds phase.  Used for Windows testing.",
-                        action='store_true')
+                        help="Disable running rclonesyncs during the SyncCmds phase.  Specify Windows Python version (2 or 3).",
+                        type=int)
     parser.add_argument('--rclonesync',
                         help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC),
                         default=RCSEXEC)
@@ -340,6 +320,11 @@ if __name__ == '__main__':
                 print ("ERROR  Path2 parameter <{}> not in list of configured remotes: {}".format(path2base, clouds)); exit()
         else:
             print ("ERROR  Path2 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path2, clouds)); exit()
+
+    if args.Windows_testing is not None:
+        if args.Windows_testing != 2 and args.Windows_testing != 3:
+            print ("ERROR  Specify '2' (Python 2.7) or '3' (Python 3.x) with --Windows-testing")
+            exit()
 
 
     if testcase != "ALL":
