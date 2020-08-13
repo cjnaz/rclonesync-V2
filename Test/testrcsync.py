@@ -10,18 +10,19 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.7 200411"
+version = "V1.8 200813"
 
 # Revision history
-# V1.7 200411  Added Python version (2 or 3) to --Windows-testing
-# V1.6 191103  Unicode enhancements, including on the rclonesync command line
-# V1.5 191003  Force sorted order of ALL testcases.  Force sorted order of 
+# V1.8 200813 - Added :SAVELSL: feature
+# V1.7 200411 - Added Python version (2 or 3) to --Windows-testing
+# V1.6 191103 - Unicode enhancements, including on the rclonesync command line
+# V1.5 191003 - Force sorted order of ALL testcases.  Force sorted order of 
 #   results compare.  Deleted --config switch for Windows testing.  Fixed cleanup bug.
-# V1.4 190408  Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
-# V1.3 190330  Added hook for running tests with Windows.  See README.md.
-# V1.2 181001  Add support for path to rclone
-# V1.1 180729  Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
-# V1.0 180701  New
+# V1.4 190408 - Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
+# V1.3 190330 - Added hook for running tests with Windows.  See README.md.
+# V1.2 181001 - Add support for path to rclone
+# V1.1 180729 - Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
+# V1.0 180701 - New
 
 # Todos
 #   sym links are not supported.
@@ -102,7 +103,7 @@ def rcstest():
                             rclone_args_index = _line.index("--rclone-args")
                             beginning = _line[0:rclone_args_index]
                             rcargs = _line[rclone_args_index:]
-                        line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config", rcconfig] + rcargs)
+                        line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --keep-chkfiles --rclone :RCLONE: --config", rcconfig] + rcargs)
                     xx = line \
                          .replace(":/", ":") \
                          .replace(":TESTCASEROOT:", TESTCASEROOT) \
@@ -126,7 +127,14 @@ def rcstest():
                 if len(line) > 0:
                     if ":MSG:" in line:
                         print ("    {}".format(line))
-                        subprocess.call(["echo", line], stdout=logfile, stderr=logfile)
+                        subprocess.call(["echo", '\n'+line+'\n'], stdout=logfile, stderr=logfile)
+                    elif ":SAVELSL:" in line:
+                        print ("    {}".format(line))
+                        subprocess.call(["echo", '\n'+line+'\n'], stdout=logfile, stderr=logfile)
+                        prefix = line.split()[1]
+                        for _file in os.listdir(WORKDIR):
+                            if _file.startswith("LSL"):
+                                shutil.copy2(os.path.join(WORKDIR, _file), os.path.join(WORKDIR, prefix + '_' + _file))
                     else:
                         if ":RCSEXEC:" in line:
                             _line = line.split()    # Move any --rclone-args after additional switches

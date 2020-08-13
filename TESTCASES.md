@@ -130,17 +130,20 @@ Keyword| Points to | Example
 `:WORKDIR:` | The temporary test working directory | `:RCLONE: copy :TESTCASEROOT:filtersfile.txt :WORKDIR:`
 `:MSG:` | Print the line to the console and to the consolelog.txt file when processing SyncCmds.txt. | `:MSG: Hello, my name is Fred`
 
-Note that the substituted `:TESTCASEROOT:`, `:PATH1:`, `:PATH2:`, and `:WORKDIR:` terms end with `/`, so it is not necessary 
+Additional notes:
+- The substituted `:TESTCASEROOT:`, `:PATH1:`, `:PATH2:`, and `:WORKDIR:` terms end with `/`, so it is not necessary 
 to include a slash in the usage. `rclone delete :PATH1:subdir/file1.txt` and `rclone delete :PATH1:/subdir/file1.txt` 
 are functionally equivalent.
-
-**New in V1.4:  `:RCEXEC:` lines may include the `--rclone-args` switch to pass arbitrary switches to rclonesync.** See documentation for rclonesync.
+- `:RCEXEC:` lines may include the `--rclone-args` switch to pass arbitrary switches to rclonesync.** See documentation for rclonesync.
+- `:SAVELSL: <somename>` may be used to snapshot the current LSL files in the middle of a multi-part test.  The `<somename>` text is prepended to the current LSL files.
 
 ## Parting shots
 Developed on CentOS 7 and tested on Python 2.7.x and Python 3.8.0.  Issues echo, touch and diff subprocess commands that surely 
 will not work on Windows (see Windows usage, above).
 
 ## Revision history
+- V1.8 200813 - Added :SAVELSL: feature
+- V1.7 200411 - Added Python version (2 or 3) to --Windows-testing
 - V1.6 191103 - Unicode enhancements, including on the rclonesync command line
 - V1.5 191003 - Force sorted order of ALL testcases.  Force sorted order of results compare.  Deleted --config switch for Windows testing.  Fixed cleanup bug.
 - V1.4 190408 - Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.

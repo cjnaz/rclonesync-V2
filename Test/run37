@@ -140,7 +140,8 @@ RUN SYNCCMDS (console output captured to consolelog.txt)
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
     :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
     rclone delete ./testdir/path2/subdir/RCLONE_TEST
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Path2_missing
     :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
     rclone copy ./testdir/path1/subdir/RCLONE_TEST ./testdir/path2/
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
@@ -148,7 +149,9 @@ RUN SYNCCMDS (console output captured to consolelog.txt)
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
     :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
     rclone delete ./testdir/path1/RCLONE_TEST
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Path1_missing
+    rm ./testwd/LSL*
     :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
     :MSG:	7) Run sync with --check-access.  Should pass.
@@ -156,19 +159,37 @@ RUN SYNCCMDS (console output captured to consolelog.txt)
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
-Number of results files (5) match
+Number of results files (11) match
 
 ----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
-
-----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+Match:  <Path1_missing_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+Match:  <Path1_missing_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <Path1_missing_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Path1_missing_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
@@ -176,6 +197,191 @@ Match:  <consolelog.txt>
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
 TEST <test_check_access> PASSED
+
+
+===================================================================
+***** Test case <test_check_access_filters> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync.py>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+DO <rclonesync --first-sync> to set LSL files baseline
+RUN CHANGECMDS to apply changes from test case initial state
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG:  EXCLUDE OTHER TESTS
+    :MSG:  Another --first-sync to get the ExcludeOther_filtersfile.txt.MD5 built.
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync --filters-file ./tests/test_check_access_filters/ExcludeOther_filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:  EXCLUDE - Test Include/Exclude filters for Check Access
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --filters-file ./tests/test_check_access_filters/ExcludeOther_filtersfile.txt --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Exclude_Initial
+    :MSG:  EXCLUDE - Delete RCLONE_TEST files in excluded directories
+    rclone delete ./testdir/path2/subdir/subdirA/RCLONE_TEST
+    rclone delete ./testdir/path1/subdir-not/RCLONE_TEST
+    rclone delete ./testdir/path2/subdir-not/subdir-not2/RCLONE_TEST
+    rclone delete ./testdir/path1/subdirX/RCLONE_TEST
+    :MSG:  EXCLUDE - Test Should PASS
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --filters-file ./tests/test_check_access_filters/ExcludeOther_filtersfile.txt --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Exclude_PassRun
+    :MSG:  EXCLUDE - Delete RCLONE_TEST files in included directories
+    rclone delete ./testdir/path2/RCLONE_TEST
+    rclone delete ./testdir/path1/subdir/RCLONE_TEST
+    :MSG:  EXCLUDE - Test Should CRITICAL ERROR
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --filters-file ./tests/test_check_access_filters/ExcludeOther_filtersfile.txt --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Exclude_ErrorRun
+    rm ./testwd/LSL*
+    :MSG:  INCLUDE OTHER TESTS
+    :MSG:  Reset to the initial state
+    rclone copy ./tests/test_check_access_filters/initial ./testdir/path1/
+    rclone sync ./testdir/path1/ ./testdir/path2/
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync --filters-file ./tests/test_check_access_filters/IncludeOther_filtersfile.txt  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:  INCLUDE - Test Include/Exclude filters for Check Access
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --filters-file ./tests/test_check_access_filters/IncludeOther_filtersfile.txt --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Include_Initial
+    :MSG:  INCLUDE - Delete RCLONE_TEST files in excluded directories
+    rclone delete ./testdir/path2/subdir/subdirA/RCLONE_TEST
+    rclone delete ./testdir/path1/subdir-not/RCLONE_TEST
+    rclone delete ./testdir/path2/subdir-not/subdir-not2/RCLONE_TEST
+    :MSG:  INCLUDE - Test Should PASS
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --filters-file ./tests/test_check_access_filters/IncludeOther_filtersfile.txt --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Include_PassRun
+    :MSG:  INCLUDE - Delete RCLONE_TEST files in included directories
+    rclone delete ./testdir/path2/RCLONE_TEST
+    rclone delete ./testdir/path1/subdir/RCLONE_TEST
+    rclone delete ./testdir/path1/subdirX/subdirX1/RCLONE_TEST
+    :MSG:  INCLUDE - Test Should CRITICAL ERROR
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --verbose --filters-file ./tests/test_check_access_filters/IncludeOther_filtersfile.txt --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Include_ErrorRun
+    rm ./testwd/LSL*
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (25) match
+
+----------------------------------------------------------
+Match:  <Exclude_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+Match:  <Exclude_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <Exclude_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Exclude_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <Exclude_Initial_LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <Exclude_Initial_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+Match:  <Exclude_Initial_LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <Exclude_Initial_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Exclude_PassRun_LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <Exclude_PassRun_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+Match:  <Exclude_PassRun_LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <Exclude_PassRun_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+10,11d9
+<       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+13a12,13
+>       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+
+----------------------------------------------------------
+Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+10,11d9
+<       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+13a12,13
+>       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+3d2
+<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+4a4
+>       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+3d2
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+4a4
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1>
+10,11d9
+<       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+13a12,13
+>       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+
+----------------------------------------------------------
+Match:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path2>
+10,11d9
+<       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+13a12,13
+>       110 2000-01-01 00:00:00.000000000 subdir/subdirB/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/subdirB/file30.txt
+
+----------------------------------------------------------
+MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+3d2
+<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+4a4
+>       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_check_access_filters> FAILED WITH 9 ERRORS.
 
 
 ===================================================================
@@ -190,28 +396,42 @@ RUN SYNCCMDS (console output captured to consolelog.txt)
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
     :MSG:	2) Delete the remote subdir .chk_file, run sync, will fail critical
     rclone delete ./testdir/path2/subdir/.chk_file
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Path2_missing
+    rm ./testwd/LSL*
     :MSG:	3) Put the remote subdir .chk_file back, run --first-sync
     rclone copy ./testdir/path1/subdir/.chk_file ./testdir/path2/
     ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --first-sync --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
     :MSG:	4) Run sync with --check-access.  Should pass.
-    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    ../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename .chk_file --keep-chkfiles  --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
 
 COMPARE RESULTS files to the testcase golden directory
 ----------------------------------------------------------
-Number of results files (5) match
+Number of results files (9) match
 
 ----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
 
 ----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_CHK>
 
 ----------------------------------------------------------
 Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
-Match:  <LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path1_CHK>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path2_CHK>
+
+----------------------------------------------------------
+Match:  <Path2_missing_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
@@ -281,18 +501,14 @@ Match:  <LSL_._testdir_path1_._testdir_path2__Path2_DRYRUN>
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-45d44
-< NOTICE: file11.txt: Not copying as --dry-run
-46a46
-> NOTICE: file11.txt: Not copying as --dry-run
-48d47
-< NOTICE: file1.txt: Not copying as --dry-run
-49a49
+47a48
 > NOTICE: file1.txt: Not copying as --dry-run
-52d51
-< NOTICE: file6.txt: Not deleting as --dry-run
-53a53
-> NOTICE: file6.txt: Not deleting as --dry-run
+49d49
+< NOTICE: file7.txt: Not copying as --dry-run
+51c51
+< NOTICE: file1.txt: Not copying as --dry-run
+---
+> NOTICE: file7.txt: Not copying as --dry-run
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir

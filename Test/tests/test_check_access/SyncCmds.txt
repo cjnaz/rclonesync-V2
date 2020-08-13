@@ -3,7 +3,8 @@
 
 :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
 :RCLONE: delete :PATH2:subdir/RCLONE_TEST
-:RCSEXEC: :PATH1: :PATH2: --check-access
+:RCSEXEC: :PATH1: :PATH2: --check-access --keep-chkfiles
+:SAVELSL: Path2_missing
 
 :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
 :RCLONE: copy :PATH1:subdir/RCLONE_TEST :PATH2:
@@ -14,7 +15,9 @@
 
 :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
 :RCLONE: delete :PATH1:RCLONE_TEST
-:RCSEXEC: :PATH1: :PATH2: --check-access
+:RCSEXEC: :PATH1: :PATH2: --check-access --keep-chkfiles
+:SAVELSL: Path1_missing
+rm :WORKDIR:LSL*
 
 :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
 :RCSEXEC: :PATH1: :PATH2: --check-access --first-sync

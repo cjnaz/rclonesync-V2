@@ -1,0 +1,58 @@
+:MSG:  EXCLUDE OTHER TESTS
+:MSG:  Another --first-sync to get the ExcludeOther_filtersfile.txt.MD5 built.
+:RCSEXEC: :PATH1: :PATH2: --first-sync --filters-file :TESTCASEROOT:ExcludeOther_filtersfile.txt
+
+# testrcsync inserts another --verbose.  Two --verbose causes dump of rclone command sequences so that we can see the --filter construction.
+:MSG:  EXCLUDE - Test Include/Exclude filters for Check Access
+:RCSEXEC: :PATH1: :PATH2: --check-access --verbose --filters-file :TESTCASEROOT:ExcludeOther_filtersfile.txt  --keep-chkfiles 
+:SAVELSL: Exclude_Initial
+
+:MSG:  EXCLUDE - Delete RCLONE_TEST files in excluded directories
+:RCLONE: delete :PATH2:/subdir/subdirA/RCLONE_TEST
+:RCLONE: delete :PATH1:/subdir-not/RCLONE_TEST
+:RCLONE: delete :PATH2:/subdir-not/subdir-not2/RCLONE_TEST
+:RCLONE: delete :PATH1:/subdirX/RCLONE_TEST
+
+:MSG:  EXCLUDE - Test Should PASS
+:RCSEXEC: :PATH1: :PATH2: --check-access --verbose --filters-file :TESTCASEROOT:ExcludeOther_filtersfile.txt --keep-chkfiles 
+:SAVELSL: Exclude_PassRun
+
+:MSG:  EXCLUDE - Delete RCLONE_TEST files in included directories
+:RCLONE: delete :PATH2:/RCLONE_TEST
+:RCLONE: delete :PATH1:/subdir/RCLONE_TEST
+
+:MSG:  EXCLUDE - Test Should CRITICAL ERROR
+:RCSEXEC: :PATH1: :PATH2: --check-access --verbose --filters-file :TESTCASEROOT:ExcludeOther_filtersfile.txt --keep-chkfiles 
+:SAVELSL: Exclude_ErrorRun
+rm :WORKDIR:LSL*
+
+
+:MSG:  INCLUDE OTHER TESTS
+
+:MSG:  Reset to the initial state
+:RCLONE: copy :TESTCASEROOT:/initial :PATH1:
+:RCLONE: sync :PATH1: :PATH2:
+:RCSEXEC: :PATH1: :PATH2: --first-sync --filters-file :TESTCASEROOT:IncludeOther_filtersfile.txt
+
+:MSG:  INCLUDE - Test Include/Exclude filters for Check Access
+:RCSEXEC: :PATH1: :PATH2: --check-access --verbose --filters-file :TESTCASEROOT:IncludeOther_filtersfile.txt --keep-chkfiles 
+:SAVELSL: Include_Initial
+
+:MSG:  INCLUDE - Delete RCLONE_TEST files in excluded directories
+:RCLONE: delete :PATH2:/subdir/subdirA/RCLONE_TEST
+:RCLONE: delete :PATH1:/subdir-not/RCLONE_TEST
+:RCLONE: delete :PATH2:/subdir-not/subdir-not2/RCLONE_TEST
+
+:MSG:  INCLUDE - Test Should PASS
+:RCSEXEC: :PATH1: :PATH2: --check-access --verbose --filters-file :TESTCASEROOT:IncludeOther_filtersfile.txt --keep-chkfiles 
+:SAVELSL: Include_PassRun
+
+:MSG:  INCLUDE - Delete RCLONE_TEST files in included directories
+:RCLONE: delete :PATH2:/RCLONE_TEST
+:RCLONE: delete :PATH1:/subdir/RCLONE_TEST
+:RCLONE: delete :PATH1:/subdirX/subdirX1/RCLONE_TEST
+
+:MSG:  INCLUDE - Test Should CRITICAL ERROR
+:RCSEXEC: :PATH1: :PATH2: --check-access --verbose --filters-file :TESTCASEROOT:IncludeOther_filtersfile.txt --keep-chkfiles 
+:SAVELSL: Include_ErrorRun
+rm :WORKDIR:LSL*

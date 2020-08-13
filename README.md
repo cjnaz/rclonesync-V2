@@ -37,12 +37,10 @@ to check for proper operation.
 ```
 
 ## Notable changes in the latest release
-V2.10 200411
-- Added verbose level 2 (debug) with rclone command log (issue #46) - Enable with `-vv` or `-v -v`.  Issued rclone commands submitted to subprocess are logged as a list.
-- Removed '/' after remote: name in support of SFTP remotes (issue #46) - SFTP remotes support path references either relative to the user's home directory or absolute full paths.  For all other remote types (that I am aware of) the remote:path is always relative to the remote's config'd base directory.  In rclonesync versions prior to V2.10, `remote:path` was being incorrectly munged to `remote:/path/` (an absolute path relative to the root of the filesystem on SFTP remotes).  As of this version it is now munged to `remote:path/`.  The training slash is benign, and added for coding consistency.
-- Added error trap for all files changed (such as for system timezone change, issue #32) - This error trap logic is added to cover the case when such as when the system timezone has been changed, resulting in timestamps on all files seen as changed.  A `--first-sync` or `--force` is needed to recover.  Be careful - perhaps check with `--dry-run`!
-- Added trap of keyboard interrupt / SIGINT and lock file removal - A `--first-sync` is required since the state of the filesystems is unknown.
-- Added log of rclonesync version number in the verbose sync header text.
+
+V2.11 200813 Bug fix for proper serarching during the check access phase.  
+- Previously, the user's filters file was not utilized, resulting in searching for check files in normally masked directories, causing access errors and inefficiency.  See [bug #55](https://github.com/cjnaz/rclonesync-V2/issues/55).  With this update, the user's filters is parsed and the search is for check files in all non-excluded directories.
+- Added `--keep-chkfiles` switch to aid in testing and debug.
 
 
 ## High level behaviors / operations
@@ -62,7 +60,8 @@ $ ./rclonesync.py -h
 usage: rclonesync.py [-h] [-1] [-c] [--check-filename CHECK_FILENAME]
                      [-D MAX_DELETES] [-F] [-e] [-f FILTERS_FILE] [-r RCLONE]
                      [--config CONFIG] [--rclone-args ...] [-v] [--rc-verbose]
-                     [-d] [-w WORKDIR] [--no-datetime-log] [-V]
+                     [-d] [-w WORKDIR] [--no-datetime-log] [--keep-chkfiles]
+                     [-V]
                      Path1 Path2
 
 ***** BiDirectional Sync for Cloud Services using rclone *****
@@ -104,17 +103,20 @@ optional arguments:
   --rclone-args ...     Optional argument(s) to be passed to rclone. Specify
                         this switch and rclone ags at the end of rclonesync
                         command line.
-  -v, --verbose         Enable event logging with per-file details.
+  -v, --verbose         Enable event logging with per-file details. Specify
+                        once for info and twice for debug detail.
   --rc-verbose          Enable rclone's verbosity levels (May be specified
                         more than once for more details. Also asserts
                         --verbose.)
   -d, --dry-run         Go thru the motions - No files are copied/deleted.
                         Also asserts --verbose.
   -w WORKDIR, --workdir WORKDIR
-                        Specified working dir - used for testing. Default is
+                        Specified working dir - useful for testing. Default is
                         ~user/.rclonesyncwd.
   --no-datetime-log     Disable date-time from log output - useful for
                         testing.
+  --keep-chkfiles       Disable deleting the --check-access phase CHK files -
+                        useful for testing.
   -V, --version         Return rclonesync's version number and exit.
 ```	
 
@@ -312,25 +314,26 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
-- V2.10 200411 Added verbose level 2 (debug) with rclone command log (issue #46); Removed '/' after remote: name in support of SFTP remotes (issue #46); Added error trap for all files changed (such as for system timezone change, issue #32); Added trap of keyboard interrupt / SIGINT and lock file removal; Added log of rclonesync version number.
-- V2.9.1 191208 Fixed workdir bug issue #39.
-- V2.9 191103 Support Unicode in command line args.  Support Python 3 on Windows.
-- V2.8 191003 Fixed Windows platform detect bug (#27), utilized Python's tempfile directory feature (#28), and made non-verbose logging completely quiet (#31).
-- V2.7 190429 Added paths-specific lock filename and exit codes.  Corrected listremotes subprocess call (thanks @JasperJuergensen).
-- V2.6 190408 Added --config and --rclone-args switches.
-- V2.5 190330 Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
-- V2.4 181004 Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 
+- V2.11 200813 - Bug fix for proper serarching during the check access phase.  
+- V2.10 200411 - Added verbose level 2 (debug) with rclone command log (issue #46); Removed '/' after remote: name in support of SFTP remotes (issue #46); Added error trap for all files changed (such as for system timezone change, issue #32); Added trap of keyboard interrupt / SIGINT and lock file removal; Added log of rclonesync version number.
+- V2.9.1 191208 - Fixed workdir bug issue #39.
+- V2.9 191103 - Support Unicode in command line args.  Support Python 3 on Windows.
+- V2.8 191003 - Fixed Windows platform detect bug (#27), utilized Python's tempfile directory feature (#28), and made non-verbose logging completely quiet (#31).
+- V2.7 190429 - Added paths-specific lock filename and exit codes.  Corrected listremotes subprocess call (thanks @JasperJuergensen).
+- V2.6 190408 - Added --config and --rclone-args switches.
+- V2.5 190330 - Fixed Windows with Python 2.7 extended characters (UTF-8) support.  
+- V2.4 181004 - Added --remove-empty-directories and --check-filename switches.  **NOTE** that the rmdirs default behavior changed as of 
 this release:  empty directories are NOT deleted by default, whereas they were deleted in prior releases.
 
-- V2.3 181001 Added Windows support.  UNC paths (//server/share/path) now supported.  
+- V2.3 181001 - Added Windows support.  UNC paths (//server/share/path) now supported.  
 Minimum Python V2.7 is now enforced.  Added --rclone switch.
 
-- V2.2 180921 Changed MD5 hash of the filtersfile for support of extended character sets, such as Cyrillic.  Thanks for the fix @erakli!
+- V2.2 180921 - Changed MD5 hash of the filtersfile for support of extended character sets, such as Cyrillic.  Thanks for the fix @erakli!
 
-- V2.1 180729 Reworked to Path1/Path2, allowing unrestricted sync between local and remote filesystems. Added blocking of syncs of Google
+- V2.1 180729 - Reworked to Path1/Path2, allowing unrestricted sync between local and remote filesystems. Added blocking of syncs of Google
 doc files (size -1).  Google doc file are logged as not syncable, but do not cause the overall rclonesync run to fail.
 
-- V2.0 180701 Added rclonesync test capabilities. 
+- V2.0 180701 - Added rclonesync test capabilities. 
 		Fixed corner case bug that copied a file from Remote to Local twice. 
 		Changed from --ExcludeListFile to --filters-file, which requires minor adjustments to your excludes file (add a '- ' in front of your
 		excludes). See [rclone Filtering documentation](https://rclone.org/filtering/#filter-from-read-filtering-patterns-from-a-file).)
@@ -339,35 +342,35 @@ doc files (size -1).  Google doc file are logged as not syncable, but do not cau
 		Changed rclonesync's interface to align to Linux command line standards (lower case, hyphens between words).  Internally adjusted
 		the code to reasonably closely align with Python coding standards in PEP 8.
 		
-- 180611  Bug fix:  A deleted a file on the Remote filesystem results in an rclone delete on the Local filesystem.  If switches to rclone are enabled 
+- 180611 -  Bug fix:  A deleted a file on the Remote filesystem results in an rclone delete on the Local filesystem.  If switches to rclone are enabled 
 		(--rc-verbose or --dry-run) then the issued delete command was incorrect -- the switches became the p2 param to rcloneCmd.
 		Added `options=' to all calls to rcloneCmd to force switches the options keyword arg.
 
-- 180314  Incorporated rework by croadfeldt, changing handling of subprocess commands and many src/dest, etc. from strings 
+- 180314 -  Incorporated rework by croadfeldt, changing handling of subprocess commands and many src/dest, etc. from strings 
 		to lists.  No functional or interface changes.  Added --dry-run oddity note to the README.
 
-- 171119  Added 3x retry on rclone commands to improve robustness.  Beautified the `--verbose` mode output.  Broke out control of 
+- 171119 -  Added 3x retry on rclone commands to improve robustness.  Beautified the `--verbose` mode output.  Broke out control of 
 		rclone's verbosity with the`--rc-verbose` switch.
 		
-- 171115  Remote supports path entry.  Reworked LSL file naming to support for Remote paths.
+- 171115 -  Remote supports path entry.  Reworked LSL file naming to support for Remote paths.
        --verbose switch applies to all rclone copyto, moveto, delete, and sync calls (was only on sync)
 
-- 171112  Revamped error handling to be effective.  See Readme.md.
+- 171112 -  Revamped error handling to be effective.  See Readme.md.
        Added --check-access switch to make filesystems access test optional.  Default is False (no check).
 
-- 171015  Moved tooManyLocalDeletes error message down below the Remote check to provide both Local and Remote change lists to the stdout
+- 171015 -  Moved tooManyLocalDeletes error message down below the Remote check to provide both Local and Remote change lists to the stdout
 
-- 170917  Added --Force switch - required when the % changes on Local or Remote system are greater than maxDelta.  Safeguard for
+- 170917 -  Added --Force switch - required when the % changes on Local or Remote system are greater than maxDelta.  Safeguard for
        Local or Remote not online.
        Added --ignore-times to the copy of changed file on Remote to Local.  Was not copying files with matching sizes.
 
-- 170805  Added --verbose command line switch 
+- 170805 -  Added --verbose command line switch 
 
-- 170730  Horrible bug - Remote lsl failing results in deleting all Local files, and then iteratively replicating _Local and _Remote files.
+- 170730 -  Horrible bug - Remote lsl failing results in deleting all Local files, and then iteratively replicating _Local and _Remote files.
        Added connection test/checking files to abort if the basic connection is down.  RCLONE_TEST files on the Local system
        must match the Remote system (and be unchanged), else abort.
        Added lockfile so that a second run aborts if a first run is still in process, or failed and left the lockfile in place.
        Added python logging, sorted processing
 
-- 170716  New
+- 170716 -  New
 

@@ -1,0 +1,1 @@
+This file prevents rclonesync from deleting empty directories.
