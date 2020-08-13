@@ -6,7 +6,7 @@ from __future__ import unicode_literals  # This sets py2.7 default string litera
 from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
 
 
-__version__ = "V2.10 200411"                         # Version number and date code
+__version__ = "V2.11 200813"                         # Version number and date code
 
 
 #==========================================================================================================
@@ -21,11 +21,6 @@ __version__ = "V2.10 200411"                         # Version number and date c
 # Known bugs:
 #   remove size compare since its not used - NO
 #   Add file compares based on hashes - NO
-#   Add debug verbose level with rclone command print - DONE
-#   Add print of rclonesync version# on verbose - DONE
-#   Add trap for too many newer files on both paths ?? Issue 32 - DONE
-#   Removed '/' after remote: name in support of SFTP remotes
-#   Trapped keyboard interrupt.  Lock file removed.  Must run --first-sync to recover since filesystem state is unknown.
 #
 #==========================================================================================================
 
@@ -218,7 +213,6 @@ def bidirSync():
                 if p.returncode == 0:
                     return 0
             except Exception as e:
-                # logging.warning(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
                 logging.info(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
                 logging.info("message:  <{}>".format(e))
         logging.error(print_msg("ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
@@ -263,7 +257,7 @@ def bidirSync():
         return RTN_CRITICAL
 
 
-    # ***** Check basic health of access to the Path1 and Path2 filesystems *****
+    # ***** Check basic access health to the Path1 and Path2 filesystems *****
     if check_access:
         if first_sync:
             logging.info(">>>>> --check-access skipped on --first-sync")
@@ -272,10 +266,35 @@ def bidirSync():
             path1_chk_list_file = list_file_base + '_Path1_CHK'
             path2_chk_list_file = list_file_base + '_Path2_CHK'
 
-            if "testdir" not in path1_base:         # Normally, disregard any check files in the test directory tree.
-                xx = ['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- *']
-            else:                                   # If testing, include check files within the test directory tree.
-                xx = ['--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- *']
+            xx = []
+            if filters_file is not None:
+                exclude_other = False
+                with io.open(filters_file, mode='rt', encoding='utf8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line == "- **":
+                            exclude_other = True
+                            continue
+                        if line.startswith("-") and (line.endswith("/") or line.endswith("/*") or line.endswith("/**")):
+                            xx.extend(['--filter', line])
+                        if line.startswith("+") and (line.endswith("/*") or line.endswith("/**")):
+                            xx.extend(['--filter', line + chk_file])
+
+                xx.extend(['--filter', '- rclonesync/Test/'])   # Exclude any check files that may be in any rclonesync/Test source tree
+
+                if "testdir" not in path1_base:                 # If not testing, exclude any check files in any remnant test directory tree.
+                    xx.extend(['--filter', '- /testdir/'])
+                
+                if not exclude_other:
+                    xx.extend(['--filter', '+ ' + chk_file])
+
+                xx.extend(['--filter', '- **'])
+            
+            else:   # No filters_file case
+                if "testdir" not in path1_base:         # Normally, disregard any check files in the test directory tree.
+                    xx.extend(['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- **'])
+                else:                                   # If testing, include check files within the test directory tree.
+                    xx.extend(['--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- **'])
             
             if rclone_lsl(path1_base, path1_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                 return RTN_ABORT
@@ -311,8 +330,9 @@ def bidirSync():
             if check_error:
                 return RTN_CRITICAL
 
-            os.remove(path1_chk_list_file)          # _*ChkLSL files will be left if the check fails.  Look at these files for clues.
-            os.remove(path2_chk_list_file)
+            if not args.keep_chkfiles:
+                os.remove(path1_chk_list_file)          # _PathX_CHK files will be left if the check fails.  Look at these files for clues.
+                os.remove(path2_chk_list_file)
 
 
     # ***** Get current listings of the path1 and path2 trees *****
@@ -456,7 +476,6 @@ def bidirSync():
         logging.error("All Path2 prior files were found to be changed.  Something is possibly wrong - Aborting.  Run with --force if desired.")
         return RTN_ABORT
         
-
 
     # ***** Update Path1 with all the changes on Path2 *****
     if len(path2_deltas) == 0:
@@ -687,10 +706,13 @@ if __name__ == '__main__':
                         help="Go thru the motions - No files are copied/deleted.  Also asserts --verbose.",
                         action='store_true')
     parser.add_argument('-w', '--workdir',
-                        help="Specified working dir - used for testing.  Default is ~user/.rclonesyncwd.",
+                        help="Specified working dir - useful for testing.  Default is ~user/.rclonesyncwd.",
                         default=os.path.expanduser("~/.rclonesyncwd"))
     parser.add_argument('--no-datetime-log',
                         help="Disable date-time from log output - useful for testing.",
+                        action='store_true')
+    parser.add_argument('--keep-chkfiles',
+                        help="Disable deleting the --check-access phase CHK files - useful for testing.",
                         action='store_true')
     parser.add_argument('-V', '--version',
                         help="Return rclonesync's version number and exit.",
@@ -800,8 +822,8 @@ if __name__ == '__main__':
                                       .format(cloud_name, clouds)); exit()
                     path_part = out.group(2)
                     if path_part:
-                        # if not path_part.startswith('/'):       # For consistency ensure the cloud path part starts and ends with /'s
-                        #     path_part = '/' + path_part
+                        # if not path_part.startswith('/'):       # NOT - For consistency ensure the cloud path part starts and ends with /'s
+                        #     path_part = '/' + path_part         # For SFTP remotes adding a '/' makes reference to the filesystem root.  Bad.
                         if not (path_part.endswith('/') or path_part.endswith('\\')):    # 2nd check is for Windows paths
                             path_part += '/'
                     path_base = cloud_name + path_part
