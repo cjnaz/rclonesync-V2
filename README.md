@@ -316,7 +316,7 @@ Path1 size | File size is different (same timestamp) | Not sure if `rclone sync`
 
 ## Revision history
 
-- V2.11 200813 - Bug fix for proper serarching during the check access phase.  
+- V2.11 200813 - Bug fix for proper searching during the check access phase.  
 - V2.10 200411 - Added verbose level 2 (debug) with rclone command log (issue #46); Removed '/' after remote: name in support of SFTP remotes (issue #46); Added error trap for all files changed (such as for system timezone change, issue #32); Added trap of keyboard interrupt / SIGINT and lock file removal; Added log of rclonesync version number.
 - V2.9.1 191208 - Fixed workdir bug issue #39.
 - V2.9 191103 - Support Unicode in command line args.  Support Python 3 on Windows.
