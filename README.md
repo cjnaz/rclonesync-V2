@@ -38,9 +38,11 @@ to check for proper operation.
 
 ## Notable changes in the latest release
 
-V2.11 200813 Bug fix for proper serarching during the check access phase.  
+V2.11 200813 Bug fix for proper searching during the check access phase.  
 - Previously, the user's filters file was not utilized, resulting in searching for check files in normally masked directories, causing access errors and inefficiency.  See [bug #55](https://github.com/cjnaz/rclonesync-V2/issues/55).  With this update, the user's filters is parsed and the search is for check files in all non-excluded directories.
+- Check out the new [FILTERING.md](https://github.com/cjnaz/rclonesync-V2/blob/master/FILTERING.md) for recommendations on how to do effective filtering for your syncs.
 - Added `--keep-chkfiles` switch to aid in testing and debug.
+
 
 
 ## High level behaviors / operations
