@@ -1,26 +1,31 @@
+:MSG: test_check_access
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
 :MSG:	1) First, see that --check-access passes with the initial setup
 :RCSEXEC: :PATH1: :PATH2: --check-access
 
 :MSG:	2) Delete the Path2 subdir RCLONE_TEST, run sync, will fail critical
 :RCLONE: delete :PATH2:subdir/RCLONE_TEST
-:RCSEXEC: :PATH1: :PATH2: --check-access --keep-chkfiles
+:RCSEXEC: :PATH1: :PATH2: --check-access
 :SAVELSL: Path2_missing
 
 :MSG:	3) Put the Path2 subdir RCLONE_TEST back, run --first-sync
 :RCLONE: copy :PATH1:subdir/RCLONE_TEST :PATH2:
-:RCSEXEC: :PATH1: :PATH2: --check-access --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
 
 :MSG:	4) Run sync with --check-access.  Should pass.
 :RCSEXEC: :PATH1: :PATH2: --check-access
 
 :MSG:	5) Delete Path1 top level RCLONE_TEST, run sync, will fail critical
 :RCLONE: delete :PATH1:RCLONE_TEST
-:RCSEXEC: :PATH1: :PATH2: --check-access --keep-chkfiles
+:RCSEXEC: :PATH1: :PATH2: --check-access
 :SAVELSL: Path1_missing
 rm :WORKDIR:LSL*
 
 :MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
-:RCSEXEC: :PATH1: :PATH2: --check-access --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
 
 :MSG:	7) Run sync with --check-access.  Should pass.
 :RCSEXEC: :PATH1: :PATH2: --check-access

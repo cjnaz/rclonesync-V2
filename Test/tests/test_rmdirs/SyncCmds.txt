@@ -1,3 +1,8 @@
+:MSG: test_rmdirs
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
 :MSG:	1) Delete Path1 subdir/file20.txt
 :RCLONE: delete :PATH1:/subdir/file20.txt
 
@@ -5,12 +10,12 @@
 :RCSEXEC: :PATH1: :PATH2:
 
 :MSG:	3) Confirm subdir exists on both paths
-rclone lsf --dirs-only -R :PATH1:
-rclone lsf --dirs-only -R :PATH2:
+:RCLONE: lsf --dirs-only -R :PATH1:
+:RCLONE: lsf --dirs-only -R :PATH2:
 
 :MSG:	4) rclonesync with --remove-empty-directories
 :RCSEXEC: :PATH1: :PATH2: --remove-empty-directories
 
 :MSG:	5) Confirm subdir has been removed on both paths
-rclone lsf --dirs-only -R :PATH1:
-rclone lsf --dirs-only -R :PATH2:
+:RCLONE: lsf --dirs-only -R :PATH1:
+:RCLONE: lsf --dirs-only -R :PATH2:

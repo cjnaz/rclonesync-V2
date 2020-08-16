@@ -1,3 +1,8 @@
+:MSG: test_all_changed
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
 :MSG:	Change timestamp on all files except RCLONE_TEST
 touch :PATH1:file* --date="2005-01-02"
 touch :PATH1:subdir/file* --date="2005-01-02"

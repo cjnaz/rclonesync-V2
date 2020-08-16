@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals  # This sets py2.7 default string literal to unicode from str.  No 'u' required on strings.
-from __future__ import print_function    # This redefined print as a function, as in py3.  Forces writing compatible code.
 """Test engine for rclonesync test cases
 Test cases are organized in subdirs beneath ./tests.
 Results are compared against golden LSL files and the rclonesync log file.
@@ -10,9 +7,10 @@ Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
 """
 
-version = "V1.8 200813"
+version = "V3.0 200818"
 
 # Revision history
+# V3.0 200818 - Cleanup revision.  Eliminated ChangeCmds phase.  Moved setup --first-sync into the tests themselves.  Added --benchmark.  Removed Py2.7 support.
 # V1.8 200813 - Added :SAVELSL: feature
 # V1.7 200411 - Added Python version (2 or 3) to --Windows-testing
 # V1.6 191103 - Unicode enhancements, including on the rclonesync command line
@@ -37,6 +35,7 @@ import os
 import subprocess
 import shutil
 import filecmp
+import time
 
 if "linux" not in sys.platform:  # <linux2> on Py2, <linux> on Py3
     print ("This program only works on Linux systems, not Windows.")
@@ -81,41 +80,6 @@ def rcstest():
     subprocess.call([rclone, "copy", INITIALDIR, path1, "--config", rcconfig])
     subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig])
     sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
-    print ("\nDO <rclonesync --first-sync> to set LSL files baseline")
-    subprocess.call([rcsexec, path1, path2, "--first-sync", "--workdir", WORKDIR,
-                     "--no-datetime-log", "--rclone", rclone, "--config", rcconfig])
-    sys.stdout.flush()
-    
-
-    print ("RUN CHANGECMDS to apply changes from test case initial state")
-    with io.open(CHANGECMDS, mode='rt', encoding='utf8', errors="replace") as ifile:
-        for line in ifile:
-            line = line[0:line.find('#')].lstrip().rstrip() # Throw away comment and any leading & trailing whitespace.
-            if len(line) > 0:
-                if ":MSG:" in line:
-                    print ("    {}".format(line))
-                else:
-                    if ":RCSEXEC:" in line:
-                        _line = line.split()    # Move any --rclone-args after additional switches
-                        beginning = _line
-                        rcargs = []
-                        if "--rclone-args" in line:
-                            rclone_args_index = _line.index("--rclone-args")
-                            beginning = _line[0:rclone_args_index]
-                            rcargs = _line[rclone_args_index:]
-                        line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --keep-chkfiles --rclone :RCLONE: --config", rcconfig] + rcargs)
-                    xx = line \
-                         .replace(":/", ":") \
-                         .replace(":TESTCASEROOT:", TESTCASEROOT) \
-                         .replace(":PATH1:", path1) \
-                         .replace(":PATH2:", path2) \
-                         .replace(":RCSEXEC:", rcsexec) \
-                         .replace(":RCLONE:", rclone) \
-                         .replace(":WORKDIR:", WORKDIR)
-                    print ("    {}".format(xx))
-                    subprocess.call(xx, shell=True) # using shell=True so that touch commands can have quoted date strings
-                sys.stdout.flush()
-
 
     print ("\nRUN SYNCCMDS (console output captured to consolelog.txt)")
     with io.open(CONSOLELOGFILE, mode="wt", encoding="utf8") as logfile:
@@ -144,7 +108,10 @@ def rcstest():
                                 rclone_args_index = _line.index("--rclone-args")
                                 beginning = _line[0:rclone_args_index]
                                 rcargs = _line[rclone_args_index:]
-                            line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --rclone :RCLONE: --config", rcconfig] + rcargs)
+                            if args.benchmark:
+                                line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-cleanup --rclone :RCLONE: --config", rcconfig] + rcargs)
+                            else:
+                                line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --no-cleanup --rclone :RCLONE: --config", rcconfig] + rcargs)
                         xx = line \
                             .replace(":/", ":") \
                             .replace(":TESTCASEROOT:", TESTCASEROOT) \
@@ -172,7 +139,10 @@ def rcstest():
                             subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
                     sys.stdout.flush()
 
-    if os.path.exists(WORKDIR + "deleteme.txt"):    # Remnant from Windows and Python2.7
+    if args.benchmark:
+        return 0
+
+    if os.path.exists(WORKDIR + "deleteme.txt"):    # Remnant from Windows and Python2.7  TODO
         os.remove (WORKDIR + "deleteme.txt")        # Delete it so that it doesn't mess up the file compare.
 
     errcnt = 0
@@ -260,28 +230,23 @@ if __name__ == '__main__':
                         help="'local' or name of cloud service with ':'")
     parser.add_argument('TestCase',
                         help="Test case subdir name (beneath ./tests).  'ALL' to run all tests in the tests subdir")
-    parser.add_argument('-g', '--golden',
-                        help="Capture output and place in testcase golden subdir",
-                        action='store_true')
-    parser.add_argument('--no-cleanup',
-                        help="Disable cleanup of Path1 and Path2 testdirs.  Useful for debug.",
-                        action='store_true')
-    parser.add_argument('--Windows-testing',
-                        help="Disable running rclonesyncs during the SyncCmds phase.  Specify Windows Python version (2 or 3).",
-                        type=int)
-    parser.add_argument('--rclonesync',
-                        help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC),
-                        default=RCSEXEC)
-    parser.add_argument('-r','--rclone',
-                        help="Path to rclone executable (default is rclone in path environment var).",
-                        default="rclone")
-    parser.add_argument('--config',
-                        help="Path to rclone config file (default is typically ~/.config/rclone/rclone.conf).",
-                        default=None)
-    parser.add_argument('-V', '--version',
-                        help="Return version number and exit.",
-                        action='version',
-                        version='%(prog)s ' + version)
+    parser.add_argument('-g', '--golden', action='store_true',
+                        help="Capture output and place in testcase golden subdir")
+    parser.add_argument('--benchmark', action='store_true',
+                        help="Include timestamps and measure full test run time.")
+    parser.add_argument('--no-cleanup', action='store_true',
+                        help="Disable cleanup of Path1 and Path2 testdirs.  Useful for debug.")
+    parser.add_argument('--Windows-testing', type=int,
+                        help="Disable running rclonesyncs during the SyncCmds phase.  Specify Windows Python version (2 or 3).")
+    parser.add_argument('--rclonesync', default=RCSEXEC,
+                        help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC))
+    parser.add_argument('-r','--rclone', default="rclone",
+                        help="Path to rclone executable (default is rclone in path environment var).")
+    parser.add_argument('--config', default=None,
+                        help="Path to rclone config file (default is typically ~/.config/rclone/rclone.conf).")
+    parser.add_argument('-V', '--version', action='version', version='%(prog)s ' + version,
+                        help="Return version number and exit.")
+                        
     
     args = parser.parse_args()
     testcase = args.TestCase
@@ -329,11 +294,15 @@ if __name__ == '__main__':
         else:
             print ("ERROR  Path2 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path2, clouds)); exit()
 
-    if args.Windows_testing is not None:
+    if args.Windows_testing is not None:        # TODO rework to boolean and hard code logic to py -3
         if args.Windows_testing != 2 and args.Windows_testing != 3:
             print ("ERROR  Specify '2' (Python 2.7) or '3' (Python 3.x) with --Windows-testing")
             exit()
 
+
+    if args.benchmark:
+        start_time = time.time()
+        print ("Start: ", time.asctime(time.localtime()))
 
     if testcase != "ALL":
         if os.path.exists("./tests/" + testcase):
@@ -345,3 +314,11 @@ if __name__ == '__main__':
             print ("===================================================================")
             testcase = directory
             rcstest()
+
+    if args.benchmark:
+        end_time = time.time()
+        print ("Finish:", time.asctime(time.localtime()))
+        zz = end_time - start_time
+        m, s = divmod(zz, 60)
+        h, m = divmod(m, 60)
+        print (f"Runtime {int(m)} min {s:6.3f} sec")

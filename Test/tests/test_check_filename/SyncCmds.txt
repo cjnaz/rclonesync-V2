@@ -1,15 +1,25 @@
+:MSG: test_check_filename
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
+
 :MSG:	1) First, see that --check-access passes with the initial setup
 :RCSEXEC: :PATH1: :PATH2: --check-access --check-filename .chk_file
+:SAVELSL: Initial_pass
+
 
 :MSG:	2) Delete the remote subdir .chk_file, run sync, will fail critical
 :RCLONE: delete :PATH2:subdir/.chk_file
-:RCSEXEC: :PATH1: :PATH2: --check-access --check-filename .chk_file --keep-chkfiles
+:RCSEXEC: :PATH1: :PATH2: --check-access --check-filename .chk_file --no-cleanup
 :SAVELSL: Path2_missing
 rm :WORKDIR:LSL*
+
 
 :MSG:	3) Put the remote subdir .chk_file back, run --first-sync
 :RCLONE: copy :PATH1:subdir/.chk_file :PATH2:
 :RCSEXEC: :PATH1: :PATH2: --check-access --first-sync --check-filename .chk_file
 
+
 :MSG:	4) Run sync with --check-access.  Should pass.
-:RCSEXEC: :PATH1: :PATH2: --check-access --check-filename .chk_file --keep-chkfiles
+:RCSEXEC: :PATH1: :PATH2: --check-access --check-filename .chk_file --no-cleanup

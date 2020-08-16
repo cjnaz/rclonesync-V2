@@ -6,7 +6,7 @@ from __future__ import unicode_literals  # This sets py2.7 default string litera
 from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
 
 
-__version__ = "V2.11 200813"                         # Version number and date code
+__version__ = "V3.0 200813"                         # Version number and date code
 
 
 #==========================================================================================================
@@ -109,42 +109,42 @@ def bidirSync():
     logging.info ("Command args: <{}>".format(args_string[:-2]))
 
 
-    # ***** Handle filters_file, if provided *****
-    filters = []
-    if filters_file is not None:
-        logging.info("Using filters-file  <{}>".format(filters_file))
+    # ***** Handle user_filter_file, if provided *****
+    # filters = []
+    if user_filter_file is not None:
+        logging.info("Using filters-file  <{}>".format(user_filter_file))
 
-        if not os.path.exists(filters_file):
-            logging.error("Specified filters-file file does not exist:  " + filters_file)
+        if not os.path.exists(user_filter_file):
+            logging.error("Specified filters-file file does not exist:  " + user_filter_file)
             return RTN_CRITICAL
 
-        filters_fileMD5 = filters_file + "-MD5"
+        user_filter_file_MD5 = user_filter_file + "-MD5"
 
-        with io.open(filters_file, 'rb') as ifile:
+        with io.open(user_filter_file, 'rb') as ifile:
             if is_Py27:
                 current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest())
             else:
                 current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest(), encoding='utf-8')
 
         stored_file_hash = ''
-        if os.path.exists(filters_fileMD5):
-            with io.open(filters_fileMD5, mode="rb") as ifile:
+        if os.path.exists(user_filter_file_MD5):
+            with io.open(user_filter_file_MD5, mode="rb") as ifile:
                 stored_file_hash = ifile.read()
         elif not first_sync:
-            logging.error("MD5 file not found for filters file <{}>.  Must run --first-sync.".format(filters_file))
+            logging.error("MD5 file not found for filters file <{}>.  Must run --first-sync.".format(user_filter_file))
             return RTN_CRITICAL
 
         if current_file_hash != stored_file_hash and not first_sync:
-            logging.error("Filters-file <{}> has chanaged (MD5 does not match).  Must run --first-sync.".format(filters_file))
+            logging.error("Filters-file <{}> has chanaged (MD5 does not match).  Must run --first-sync.".format(user_filter_file))
             return RTN_CRITICAL
 
         if first_sync:
-            logging.info("Storing filters-file hash to <{}>".format(filters_fileMD5))
-            with io.open(filters_fileMD5, 'wb') as ofile:
+            logging.info("Storing filters-file hash to <{}>".format(user_filter_file_MD5))
+            with io.open(user_filter_file_MD5, 'wb') as ofile:
                 ofile.write(current_file_hash)
 
-        filters.append("--filter-from")
-        filters.append(filters_file)
+        # filters.append("--filter-from")
+        # filters.append(filters_file)
 
 
     # ***** Set up dry_run and rclone --verbose switches *****
@@ -166,8 +166,17 @@ def bidirSync():
 
     # ***** rclone call wrapper functions with retries *****
     MAXTRIES=3
-    def rclone_lsl(path, ofile, options=None, linenum=0):
+    def rclone_lsl(path, ofile, filter_file=None, options=None):
+        """
+        Fetch an rclone LSL of the path and write it to ofile.
+        filter_file is a string full path to a file which will be passed to rclone --filter-from.
+        options is a list of switches passed to rclone
+            EG: ["--filter-from", "some_file"]
+        """
+        linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
         process_args = [rclone, "lsl", path, "--config", rcconfig]
+        if filter_file is not None:
+            process_args.extend(["--filter-from", filter_file])
         if options is not None:
             process_args.extend(options)
         if args.rclone_args is not None:
@@ -187,12 +196,22 @@ def bidirSync():
         logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
         return 1
 
-    def rclone_cmd(cmd, p1=None, p2=None, options=None, linenum=0):
+    def rclone_cmd(cmd, p1=None, p2=None, filter_file=None, options=None):
+        """
+        Execute an rclone command.
+        p1 and p2 are optional.
+        filter_file is a string full path to a file which will be passed to rclone --filter-from.
+        options is a list of switches passed to rclone
+            EG: ["--filter-from", "some_file", "--dry-run", "-vv", '--log-format', '""']
+        """
+        linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
         process_args = [rclone, cmd, "--config", rcconfig]
         if p1 is not None:
             process_args.append(p1)
         if p2 is not None:
             process_args.append(p2)
+        if filter_file is not None:
+            process_args.extend(["--filter-from", filter_file])
         if options is not None:
             process_args.extend(options)
         if args.rclone_args is not None:
@@ -222,10 +241,10 @@ def bidirSync():
     # ***** first_sync generate path1 and path2 file lists, and copy any unique path2 files to path1 ***** 
     if first_sync:
         logging.info(">>>>> --first-sync copying any unique Path2 files to Path1")
-        if rclone_lsl(path1_base, path1_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_lsl(path1_base, path1_list_file, filter_file=user_filter_file):
             return RTN_CRITICAL
 
-        if rclone_lsl(path2_base, path2_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_lsl(path2_base, path2_list_file, filter_file=user_filter_file):
             return RTN_CRITICAL
 
         status, path1_now = load_list(path1_list_file)
@@ -238,22 +257,54 @@ def bidirSync():
             logging.error(print_msg("ERROR", "Failed loading Path2 list file <{}>".format(path2_list_file)))
             return RTN_CRITICAL
 
+        # do_copy_P2P1 = False
+        filter_first_sync_copy_P2P1 = []
         for key in path2_now:
-            if key not in path1_now:
-                src  = path2_base + key
-                dest = path1_base + key
-                logging.info(print_msg("Path2", "  --first-sync copying to Path1", dest))
-                if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    return RTN_CRITICAL
+            if key not in path1_now:    # TODO add in timestamp check for older on Path2 ??
+                # src  = path2_base + key
+                logging.info(print_msg("Path2", "  --first-sync queue copy to Path1", key))
+                filter_first_sync_copy_P2P1.append(key)
+        # with io.open(filter_first_sync_copy_filename, mode='wt', encoding='utf8') as outf:
+        #     for key in path2_now:
+        #         if key not in path1_now:    # TODO add in timestamp check for older on Path2 ??
+        #             # src  = path2_base + key
+        #             dest = path1_base + key
+        #             do_copy_P2P1 = True
+        #             logging.info(print_msg("Path2", "  --first-sync queue copy to Path1", dest))
+        #             # if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        #             #     return RTN_CRITICAL
+        #             outf.write("+ /" + key + "\n")
+        #     outf.write("- **\n")
+        # first_sync_switches = ["-vv", "--filter-from", ]
+        # if rclone_cmd('copyto', path2_base, path1_base, options=first_sync_switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        #         return RTN_CRITICAL
 
-        if rclone_lsl(path1_base, path1_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-            return RTN_CRITICAL
-
+        if len(filter_first_sync_copy_P2P1) > 0:
+            filter_first_sync_copy_filename = list_file_base + "_filter_first_sync_copy"
+            with io.open(filter_first_sync_copy_filename, mode='wt', encoding='utf8') as outf:
+                for item in filter_first_sync_copy_P2P1:
+                    outf.write("+ /" + item + "\n")
+                outf.write("- **\n")
+            logging.info(print_msg("Path2", "  Do queued first-sync copies to", "Path1"))
+            if rclone_cmd('copyto', path2_base, path1_base, filter_file=filter_first_sync_copy_filename, options=switches):
+                return RTN_CRITICAL
+            if not args.no_cleanup:
+                os.remove(filter_first_sync_copy_filename)
 
     # ***** Check for existence of prior Path1 and Path2 lsl files *****
     if not os.path.exists(path1_list_file) or not os.path.exists(path2_list_file):
         # On prior critical error abort, the prior LSL files are renamed to _ERROR to lock out further runs
         logging.error("***** Cannot find prior Path1 or Path2 lsl files.")
+        return RTN_CRITICAL
+
+
+    # ***** Get current listings of the path1 and path2 trees *****
+    path1_list_file_new = list_file_base + '_Path1_NEW'
+    if rclone_lsl(path1_base, path1_list_file_new, filter_file=user_filter_file):
+        return RTN_CRITICAL
+
+    path2_list_file_new = list_file_base + '_Path2_NEW'
+    if rclone_lsl(path2_base, path2_list_file_new, filter_file=user_filter_file):
         return RTN_CRITICAL
 
 
@@ -263,53 +314,18 @@ def bidirSync():
             logging.info(">>>>> --check-access skipped on --first-sync")
         else:
             logging.info(">>>>> Checking Path1 and Path2 rclone filesystems access health")
-            path1_chk_list_file = list_file_base + '_Path1_CHK'
-            path2_chk_list_file = list_file_base + '_Path2_CHK'
 
-            xx = []
-            if filters_file is not None:
-                exclude_other = False
-                with io.open(filters_file, mode='rt', encoding='utf8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line == "- **":
-                            exclude_other = True
-                            continue
-                        if line.startswith("-") and (line.endswith("/") or line.endswith("/*") or line.endswith("/**")):
-                            xx.extend(['--filter', line])
-                        if line.startswith("+") and (line.endswith("/*") or line.endswith("/**")):
-                            xx.extend(['--filter', line + chk_file])
 
-                xx.extend(['--filter', '- rclonesync/Test/'])   # Exclude any check files that may be in any rclonesync/Test source tree
-
-                if "testdir" not in path1_base:                 # If not testing, exclude any check files in any remnant test directory tree.
-                    xx.extend(['--filter', '- /testdir/'])
-                
-                if not exclude_other:
-                    xx.extend(['--filter', '+ ' + chk_file])
-
-                xx.extend(['--filter', '- **'])
-            
-            else:   # No filters_file case
-                if "testdir" not in path1_base:         # Normally, disregard any check files in the test directory tree.
-                    xx.extend(['--filter', '- /testdir/', '--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- **'])
-                else:                                   # If testing, include check files within the test directory tree.
-                    xx.extend(['--filter', '- rclonesync/Test/', '--filter', '+ ' + chk_file, '--filter', '- **'])
-            
-            if rclone_lsl(path1_base, path1_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                return RTN_ABORT
-
-            if rclone_lsl(path2_base, path2_chk_list_file, options=xx, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                return RTN_ABORT
-
-            status, path1_check = load_list(path1_chk_list_file)
+            # status, path1_check = load_list(path1_chk_list_file)
+            status, path1_check = load_list(path1_list_file_new, match=chk_file)
             if status:
-                logging.error(print_msg("ERROR", "Failed loading Path1 check list file <{}>".format(path1_chk_list_file)))
+                logging.error(print_msg("ERROR", "Failed loading current Path1 list file <{}>".format(path1_list_file_new)))
                 return RTN_CRITICAL
 
-            status, path2_check  = load_list(path2_chk_list_file)
+            # status, path2_check  = load_list(path2_chk_list_file)
+            status, path2_check  = load_list(path2_list_file_new, match=chk_file)
             if status:
-                logging.error(print_msg("ERROR", "Failed loading Path2 check list file <{}>".format(path2_chk_list_file)))
+                logging.error(print_msg("ERROR", "Failed loading current Path2 list file <{}>".format(path2_list_file_new)))
                 return RTN_CRITICAL
 
             check_error = False
@@ -330,19 +346,19 @@ def bidirSync():
             if check_error:
                 return RTN_CRITICAL
 
-            if not args.keep_chkfiles:
-                os.remove(path1_chk_list_file)          # _PathX_CHK files will be left if the check fails.  Look at these files for clues.
-                os.remove(path2_chk_list_file)
+            # if not args.keep_chkfiles:
+            #     os.remove(path1_chk_list_file)          # _PathX_CHK files will be left if the check fails.  Look at these files for clues.
+            #     os.remove(path2_chk_list_file)
 
 
-    # ***** Get current listings of the path1 and path2 trees *****
-    path1_list_file_new = list_file_base + '_Path1_NEW'
-    if rclone_lsl(path1_base, path1_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-        return RTN_CRITICAL
+    # # ***** Get current listings of the path1 and path2 trees *****
+    # path1_list_file_new = list_file_base + '_Path1_NEW'
+    # if rclone_lsl(path1_base, path1_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    #     return RTN_CRITICAL
 
-    path2_list_file_new = list_file_base + '_Path2_NEW'
-    if rclone_lsl(path2_base, path2_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-        return RTN_CRITICAL
+    # path2_list_file_new = list_file_base + '_Path2_NEW'
+    # if rclone_lsl(path2_base, path2_list_file_new, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    #     return RTN_CRITICAL
 
 
     # ***** Load Current and Prior listings of both Path1 and Path2 trees *****
@@ -389,7 +405,7 @@ def bidirSync():
         if _newer or _older or _size or _deleted:
             path1_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
         else:
-            path1_found_same = True
+            path1_found_same = True # Once we've found at least 1 unchanged file we know that not everything has changed, as with a DST time change
 
     for key in path1_now:
         if key not in path1_prior:
@@ -423,7 +439,7 @@ def bidirSync():
                 if path2_prior[key]['datetime'] < path2_now[key]['datetime']:
                     logging.info(print_msg("Path2", "  File is newer", key))
                     _newer = True
-                else:               # Now Path2 version is older than prior sync.
+                else:               # Current Path2 version is older than prior sync.
                     logging.info(print_msg("Path2", "  File is OLDER", key))
                     _older = True
             if path2_prior[key]['size'] != path2_now[key]['size']:
@@ -433,7 +449,7 @@ def bidirSync():
         if _newer or _older or _size or _deleted:
             path2_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
         else:
-            path2_found_same = True
+            path2_found_same = True # Once we've found at least 1 unchanged file we know that not everything has changed, as with a DST time change
 
     for key in path2_now:
         if key not in path2_prior:
@@ -483,6 +499,8 @@ def bidirSync():
     else:
         logging.info(">>>>> Applying changes on Path2 to Path1")
 
+    filter_copy_P2P1 = []
+    filter_delete_P1 = []
     for key in path2_deltas:
 
         if path2_deltas[key]['new']:
@@ -490,23 +508,25 @@ def bidirSync():
                 # File is new on Path2, does not exist on Path1.
                 src  = path2_base + key
                 dest = path1_base + key
-                logging.info(print_msg("Path2", "  Copying to Path1", dest))
-                if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    return RTN_CRITICAL
+                # logging.info(print_msg("Path2", "  Copying to Path1", dest))
+                logging.info(print_msg("Path2", "  Queue copy to Path1", src))
+                filter_copy_P2P1.append(key)
+                # if rclone_cmd('copyto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                #     return RTN_CRITICAL
 
             else:
                 # File is new on Path1 AND new on Path2.
                 src  = path2_base + key 
                 dest = path1_base + key + '_Path2' 
                 logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
-                logging.warning(print_msg("Path2", "  Copying to Path1", dest))
-                if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                logging.warning(print_msg("Path2", "  Copying to Path1", src + '_Path2'))
+                if rclone_cmd('copyto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
                 # Rename Path1.
                 src  = path1_base + key 
                 dest = path1_base + key + '_Path1' 
                 logging.warning(print_msg("Path1", "  Renaming Path1 copy", dest))
-                if rclone_cmd('moveto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                if rclone_cmd('moveto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                     return RTN_CRITICAL
 
         if path2_deltas[key]['newer']:
@@ -514,23 +534,25 @@ def bidirSync():
                 # File is newer on Path2, unchanged on Path1.
                 src  = path2_base + key 
                 dest = path1_base + key 
-                logging.info(print_msg("Path2", "  Copying to Path1", dest))
-                if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    return RTN_CRITICAL
+                # logging.info(print_msg("Path2", "  Copying to Path1", dest))
+                logging.info(print_msg("Path2", "  Queue copy to Path1", src))
+                filter_copy_P2P1.append(key)        # TODO Why the --ignore-times ????
+                # if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                #     return RTN_CRITICAL
             else:
                 if key in path1_now:
                     # File is newer on Path2 AND also changed (newer/older/size) on Path1.
                     src  = path2_base + key 
                     dest = path1_base + key + '_Path2' 
                     logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
-                    logging.warning(print_msg("Path2", "  Copying to Path1", dest))
-                    if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                    logging.warning(print_msg("Path2", "  Copying to Path1", src + '_Path2'))
+                    if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                         return RTN_CRITICAL
                     # Rename Path1.
                     src  = path1_base + key 
                     dest = path1_base + key + '_Path1' 
                     logging.warning(print_msg("Path1", "  Renaming Path1 copy", dest))
-                    if rclone_cmd('moveto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                    if rclone_cmd('moveto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
                         return RTN_CRITICAL
 
         if path2_deltas[key]['deleted']:
@@ -538,9 +560,11 @@ def bidirSync():
                 if key in path1_now:
                     # File is deleted on Path2, unchanged on Path1.
                     src  = path1_base + key 
-                    logging.info(print_msg("Path1", "  Deleting file", src))
-                    if rclone_cmd('delete', src, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                        return RTN_CRITICAL
+                    # logging.info(print_msg("Path1", "  Deleting file", src))
+                    logging.info(print_msg("Path1", "  Queue delete", src))
+                    filter_delete_P1.append(key)
+                    # if rclone_cmd('delete', src, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                    #     return RTN_CRITICAL
 
 
     for key in path1_deltas:
@@ -550,10 +574,43 @@ def bidirSync():
                 src  = path2_base + key 
                 dest = path1_base + key 
                 logging.warning(print_msg("WARNING", "  Deleted on Path1 and also changed on Path2", key))
-                logging.warning(print_msg("Path2", "  Copying to Path1", dest))
-                if rclone_cmd('copyto', src, dest, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    return RTN_CRITICAL
+                # logging.warning(print_msg("Path2", "  Copying to Path1", dest))
+                logging.warning(print_msg("Path2", "  Queue copy to Path1", src))
+                filter_copy_P2P1.append(key)
+                # if rclone_cmd('copyto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+                #     return RTN_CRITICAL
 
+    # Do the batch operation
+    if len(filter_copy_P2P1) > 0:
+        filter_copy_P2P1_filename = list_file_base + "_filter_copy_P2P1"
+        with io.open(filter_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
+            for item in filter_copy_P2P1:
+                outf.write("+ /" + item + "\n")
+            outf.write("- **\n")
+        logging.info(print_msg("Path2", "  Do queued copies to", "Path1"))
+        if rclone_cmd('copyto', path2_base, path1_base, filter_file=filter_copy_P2P1_filename, options=switches):
+            return RTN_CRITICAL
+        if not args.no_cleanup:
+            os.remove(filter_copy_P2P1_filename)
+
+    if len(filter_delete_P1) > 0:
+        filter_delete_P1_filename = list_file_base + "_filter_delete_P1"
+        with io.open(filter_delete_P1_filename, mode='wt', encoding='utf8') as outf:
+            for item in filter_delete_P1:
+                outf.write("+ /" + item + "\n")
+            outf.write("- **\n")
+        logging.info(print_msg("", "  Do queued deletes on", "Path1"))
+        if rclone_cmd('delete', path1_base, filter_file=filter_delete_P1_filename, options=switches):
+            return RTN_CRITICAL
+        if not args.no_cleanup:
+            os.remove(filter_delete_P1_filename)
+
+
+
+    # if rclone_cmd('copyto', path2_base, path1_base, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    #     return RTN_CRITICAL
+    # if rclone_cmd('delete', path2_base, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    #     return RTN_CRITICAL
 
     # ***** Sync Path1 changes to Path2 ***** 
     if len(path1_deltas) == 0 and len(path2_deltas) == 0 and not first_sync:
@@ -561,18 +618,18 @@ def bidirSync():
     else:
         logging.info(">>>>> Synching Path1 to Path2")
         # NOTE:  --min-size 0 added to block attempting to overwrite Google Doc files which have size -1 on Google Drive.  180729
-        if rclone_cmd('sync', path1_base, path2_base, options=filters + switches + ['--min-size', '0'], linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_cmd('sync', path1_base, path2_base, filter_file=user_filter_file, options=switches + ['--min-size', '0']):
             return RTN_CRITICAL
 
 
     # ***** Optional rmdirs for empty directories *****
     if rmdirs:
         logging.info(">>>>> rmdirs Path1")
-        if rclone_cmd('rmdirs', path1_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_cmd('rmdirs', path1_base, filter_file=user_filter_file, options=switches):
             return RTN_CRITICAL
 
         logging.info(">>>>> rmdirs Path2")
-        if rclone_cmd('rmdirs', path2_base, options=switches, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+        if rclone_cmd('rmdirs', path2_base, filter_file=user_filter_file, options=switches):
             return RTN_CRITICAL
 
 
@@ -581,10 +638,10 @@ def bidirSync():
     os.remove(path1_list_file_new)
     os.remove(path2_list_file_new)
 
-    if rclone_lsl(path1_base, path1_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    if rclone_lsl(path1_base, path1_list_file, filter_file=user_filter_file):
         return RTN_CRITICAL
 
-    if rclone_lsl(path2_base, path2_list_file, filters, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
+    if rclone_lsl(path2_base, path2_list_file, filter_file=user_filter_file):
         return RTN_CRITICAL
 
     return 0
@@ -592,7 +649,7 @@ def bidirSync():
 
 # LINE_FORMAT = re.compile(u'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
 LINE_FORMAT = re.compile(r'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
-def load_list(infile):
+def load_list(infile, match=None):
     # Format ex:
     #  3009805 2013-09-16 04:13:50.000000000 12 - Wait.mp3
     #   541087 2017-06-19 21:23:28.610000000 DSC02478.JPG
@@ -610,7 +667,11 @@ def load_list(infile):
                     microsec = out.group(4)
                     date_time = time.mktime(datetime.strptime(date + ' ' + _time, '%Y-%m-%d %H:%M:%S').timetuple()) + float('.'+ microsec)
                     filename = out.group(5)
-                    d[filename] = {'size': size, 'datetime': date_time}
+                    if match is None:
+                        d[filename] = {'size': size, 'datetime': date_time}
+                    else:
+                        if match in filename:
+                            d[filename] = {'size': size, 'datetime': date_time}
                 else:
                     logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
         return 0, collections.OrderedDict(sorted(d.items()))        # return Success and a sorted list
@@ -711,8 +772,8 @@ if __name__ == '__main__':
     parser.add_argument('--no-datetime-log',
                         help="Disable date-time from log output - useful for testing.",
                         action='store_true')
-    parser.add_argument('--keep-chkfiles',
-                        help="Disable deleting the --check-access phase CHK files - useful for testing.",
+    parser.add_argument('--no-cleanup',
+                        help="Retain working files - useful for debug and testing.",
                         action='store_true')
     parser.add_argument('-V', '--version',
                         help="Return rclonesync's version number and exit.",
@@ -729,9 +790,9 @@ if __name__ == '__main__':
     verbose      =  args.verbose
     rc_verbose   =  args.rc_verbose
     if rc_verbose == None: rc_verbose = 0
-    filters_file =  args.filters_file
+    user_filter_file =  args.filters_file
     if args.filters_file is not None and is_Linux and is_Py27:  # As with chk_file
-        filters_file =  filters_file.decode("utf-8")
+        user_filter_file =  user_filter_file.decode("utf-8")
     rclone       =  args.rclone
     dry_run      =  args.dry_run
     force        =  args.force

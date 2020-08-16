@@ -1,11 +1,14 @@
 
+:MSG: test_extended_char_paths
+
+
 :MSG:	--first-sync of subdirs with extended chars
 
-../rclonesync.py ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync.py ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ_>
 Synching Path1  <./testdir/path1/測試_Русский_ě_áñ/>  with Path2  <./testdir/path2/測試_Русский_ě_áñ/>
-Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./testdir/path2/測試_Русский_ě_áñ, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./testdir/path2/測試_Русский_ě_áñ, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -16,19 +19,22 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_測試_Русский_�
 >>>>> Successful run.  All done.
 
 
+:SAVELSL: first_sync
+
+
 :MSG:   Place new files with extended chars on each side
 
 touch ./tests/test_extended_char_paths/modfiles/file1.txt --date=2001-01-02
 rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path1/測試_Русский_ě_áñ/測試_file1p1
 rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path2/測試_Русский_ě_áñ/測試_file1p2
 
-:MSG:   Regular sync of subdirs with extended chars
+:MSG:   Normal sync of subdirs with extended chars
 
-../rclonesync.py ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync.py ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ_>
 Synching Path1  <./testdir/path1/測試_Русский_ě_áñ/>  with Path2  <./testdir/path2/測試_Русский_ě_áñ/>
-Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./testdir/path2/測試_Русский_ě_áñ, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./testdir/path2/測試_Русский_ě_áñ, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is new                       - 測試_file1p1
      1 file change(s) on Path1:    1 new,    0 newer,    0 older,    0 deleted
@@ -36,20 +42,25 @@ Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./test
   Path2      File is new                       - 測試_file1p2
      1 file change(s) on Path2:    1 new,    0 newer,    0 older,    0 deleted
 >>>>> Applying changes on Path2 to Path1
-  Path2      Copying to Path1                  - ./testdir/path1/測試_Русский_ě_áñ/測試_file1p2
+  Path2      Queue copy to Path1               - ./testdir/path2/測試_Русский_ě_áñ/測試_file1p2
+  Path2      Do queued copies to               - Path1
 >>>>> Synching Path1 to Path2
 >>>>> Refreshing Path1 and Path2 lsl files
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ_>
 >>>>> Successful run.  All done.
 
 
-:MSG:	Test --check-filename with extended chars
+:SAVELSL: normal_sync
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+rm ./testwd/LSL_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ__filter_copy_P2P1 ./testwd/LSL_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ__Path1 ./testwd/LSL_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ__Path2
+
+:MSG:	Test --check-filename with extended chars - check fail
+
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -60,25 +71,34 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 rclone delete ./testdir/path1/測試_Русский_ě_áñ/測試_checkfile
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=測試_checkfile, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=測試_checkfile, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
   ERROR    Failed access health test:  <測試_checkfile> Path1 count 1, Path2 count 2 - 
   ERROR    Failed access health test:  Path2 key <測試_Русский_ě_áñ/測試_checkfile> not found in Path1 - 
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 ***** Critical Error Abort - Must run --first-sync to recover.  See README.md *****
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+
+:SAVELSL: Check_access_fail
+
+
+:MSG:	Test --check-filename with extended chars - check pass
+
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> --first-sync copying any unique Path2 files to Path1
-  Path2      --first-sync copying to Path1     - ./testdir/path1/測試_Русский_ě_áñ/測試_checkfile
+  Path2      --first-sync queue copy to Path1  - 測試_Русский_ě_áñ/測試_checkfile
+  Path2      Do queued first-sync copies to    - Path1
 >>>>> Path1 Checking for Diffs
+  Path1      File is new                       - 測試_Русский_ě_áñ/測試_checkfile
+     1 file change(s) on Path1:    1 new,    0 newer,    0 older,    0 deleted
 >>>>> Path2 Checking for Diffs
 >>>>> No changes on Path2 - Skipping ahead
 >>>>> Synching Path1 to Path2
@@ -86,11 +106,11 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=測試_checkfile, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=測試_checkfile, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Checking Path1 and Path2 rclone filesystems access health
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -101,15 +121,20 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 
-:MSG:   Test --filters-file path with extended chars
+:SAVELSL: Check_access_pass
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt --first-sync --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+rm ./testwd/LSL_._testdir_path1_._testdir_path2__filter_first_sync_copy ./testwd/LSL_._testdir_path1_._testdir_path2__Path1 ./testwd/LSL_._testdir_path1_._testdir_path2__Path1_ERROR ./testwd/LSL_._testdir_path1_._testdir_path2__Path2 ./testwd/LSL_._testdir_path1_._testdir_path2__Path2_ERROR
+
+:MSG:   Test --filters-file path with extended chars - masks /fileZ.txt
+
+rclone copy ./tests/test_extended_char_paths/modfiles/測試_filtersfile.txt ./testwd/
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/測試_filtersfile.txt --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt, first_sync=True, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
-Using filters-file  <./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt>
-Storing filters-file hash to <./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt-MD5>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/測試_filtersfile.txt, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Using filters-file  <./testwd/測試_filtersfile.txt>
+Storing filters-file hash to <./testwd/測試_filtersfile.txt-MD5>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
@@ -120,12 +145,12 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path1/fileZ.txt
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync.py ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/測試_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200813) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt, first_sync=False, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
-Using filters-file  <./tests/test_extended_char_paths/modfiles/測試_filters/測試_filtersfile.txt>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/測試_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Using filters-file  <./testwd/測試_filtersfile.txt>
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
 >>>>> No changes on Path2 - Skipping ahead
