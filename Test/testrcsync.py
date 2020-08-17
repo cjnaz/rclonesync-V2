@@ -81,6 +81,11 @@ def rcstest():
     subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig])
     sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
 
+
+    if args.benchmark:
+        start_time = time.time()
+        print ("Start: ", time.asctime(time.localtime()))
+
     print ("\nRUN SYNCCMDS (console output captured to consolelog.txt)")
     with io.open(CONSOLELOGFILE, mode="wt", encoding="utf8") as logfile:
         with io.open(SYNCCMD, mode="rt", encoding='utf8', errors="replace") as ifile:
@@ -140,6 +145,12 @@ def rcstest():
                     sys.stdout.flush()
 
     if args.benchmark:
+        end_time = time.time()
+        print ("Finish:", time.asctime(time.localtime()))
+        zz = end_time - start_time
+        m, s = divmod(zz, 60)
+        h, m = divmod(m, 60)
+        print (f"Runtime {int(m)} min {s:6.3f} sec")
         return 0
 
     if os.path.exists(WORKDIR + "deleteme.txt"):    # Remnant from Windows and Python2.7  TODO
@@ -300,9 +311,6 @@ if __name__ == '__main__':
             exit()
 
 
-    if args.benchmark:
-        start_time = time.time()
-        print ("Start: ", time.asctime(time.localtime()))
 
     if testcase != "ALL":
         if os.path.exists("./tests/" + testcase):
@@ -310,15 +318,18 @@ if __name__ == '__main__':
         else:
             print ("ERROR  TestCase directory <{}> not found".format(testcase)); exit()
     else:
+        if args.benchmark:
+            start_time_all = time.time()
+            print ("Start: ", time.asctime(time.localtime()))
         for directory in sorted(os.listdir("./tests")):
             print ("===================================================================")
             testcase = directory
             rcstest()
 
-    if args.benchmark:
-        end_time = time.time()
-        print ("Finish:", time.asctime(time.localtime()))
-        zz = end_time - start_time
-        m, s = divmod(zz, 60)
-        h, m = divmod(m, 60)
-        print (f"Runtime {int(m)} min {s:6.3f} sec")
+        if args.benchmark:
+            end_time_all = time.time()
+            print ("Finish:", time.asctime(time.localtime()))
+            zz = end_time_all - start_time_all
+            m, s = divmod(zz, 60)
+            h, m = divmod(m, 60)
+            print (f"Runtime ALL {int(m)} min {s:6.3f} sec")

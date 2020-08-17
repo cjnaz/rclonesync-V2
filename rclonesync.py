@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 """BiDirectional Sync using rclone"""
 
-from __future__ import unicode_literals  # This sets py2.7 default string literal to unicode from str.  No 'u' required on strings.
-from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
+# from __future__ import unicode_literals  # This sets py2.7 default string literal to unicode from str.  No 'u' required on strings.
+# from __future__ import print_function    # This redefines print as a function, as in py3.  Forces writing compatible code.
 
 
-__version__ = "V3.0 200813"                         # Version number and date code
+__version__ = "V3.0 200818"                         # Version number and date code
 
 
 #==========================================================================================================
@@ -49,17 +49,17 @@ if sys.platform == "win32":
     is_Windows = True
 if "linux" in sys.platform:  # <linux2> on Py2, <linux> on Py3
     is_Linux = True
-is_Py27 = False
-is_Py3x = False
-if sys.version_info[0] == 2 and sys.version_info[1] == 7:
-    is_Py27 = True
-if sys.version_info[0] == 3:
-    is_Py3x = True
-is_Windows_Py27 = is_Windows and is_Py27
+# is_Py27 = False
+# is_Py3x = False
+# if sys.version_info[0] == 2 and sys.version_info[1] == 7:
+#     is_Py27 = True
+# if sys.version_info[0] == 3:
+#     is_Py3x = True
+# is_Windows_Py27 = is_Windows and is_Py27
 
-if is_Windows_Py27:
-    import win_subprocess                           # Win Py27 subprocess only supports ASCII in subprocess calls.
-    import win32_unicode_argv                       # Win Py27 only supports ASCII on command line.
+# if is_Windows_Py27:
+#     import win_subprocess                           # Win Py27 subprocess only supports ASCII in subprocess calls.
+#     import win32_unicode_argv                       # Win Py27 only supports ASCII on command line.
 
 MAX_DELETE = 50                                     # % deleted allowed, else abort.  Use --force or --max_deletes to override.
 CHK_FILE = 'RCLONE_TEST'
@@ -89,8 +89,8 @@ def bidirSync():
     args_string = ''                            # Build call args string for consistency across Linux/Windows/Py27/Py3x
     for arg in sorted(args.__dict__):
         argvalue = getattr(args, arg)
-        if type(argvalue) is str and is_Py27:
-            argvalue = argvalue.decode("utf-8")
+        # if type(argvalue) is str and is_Py27:
+        #     argvalue = argvalue.decode("utf-8")
         if type(argvalue) is int:
             argvalue = str(argvalue)
         if type(argvalue) is bool:
@@ -121,9 +121,9 @@ def bidirSync():
         user_filter_file_MD5 = user_filter_file + "-MD5"
 
         with io.open(user_filter_file, 'rb') as ifile:
-            if is_Py27:
-                current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest())
-            else:
+            # if is_Py27:
+            #     current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest())
+            # else:
                 current_file_hash = bytes(hashlib.md5(ifile.read()).hexdigest(), encoding='utf-8')
 
         stored_file_hash = ''
@@ -184,19 +184,21 @@ def bidirSync():
         logging.debug("    rclone command:  {}".format(process_args))
         for x in range(MAXTRIES):
             with io.open(ofile, "wt", encoding='utf8') as of:
-                if is_Windows_Py27:
-                    p = win_subprocess.Popen(process_args, stdout=of, shell=True)
-                    out, err = p.communicate()
-                    if not err:
-                        return(0)
-                else:
-                    if not subprocess.call(process_args, stdout=of):
-                        return 0
+                # if is_Windows_Py27:
+                #     p = win_subprocess.Popen(process_args, stdout=of, shell=True)
+                #     out, err = p.communicate()
+                #     if not err:
+                #         return(0)
+                # else:
+                #     if not subprocess.call(process_args, stdout=of):
+                #         return 0
+                if not subprocess.call(process_args, stdout=of):
+                    return 0
                 logging.info(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1)))
         logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
         return 1
 
-    def rclone_cmd(cmd, p1=None, p2=None, filter_file=None, options=None):
+    def rclone_cmd(cmd, p1=None, p2=None, filter_file=None, files_file=None, options=None):
         """
         Execute an rclone command.
         p1 and p2 are optional.
@@ -212,6 +214,8 @@ def bidirSync():
             process_args.append(p2)
         if filter_file is not None:
             process_args.extend(["--filter-from", filter_file])
+        if files_file is not None:
+            process_args.extend(["--files-from-raw", files_file])
         if options is not None:
             process_args.extend(options)
         if args.rclone_args is not None:
@@ -219,15 +223,16 @@ def bidirSync():
         logging.debug("    rclone command:  {}".format(process_args))
         for x in range(MAXTRIES):
             try:
-                if is_Windows_Py27:
-                    # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
-                    # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
-                    # when file and directory names contain extended characters.  However, win_subprocess 
-                    # requires both shell=True and valid output files.  
-                    with io.open(workdir + "deleteme.txt", "wt") as of:
-                        p = win_subprocess.Popen(process_args, stdout=of, stderr=of, shell=True)
-                else:
-                    p = subprocess.Popen(process_args)
+                # if is_Windows_Py27:
+                #     # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
+                #     # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
+                #     # when file and directory names contain extended characters.  However, win_subprocess 
+                #     # requires both shell=True and valid output files.  
+                #     with io.open(workdir + "deleteme.txt", "wt") as of:
+                #         p = win_subprocess.Popen(process_args, stdout=of, stderr=of, shell=True)
+                # else:
+                #     p = subprocess.Popen(process_args)
+                p = subprocess.Popen(process_args)
                 p.wait()
                 if p.returncode == 0:
                     return 0
@@ -283,10 +288,11 @@ def bidirSync():
             filter_first_sync_copy_filename = list_file_base + "_filter_first_sync_copy"
             with io.open(filter_first_sync_copy_filename, mode='wt', encoding='utf8') as outf:
                 for item in filter_first_sync_copy_P2P1:
-                    outf.write("+ /" + item + "\n")
-                outf.write("- **\n")
+                    outf.write(item + "\n")
+                #     outf.write("+ /" + item + "\n")
+                # outf.write("- **\n")
             logging.info(print_msg("Path2", "  Do queued first-sync copies to", "Path1"))
-            if rclone_cmd('copyto', path2_base, path1_base, filter_file=filter_first_sync_copy_filename, options=switches):
+            if rclone_cmd('copyto', path2_base, path1_base, files_file=filter_first_sync_copy_filename, options=switches):
                 return RTN_CRITICAL
             if not args.no_cleanup:
                 os.remove(filter_first_sync_copy_filename)
@@ -585,10 +591,9 @@ def bidirSync():
         filter_copy_P2P1_filename = list_file_base + "_filter_copy_P2P1"
         with io.open(filter_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
             for item in filter_copy_P2P1:
-                outf.write("+ /" + item + "\n")
-            outf.write("- **\n")
+                outf.write(item + "\n")
         logging.info(print_msg("Path2", "  Do queued copies to", "Path1"))
-        if rclone_cmd('copyto', path2_base, path1_base, filter_file=filter_copy_P2P1_filename, options=switches):
+        if rclone_cmd('copyto', path2_base, path1_base, files_file=filter_copy_P2P1_filename, options=switches):
             return RTN_CRITICAL
         if not args.no_cleanup:
             os.remove(filter_copy_P2P1_filename)
@@ -597,13 +602,39 @@ def bidirSync():
         filter_delete_P1_filename = list_file_base + "_filter_delete_P1"
         with io.open(filter_delete_P1_filename, mode='wt', encoding='utf8') as outf:
             for item in filter_delete_P1:
-                outf.write("+ /" + item + "\n")
-            outf.write("- **\n")
+                outf.write(item + "\n")
         logging.info(print_msg("", "  Do queued deletes on", "Path1"))
-        if rclone_cmd('delete', path1_base, filter_file=filter_delete_P1_filename, options=switches):
+        if rclone_cmd('delete', path1_base, files_file=filter_delete_P1_filename, options=switches):
             return RTN_CRITICAL
         if not args.no_cleanup:
             os.remove(filter_delete_P1_filename)
+
+
+
+    # # Do the batch operation
+    # if len(filter_copy_P2P1) > 0:
+    #     filter_copy_P2P1_filename = list_file_base + "_filter_copy_P2P1"
+    #     with io.open(filter_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
+    #         for item in filter_copy_P2P1:
+    #             outf.write("+ /" + item + "\n")
+    #         outf.write("- **\n")
+    #     logging.info(print_msg("Path2", "  Do queued copies to", "Path1"))
+    #     if rclone_cmd('copyto', path2_base, path1_base, filter_file=filter_copy_P2P1_filename, options=switches):
+    #         return RTN_CRITICAL
+    #     if not args.no_cleanup:
+    #         os.remove(filter_copy_P2P1_filename)
+
+    # if len(filter_delete_P1) > 0:
+    #     filter_delete_P1_filename = list_file_base + "_filter_delete_P1"
+    #     with io.open(filter_delete_P1_filename, mode='wt', encoding='utf8') as outf:
+    #         for item in filter_delete_P1:
+    #             outf.write("+ /" + item + "\n")
+    #         outf.write("- **\n")
+    #     logging.info(print_msg("", "  Do queued deletes on", "Path1"))
+    #     if rclone_cmd('delete', path1_base, filter_file=filter_delete_P1_filename, options=switches):
+    #         return RTN_CRITICAL
+    #     if not args.no_cleanup:
+    #         os.remove(filter_delete_P1_filename)
 
 
 
@@ -784,15 +815,15 @@ if __name__ == '__main__':
     first_sync   =  args.first_sync
     check_access =  args.check_access
     chk_file     =  args.check_filename
-    if is_Linux and is_Py27:                # Already unicode on Linux Py3 and Win Py2 with win32_unicode_argv module 
-        chk_file     =  chk_file.decode("utf-8")
+    # if is_Linux and is_Py27:                # Already unicode on Linux Py3 and Win Py2 with win32_unicode_argv module 
+    #     chk_file     =  chk_file.decode("utf-8")
     max_deletes  =  args.max_deletes
     verbose      =  args.verbose
     rc_verbose   =  args.rc_verbose
     if rc_verbose == None: rc_verbose = 0
     user_filter_file =  args.filters_file
-    if args.filters_file is not None and is_Linux and is_Py27:  # As with chk_file
-        user_filter_file =  user_filter_file.decode("utf-8")
+    # if args.filters_file is not None and is_Linux and is_Py27:  # As with chk_file
+    #     user_filter_file =  user_filter_file.decode("utf-8")
     rclone       =  args.rclone
     dry_run      =  args.dry_run
     force        =  args.force
@@ -861,8 +892,8 @@ if __name__ == '__main__':
         On Windows a one-character cloud name is not supported - it will be interprested as a drive letter.
         """
         
-        if is_Linux and is_Py27:
-            path = path.decode("utf-8")
+        # if is_Linux and is_Py27:
+        #     path = path.decode("utf-8")
         
         _cloud = False
         if ':' in path:
