@@ -1,0 +1,11 @@
+test_first_sync - Exercise all of the various file difference scenarios during a first-sync
+
+				Path1			Path2			Expected action		Which wins
+file1.txt	    exists			missing			Sync Path1 > Path2	Path1
+file2.txt		missing			exists			Copy Path2 > Path1	Path2
+file3.txt		exists			newer date 		Sync Path1 > Path2	Path1
+file4.txt		missing			newer date		Copy Path2 > Path1	Path2
+file5.txt		exists			older date		Sync Path1 > Path2	Path1
+file6.txt		older date		newer date		Sync Path1 > Path2	Path1
+file7.txt		exists			exists (same)	None				same
+ 

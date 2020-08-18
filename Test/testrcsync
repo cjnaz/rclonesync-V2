@@ -45,7 +45,7 @@ if "PYTHONIOENCODING" not in os.environ:
     exit()
 
 
-RCSEXEC = "../rclonesync.py"
+RCSEXEC = "../rclonesync"
 LOCALTESTBASE = "./"
 TESTDIR = "testdir/"
 WORKDIR = "./testwd" + "/"

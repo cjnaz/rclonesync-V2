@@ -70,10 +70,6 @@ RTN_CRITICAL = 2                                    # Aborts allow rerunning.  C
 
 def bidirSync():
 
-    def print_msg(tag, msg, key=''):
-        return "  {:9}{:35} - {}".format(tag, msg, key)
-
- 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
 
@@ -86,7 +82,7 @@ def bidirSync():
     logging.info("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
 
 
-    args_string = ''                            # Build call args string for consistency across Linux/Windows/Py27/Py3x
+    args_string = ''                            # TODO Build call args string for consistency across Linux/Windows/Py27/Py3x
     for arg in sorted(args.__dict__):
         argvalue = getattr(args, arg)
         # if type(argvalue) is str and is_Py27:
@@ -147,128 +143,157 @@ def bidirSync():
         # filters.append(filters_file)
 
 
-    # ***** Set up dry_run and rclone --verbose switches *****
+    # ***** Set up rclonesync --dry-run, and rclone --verbose and --log-format switches *****
     switches = []
     for _ in range(rc_verbose):
         switches.append("-v")
-    if dry_run:
+    if dry_run:     # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
         switches.append("--dry-run")
-        if os.path.exists(path2_list_file):          # If dry_run, original LSL files are preserved and lsl's are done to the _DRYRUN files.
-            shutil.copy(path2_list_file, path2_list_file + '_DRYRUN')
-            path2_list_file  += '_DRYRUN'
         if os.path.exists(path1_list_file):
             shutil.copy(path1_list_file, path1_list_file + '_DRYRUN')
             path1_list_file += '_DRYRUN'
+        if os.path.exists(path2_list_file):          
+            shutil.copy(path2_list_file, path2_list_file + '_DRYRUN')
+            path2_list_file  += '_DRYRUN'
     if args.no_datetime_log:
         switches.extend(['--log-format', '""'])
     # print (switches)
 
 
-    # ***** rclone call wrapper functions with retries *****
-    MAXTRIES=3
-    def rclone_lsl(path, ofile, filter_file=None, options=None):
-        """
-        Fetch an rclone LSL of the path and write it to ofile.
-        filter_file is a string full path to a file which will be passed to rclone --filter-from.
-        options is a list of switches passed to rclone
-            EG: ["--filter-from", "some_file"]
-        """
-        linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
-        process_args = [rclone, "lsl", path, "--config", rcconfig]
-        if filter_file is not None:
-            process_args.extend(["--filter-from", filter_file])
-        if options is not None:
-            process_args.extend(options)
-        if args.rclone_args is not None:
-            process_args.extend(args.rclone_args)
-        logging.debug("    rclone command:  {}".format(process_args))
-        for x in range(MAXTRIES):
-            with io.open(ofile, "wt", encoding='utf8') as of:
-                # if is_Windows_Py27:
-                #     p = win_subprocess.Popen(process_args, stdout=of, shell=True)
-                #     out, err = p.communicate()
-                #     if not err:
-                #         return(0)
-                # else:
-                #     if not subprocess.call(process_args, stdout=of):
-                #         return 0
-                if not subprocess.call(process_args, stdout=of):
-                    return 0
-                logging.info(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1)))
-        logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
-        return 1
+    # # ***** rclone call wrapper functions with retries *****
+    # MAXTRIES=3
+    # def rclone_lsl(path, ofile, filter_file=None, options=None):
+    #     """
+    #     Fetch an rclone LSL of the path and write it to ofile.
+    #     filter_file is a string full path to a file which will be passed to rclone --filter-from.
+    #     options is a list of switches passed to rclone
+    #         EG: ["--filter-from", "some_file"]
+    #     """
+    #     linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
+    #     process_args = [rclone, "lsl", path, "--config", rcconfig]
+    #     if filter_file is not None:
+    #         process_args.extend(["--filter-from", filter_file])
+    #     if options is not None:
+    #         process_args.extend(options)
+    #     if args.rclone_args is not None:
+    #         process_args.extend(args.rclone_args)
+    #     logging.debug("    rclone command:  {}".format(process_args))
+    #     for x in range(MAXTRIES):
+    #         with io.open(ofile, "wt", encoding='utf8') as of:
+    #             # if is_Windows_Py27:
+    #             #     p = win_subprocess.Popen(process_args, stdout=of, shell=True)
+    #             #     out, err = p.communicate()
+    #             #     if not err:
+    #             #         return(0)
+    #             # else:
+    #             #     if not subprocess.call(process_args, stdout=of):
+    #             #         return 0
+    #             if not subprocess.call(process_args, stdout=of):
+    #                 return 0
+    #             logging.info(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1)))
+    #     logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
+    #     return 1
 
-    def rclone_cmd(cmd, p1=None, p2=None, filter_file=None, files_file=None, options=None):
-        """
-        Execute an rclone command.
-        p1 and p2 are optional.
-        filter_file is a string full path to a file which will be passed to rclone --filter-from.
-        options is a list of switches passed to rclone
-            EG: ["--filter-from", "some_file", "--dry-run", "-vv", '--log-format', '""']
-        """
-        linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
-        process_args = [rclone, cmd, "--config", rcconfig]
-        if p1 is not None:
-            process_args.append(p1)
-        if p2 is not None:
-            process_args.append(p2)
-        if filter_file is not None:
-            process_args.extend(["--filter-from", filter_file])
-        if files_file is not None:
-            process_args.extend(["--files-from-raw", files_file])
-        if options is not None:
-            process_args.extend(options)
-        if args.rclone_args is not None:
-            process_args.extend(args.rclone_args)
-        logging.debug("    rclone command:  {}".format(process_args))
-        for x in range(MAXTRIES):
-            try:
-                # if is_Windows_Py27:
-                #     # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
-                #     # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
-                #     # when file and directory names contain extended characters.  However, win_subprocess 
-                #     # requires both shell=True and valid output files.  
-                #     with io.open(workdir + "deleteme.txt", "wt") as of:
-                #         p = win_subprocess.Popen(process_args, stdout=of, stderr=of, shell=True)
-                # else:
-                #     p = subprocess.Popen(process_args)
-                p = subprocess.Popen(process_args)
-                p.wait()
-                if p.returncode == 0:
-                    return 0
-            except Exception as e:
-                logging.info(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
-                logging.info("message:  <{}>".format(e))
-        logging.error(print_msg("ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
-        return 1
+    # def rclone_cmd(cmd, p1=None, p2=None, filter_file=None, files_file=None, options=None):
+    #     """
+    #     Execute an rclone command.
+    #     p1 and p2 are optional.
+    #     filter_file is a string full path to a file which will be passed to rclone --filter-from.
+    #     options is a list of switches passed to rclone
+    #         EG: ["--filter-from", "some_file", "--dry-run", "-vv", '--log-format', '""']
+    #     """
+    #     linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
+    #     process_args = [rclone, cmd, "--config", rcconfig]
+    #     if p1 is not None:
+    #         process_args.append(p1)
+    #     if p2 is not None:
+    #         process_args.append(p2)
+    #     if filter_file is not None:
+    #         process_args.extend(["--filter-from", filter_file])
+    #     if files_file is not None:
+    #         process_args.extend(["--files-from-raw", files_file])
+    #     if options is not None:
+    #         process_args.extend(options)
+    #     if args.rclone_args is not None:
+    #         process_args.extend(args.rclone_args)
+    #     logging.debug("    rclone command:  {}".format(process_args))
+    #     for x in range(MAXTRIES):
+    #         try:
+    #             # if is_Windows_Py27:
+    #             #     # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
+    #             #     # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
+    #             #     # when file and directory names contain extended characters.  However, win_subprocess 
+    #             #     # requires both shell=True and valid output files.  
+    #             #     with io.open(workdir + "deleteme.txt", "wt") as of:
+    #             #         p = win_subprocess.Popen(process_args, stdout=of, stderr=of, shell=True)
+    #             # else:
+    #             #     p = subprocess.Popen(process_args)
+    #             p = subprocess.Popen(process_args)
+    #             p.wait()
+    #             if p.returncode == 0:
+    #                 return 0
+    #         except Exception as e:
+    #             logging.info(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+    #             logging.info("message:  <{}>".format(e))
+    #     logging.error(print_msg("ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
+    #     return 1
+
+
+    # ***** Get current listings of the path1 and path2 trees *****
+    def get_and_load_lsl (path, lsl_filename):
+        # lsl_filename = list_file_base + lsl_suffix
+        if rclone_lsl(path, lsl_filename, filter_file=user_filter_file):
+            return RTN_CRITICAL, None
+        status, loaded_list = load_list(lsl_filename)
+        if status:
+            logging.error(print_msg("ERROR", f"Failed loading list file <{lsl_filename}>"))
+            return RTN_CRITICAL, None
+        else:
+            return status, loaded_list
+
+    path1_list_file_new = list_file_base + '_Path1_NEW'
+    status, path1_now = get_and_load_lsl (path1_base, path1_list_file_new)
+    if status:  return status
+
+    path2_list_file_new = list_file_base + '_Path2_NEW'
+    status, path2_now = get_and_load_lsl (path2_base, path2_list_file_new)
+    if status:  return status
+
+    # path1_list_file_new = list_file_base + '_Path1_NEW'
+    # if rclone_lsl(path1_base, path1_list_file_new, filter_file=user_filter_file):
+    #     return RTN_CRITICAL
+
+    # path2_list_file_new = list_file_base + '_Path2_NEW'
+    # if rclone_lsl(path2_base, path2_list_file_new, filter_file=user_filter_file):
+    #     return RTN_CRITICAL
+
 
 
     # ***** first_sync generate path1 and path2 file lists, and copy any unique path2 files to path1 ***** 
     if first_sync:
         logging.info(">>>>> --first-sync copying any unique Path2 files to Path1")
-        if rclone_lsl(path1_base, path1_list_file, filter_file=user_filter_file):
-            return RTN_CRITICAL
+        # if rclone_lsl(path1_base, path1_list_file, filter_file=user_filter_file):
+        #     return RTN_CRITICAL
 
-        if rclone_lsl(path2_base, path2_list_file, filter_file=user_filter_file):
-            return RTN_CRITICAL
+        # if rclone_lsl(path2_base, path2_list_file, filter_file=user_filter_file):
+        #     return RTN_CRITICAL
 
-        status, path1_now = load_list(path1_list_file)
-        if status:
-            logging.error(print_msg("ERROR", "Failed loading Path1 list file <{}>".format(path1_list_file)))
-            return RTN_CRITICAL
+        # status, path1_now = load_list(path1_list_file)
+        # if status:
+        #     logging.error(print_msg("ERROR", "Failed loading Path1 list file <{}>".format(path1_list_file)))
+        #     return RTN_CRITICAL
 
-        status, path2_now  = load_list(path2_list_file)
-        if status:
-            logging.error(print_msg("ERROR", "Failed loading Path2 list file <{}>".format(path2_list_file)))
-            return RTN_CRITICAL
+        # status, path2_now  = load_list(path2_list_file)
+        # if status:
+        #     logging.error(print_msg("ERROR", "Failed loading Path2 list file <{}>".format(path2_list_file)))
+        #     return RTN_CRITICAL
 
-        # do_copy_P2P1 = False
-        filter_first_sync_copy_P2P1 = []
+        files_first_sync_copy_P2P1 = []
         for key in path2_now:
             if key not in path1_now:    # TODO add in timestamp check for older on Path2 ??
                 # src  = path2_base + key
                 logging.info(print_msg("Path2", "  --first-sync queue copy to Path1", key))
-                filter_first_sync_copy_P2P1.append(key)
+                files_first_sync_copy_P2P1.append(key)
         # with io.open(filter_first_sync_copy_filename, mode='wt', encoding='utf8') as outf:
         #     for key in path2_now:
         #         if key not in path1_now:    # TODO add in timestamp check for older on Path2 ??
@@ -284,18 +309,45 @@ def bidirSync():
         # if rclone_cmd('copyto', path2_base, path1_base, options=first_sync_switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
         #         return RTN_CRITICAL
 
-        if len(filter_first_sync_copy_P2P1) > 0:
-            filter_first_sync_copy_filename = list_file_base + "_filter_first_sync_copy"
-            with io.open(filter_first_sync_copy_filename, mode='wt', encoding='utf8') as outf:
-                for item in filter_first_sync_copy_P2P1:
+        def copy_files (src, dest, copy_list, file_suffix):
+            full_filename = list_file_base + file_suffix
+            with io.open(full_filename, mode='wt', encoding='utf8') as outf:
+                for item in copy_list:
                     outf.write(item + "\n")
-                #     outf.write("+ /" + item + "\n")
-                # outf.write("- **\n")
-            logging.info(print_msg("Path2", "  Do queued first-sync copies to", "Path1"))
-            if rclone_cmd('copyto', path2_base, path1_base, files_file=filter_first_sync_copy_filename, options=switches):
+            # logging.info(print_msg("Path2", "  Do queued first-sync copies to", "Path1"))
+            if rclone_cmd('copy', src, dest, files_file=full_filename, options=switches):
                 return RTN_CRITICAL
             if not args.no_cleanup:
-                os.remove(filter_first_sync_copy_filename)
+                os.remove(full_filename)
+            return 0
+
+    
+        if len(files_first_sync_copy_P2P1) > 0:
+            logging.info(print_msg("Path2", "  Do queued first-sync copies to", "Path1"))
+            # filter_first_sync_copy_filename = list_file_base + "_filter_first_sync_copy"
+            result = copy_files (path2_base, path1_base, files_first_sync_copy_P2P1, "_files_first_sync_copy")
+            if result:  return result
+        
+        logging.info(">>>>> --first-sync synching Path1 to Path2")
+        # NOTE:  --min-size 0 added to block attempting to overwrite Google Doc files which have size -1 on Google Drive.  180729
+        if rclone_cmd('sync', path1_base, path2_base, filter_file=user_filter_file, options=switches + ['--min-size', '0']):
+            return RTN_CRITICAL
+
+        logging.info(">>>>> --first-sync refreshing lsl files")
+        if rclone_lsl(path1_base, path1_list_file, filter_file=user_filter_file):
+            return RTN_CRITICAL
+
+        if rclone_lsl(path2_base, path2_list_file, filter_file=user_filter_file):
+            return RTN_CRITICAL
+
+        if not args.no_cleanup:
+            os.remove(path1_list_file_new)
+            os.remove(path2_list_file_new)
+
+        return 0
+    
+
+
 
     # ***** Check for existence of prior Path1 and Path2 lsl files *****
     if not os.path.exists(path1_list_file) or not os.path.exists(path2_list_file):
@@ -304,14 +356,14 @@ def bidirSync():
         return RTN_CRITICAL
 
 
-    # ***** Get current listings of the path1 and path2 trees *****
-    path1_list_file_new = list_file_base + '_Path1_NEW'
-    if rclone_lsl(path1_base, path1_list_file_new, filter_file=user_filter_file):
-        return RTN_CRITICAL
+    # # ***** Get current listings of the path1 and path2 trees *****
+    # path1_list_file_new = list_file_base + '_Path1_NEW'
+    # if rclone_lsl(path1_base, path1_list_file_new, filter_file=user_filter_file):
+    #     return RTN_CRITICAL
 
-    path2_list_file_new = list_file_base + '_Path2_NEW'
-    if rclone_lsl(path2_base, path2_list_file_new, filter_file=user_filter_file):
-        return RTN_CRITICAL
+    # path2_list_file_new = list_file_base + '_Path2_NEW'
+    # if rclone_lsl(path2_base, path2_list_file_new, filter_file=user_filter_file):
+    #     return RTN_CRITICAL
 
 
     # ***** Check basic access health to the Path1 and Path2 filesystems *****
@@ -321,18 +373,27 @@ def bidirSync():
         else:
             logging.info(">>>>> Checking Path1 and Path2 rclone filesystems access health")
 
+            def get_check_files (loaded_lsl):
+                check_files = {}
+                for key in loaded_lsl:
+                    if args.check_filename in key:
+                        check_files[key] = loaded_lsl[key]
+                return check_files
 
-            # status, path1_check = load_list(path1_chk_list_file)
-            status, path1_check = load_list(path1_list_file_new, match=chk_file)
-            if status:
-                logging.error(print_msg("ERROR", "Failed loading current Path1 list file <{}>".format(path1_list_file_new)))
-                return RTN_CRITICAL
+            path1_check = get_check_files(path1_now)
+            path2_check = get_check_files(path2_now)
 
-            # status, path2_check  = load_list(path2_chk_list_file)
-            status, path2_check  = load_list(path2_list_file_new, match=chk_file)
-            if status:
-                logging.error(print_msg("ERROR", "Failed loading current Path2 list file <{}>".format(path2_list_file_new)))
-                return RTN_CRITICAL
+            # # status, path1_check = load_list(path1_chk_list_file)
+            # status, path1_check = load_list(path1_list_file_new, match=chk_file)
+            # if status:
+            #     logging.error(print_msg("ERROR", "Failed loading current Path1 list file <{}>".format(path1_list_file_new)))
+            #     return RTN_CRITICAL
+
+            # # status, path2_check  = load_list(path2_chk_list_file)
+            # status, path2_check  = load_list(path2_list_file_new, match=chk_file)
+            # if status:
+            #     logging.error(print_msg("ERROR", "Failed loading current Path2 list file <{}>".format(path2_list_file_new)))
+            #     return RTN_CRITICAL
 
             check_error = False
             if len(path1_check) < 1 or len(path1_check) != len(path2_check):
@@ -376,13 +437,13 @@ def bidirSync():
     if status:                  logging.error(print_msg("ERROR", "Failed loading prior Path2 list file <{}>".format(path2_list_file))); return RTN_CRITICAL
     if len(path2_prior) == 0:   logging.error(print_msg("ERROR", "Zero length in prior Path2 list file <{}>".format(path2_list_file))); return RTN_CRITICAL
 
-    status, path1_now =    load_list(path1_list_file_new)
-    if status:                  logging.error(print_msg("ERROR", "Failed loading current Path1 list file <{}>".format(path1_list_file_new))); return RTN_ABORT
-    if len(path1_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current Path1 list file <{}>".format(path1_list_file_new))); return RTN_ABORT
+    # status, path1_now =    load_list(path1_list_file_new)
+    # if status:                  logging.error(print_msg("ERROR", "Failed loading current Path1 list file <{}>".format(path1_list_file_new))); return RTN_ABORT
+    # if len(path1_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current Path1 list file <{}>".format(path1_list_file_new))); return RTN_ABORT
 
-    status, path2_now =    load_list(path2_list_file_new)
-    if status:                  logging.error(print_msg("ERROR", "Failed loading current Path2 list file <{}>".format(path2_list_file_new))); return RTN_ABORT
-    if len(path2_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current Path2 list file <{}>".format(path2_list_file_new))); return RTN_ABORT
+    # status, path2_now =    load_list(path2_list_file_new)
+    # if status:                  logging.error(print_msg("ERROR", "Failed loading current Path2 list file <{}>".format(path2_list_file_new))); return RTN_ABORT
+    # if len(path2_now) == 0:     logging.error(print_msg("ERROR", "Zero length in current Path2 list file <{}>".format(path2_list_file_new))); return RTN_ABORT
 
 
     # ***** Check for Path1 deltas relative to the prior sync *****
@@ -499,158 +560,111 @@ def bidirSync():
         return RTN_ABORT
         
 
-    # ***** Update Path1 with all the changes on Path2 *****
-    if len(path2_deltas) == 0:
-        logging.info(">>>>> No changes on Path2 - Skipping ahead")
+    # ***** Update logic for Path1 and Path2 *****
+    files_copy_P1P2 = []
+    files_copy_P2P1 = []
+    files_delete_P1 = []
+    files_delete_P2 = []
+    already_handled = {}
+
+    if len(path2_deltas) == 0 and len(path2_deltas) == 0:
+        logging.info(">>>>> No changes on Path1 or Path2 - Skipping ahead")
     else:
-        logging.info(">>>>> Applying changes on Path2 to Path1")
+        logging.info(">>>>> Determining and applying changes")
 
-    filter_copy_P2P1 = []
-    filter_delete_P1 = []
-    for key in path2_deltas:
+        for key in path1_deltas:
+            if path1_deltas[key]['new'] or path1_deltas[key]['newer'] or path1_deltas[key]['older']:
+                if key not in path2_deltas:
+                    logging.info(print_msg("Path1", "  Queue copy to Path2", path2_base + key))
+                    files_copy_P1P2.append(key)
 
-        if path2_deltas[key]['new']:
-            if key not in path1_now:
-                # File is new on Path2, does not exist on Path1.
-                src  = path2_base + key
-                dest = path1_base + key
-                # logging.info(print_msg("Path2", "  Copying to Path1", dest))
-                logging.info(print_msg("Path2", "  Queue copy to Path1", src))
-                filter_copy_P2P1.append(key)
-                # if rclone_cmd('copyto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                #     return RTN_CRITICAL
+                elif path2_deltas[key]['deleted']:
+                    logging.info(print_msg("Path1", "  Queue copy to Path2", path2_base + key))
+                    files_copy_P1P2.append(key)
+                    already_handled[key] = 1
 
-            else:
-                # File is new on Path1 AND new on Path2.
-                src  = path2_base + key 
-                dest = path1_base + key + '_Path2' 
-                logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
-                logging.warning(print_msg("Path2", "  Copying to Path1", src + '_Path2'))
-                if rclone_cmd('copyto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    return RTN_CRITICAL
-                # Rename Path1.
-                src  = path1_base + key 
-                dest = path1_base + key + '_Path1' 
-                logging.warning(print_msg("Path1", "  Renaming Path1 copy", dest))
-                if rclone_cmd('moveto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    return RTN_CRITICAL
+                elif path2_deltas[key]['new'] or path2_deltas[key]['newer'] or path2_deltas[key]['older']:
 
-        if path2_deltas[key]['newer']:
-            if key not in path1_deltas:
-                # File is newer on Path2, unchanged on Path1.
-                src  = path2_base + key 
-                dest = path1_base + key 
-                # logging.info(print_msg("Path2", "  Copying to Path1", dest))
-                logging.info(print_msg("Path2", "  Queue copy to Path1", src))
-                filter_copy_P2P1.append(key)        # TODO Why the --ignore-times ????
-                # if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                #     return RTN_CRITICAL
-            else:
-                if key in path1_now:
-                    # File is newer on Path2 AND also changed (newer/older/size) on Path1.
-                    src  = path2_base + key 
-                    dest = path1_base + key + '_Path2' 
+                    def keep_both_versions (key):
+                        logging.warning(print_msg("Path1", "  Renaming Path1 copy", path1_base + key + "_Path1"))
+                        if rclone_cmd('moveto', path1_base + key, path1_base + key + "_Path1", options=switches):
+                            return RTN_CRITICAL
+                        logging.warning(print_msg("Path1", "  Queue copy to Path2", path2_base + key + "_Path1"))
+                        files_copy_P1P2.append(key + "_Path1")
+
+                        logging.warning(print_msg("Path2", "  Renaming Path2 copy", path2_base + key + "_Path2"))
+                        if rclone_cmd('moveto', path2_base + key, path2_base + key + "_Path2", options=switches):
+                            return RTN_CRITICAL
+                        logging.warning(print_msg("Path2", "  Queue copy to Path1", path1_base + key + "_Path2"))
+                        files_copy_P2P1.append(key + "_Path2")
+                        already_handled[key] = 1
+
                     logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
-                    logging.warning(print_msg("Path2", "  Copying to Path1", src + '_Path2'))
-                    if rclone_cmd('copyto', src, dest, options=["--ignore-times"] + switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                        return RTN_CRITICAL
-                    # Rename Path1.
-                    src  = path1_base + key 
-                    dest = path1_base + key + '_Path1' 
-                    logging.warning(print_msg("Path1", "  Renaming Path1 copy", dest))
-                    if rclone_cmd('moveto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                        return RTN_CRITICAL
+                    keep_both_versions (key)
 
-        if path2_deltas[key]['deleted']:
-            if key not in path1_deltas:
-                if key in path1_now:
-                    # File is deleted on Path2, unchanged on Path1.
-                    src  = path1_base + key 
-                    # logging.info(print_msg("Path1", "  Deleting file", src))
-                    logging.info(print_msg("Path1", "  Queue delete", src))
-                    filter_delete_P1.append(key)
-                    # if rclone_cmd('delete', src, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                    #     return RTN_CRITICAL
+            else: # Path1 deleted
+                if key not in path2_deltas:
+                    logging.info(print_msg("Path2", "  Queue delete", path2_base + key))
+                    files_delete_P2.append(key)
+                elif path2_deltas[key]['new'] or path2_deltas[key]['newer'] or path2_deltas[key]['older']:
+                    logging.info(print_msg("Path2", "  Queue copy to Path1", path1_base + key))
+                    files_copy_P2P1.append(key)
+                    already_handled[key] = 1
 
-
-    for key in path1_deltas:
-        if path1_deltas[key]['deleted']:
-            if (key in path2_deltas) and (key in path2_now):
-                # File is deleted on Path1 AND changed (newer/older/size) on Path2.
-                src  = path2_base + key 
-                dest = path1_base + key 
-                logging.warning(print_msg("WARNING", "  Deleted on Path1 and also changed on Path2", key))
-                # logging.warning(print_msg("Path2", "  Copying to Path1", dest))
-                logging.warning(print_msg("Path2", "  Queue copy to Path1", src))
-                filter_copy_P2P1.append(key)
-                # if rclone_cmd('copyto', src, dest, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-                #     return RTN_CRITICAL
-
-    # Do the batch operation
-    if len(filter_copy_P2P1) > 0:
-        filter_copy_P2P1_filename = list_file_base + "_filter_copy_P2P1"
-        with io.open(filter_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
-            for item in filter_copy_P2P1:
-                outf.write(item + "\n")
-        logging.info(print_msg("Path2", "  Do queued copies to", "Path1"))
-        if rclone_cmd('copyto', path2_base, path1_base, files_file=filter_copy_P2P1_filename, options=switches):
-            return RTN_CRITICAL
-        if not args.no_cleanup:
-            os.remove(filter_copy_P2P1_filename)
-
-    if len(filter_delete_P1) > 0:
-        filter_delete_P1_filename = list_file_base + "_filter_delete_P1"
-        with io.open(filter_delete_P1_filename, mode='wt', encoding='utf8') as outf:
-            for item in filter_delete_P1:
-                outf.write(item + "\n")
-        logging.info(print_msg("", "  Do queued deletes on", "Path1"))
-        if rclone_cmd('delete', path1_base, files_file=filter_delete_P1_filename, options=switches):
-            return RTN_CRITICAL
-        if not args.no_cleanup:
-            os.remove(filter_delete_P1_filename)
+        for key in path2_deltas:
+            if key not in already_handled:
+                if path2_deltas[key]['new'] or path2_deltas[key]['newer'] or path2_deltas[key]['older']:
+                    logging.info(print_msg("Path2", "  Queue copy to Path1", path1_base + key))
+                    files_copy_P2P1.append(key)
+                else: # Deleted 
+                    logging.info(print_msg("Path1", "  Queue delete", path1_base + key))
+                    files_delete_P1.append(key)
 
 
+        # Do the batch operation
+        if len(files_copy_P2P1) > 0:
+            files_copy_P2P1_filename = list_file_base + "_files_copy_P2P1"
+            with io.open(files_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
+                for item in files_copy_P2P1:
+                    outf.write(item + "\n")
+            logging.info(print_msg("Path2", "  Do queued copies to", "Path1"))
+            if rclone_cmd('copyto', path2_base, path1_base, files_file=files_copy_P2P1_filename, options=switches):
+                return RTN_CRITICAL
+            if not args.no_cleanup:
+                os.remove(files_copy_P2P1_filename)
 
-    # # Do the batch operation
-    # if len(filter_copy_P2P1) > 0:
-    #     filter_copy_P2P1_filename = list_file_base + "_filter_copy_P2P1"
-    #     with io.open(filter_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
-    #         for item in filter_copy_P2P1:
-    #             outf.write("+ /" + item + "\n")
-    #         outf.write("- **\n")
-    #     logging.info(print_msg("Path2", "  Do queued copies to", "Path1"))
-    #     if rclone_cmd('copyto', path2_base, path1_base, filter_file=filter_copy_P2P1_filename, options=switches):
-    #         return RTN_CRITICAL
-    #     if not args.no_cleanup:
-    #         os.remove(filter_copy_P2P1_filename)
+        if len(files_copy_P1P2) > 0:
+            files_copy_P1P2_filename = list_file_base + "_files_copy_P1P2"
+            with io.open(files_copy_P1P2_filename, mode='wt', encoding='utf8') as outf:
+                for item in files_copy_P1P2:
+                    outf.write(item + "\n")
+            logging.info(print_msg("Path1", "  Do queued copies to", "Path2"))
+            if rclone_cmd('copyto', path1_base, path2_base, files_file=files_copy_P1P2_filename, options=switches):
+                return RTN_CRITICAL
+            if not args.no_cleanup:
+                os.remove(files_copy_P1P2_filename)
 
-    # if len(filter_delete_P1) > 0:
-    #     filter_delete_P1_filename = list_file_base + "_filter_delete_P1"
-    #     with io.open(filter_delete_P1_filename, mode='wt', encoding='utf8') as outf:
-    #         for item in filter_delete_P1:
-    #             outf.write("+ /" + item + "\n")
-    #         outf.write("- **\n")
-    #     logging.info(print_msg("", "  Do queued deletes on", "Path1"))
-    #     if rclone_cmd('delete', path1_base, filter_file=filter_delete_P1_filename, options=switches):
-    #         return RTN_CRITICAL
-    #     if not args.no_cleanup:
-    #         os.remove(filter_delete_P1_filename)
+        if len(files_delete_P1) > 0:
+            files_delete_P1_filename = list_file_base + "_files_delete_P1"
+            with io.open(files_delete_P1_filename, mode='wt', encoding='utf8') as outf:
+                for item in files_delete_P1:
+                    outf.write(item + "\n")
+            logging.info(print_msg("", "  Do queued deletes on", "Path1"))
+            if rclone_cmd('delete', path1_base, files_file=files_delete_P1_filename, options=switches):
+                return RTN_CRITICAL
+            if not args.no_cleanup:
+                os.remove(files_delete_P1_filename)
 
-
-
-    # if rclone_cmd('copyto', path2_base, path1_base, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-    #     return RTN_CRITICAL
-    # if rclone_cmd('delete', path2_base, options=switches): #, linenum=inspect.getframeinfo(inspect.currentframe()).lineno):
-    #     return RTN_CRITICAL
-
-    # ***** Sync Path1 changes to Path2 ***** 
-    if len(path1_deltas) == 0 and len(path2_deltas) == 0 and not first_sync:
-        logging.info(">>>>> No changes on Path1 or Path2 - Skipping sync from Path1 to Path2")
-    else:
-        logging.info(">>>>> Synching Path1 to Path2")
-        # NOTE:  --min-size 0 added to block attempting to overwrite Google Doc files which have size -1 on Google Drive.  180729
-        if rclone_cmd('sync', path1_base, path2_base, filter_file=user_filter_file, options=switches + ['--min-size', '0']):
-            return RTN_CRITICAL
+        if len(files_delete_P2) > 0:
+            files_delete_P2_filename = list_file_base + "_files_delete_P2"
+            with io.open(files_delete_P2_filename, mode='wt', encoding='utf8') as outf:
+                for item in files_delete_P2:
+                    outf.write(item + "\n")
+            logging.info(print_msg("", "  Do queued deletes on", "Path2"))
+            if rclone_cmd('delete', path2_base, files_file=files_delete_P2_filename, options=switches):
+                return RTN_CRITICAL
+            if not args.no_cleanup:
+                os.remove(files_delete_P2_filename)
 
 
     # ***** Optional rmdirs for empty directories *****
@@ -666,8 +680,9 @@ def bidirSync():
 
     # ***** Clean up *****
     logging.info(">>>>> Refreshing Path1 and Path2 lsl files")
-    os.remove(path1_list_file_new)
-    os.remove(path2_list_file_new)
+    if not args.no_cleanup:
+        os.remove(path1_list_file_new)
+        os.remove(path2_list_file_new)
 
     if rclone_lsl(path1_base, path1_list_file, filter_file=user_filter_file):
         return RTN_CRITICAL
@@ -677,10 +692,94 @@ def bidirSync():
 
     return 0
 
+# ===============================================================
+def print_msg(tag, msg, key=''):
+    return "  {:9}{:35} - {}".format(tag, msg, key)
+
+
+# ***** rclone call wrapper functions with retries *****
+MAXTRIES=3
+def rclone_lsl(path, ofile, filter_file=None, options=None):
+    """
+    Fetch an rclone LSL of the path and write it to ofile.
+    filter_file is a string full path to a file which will be passed to rclone --filter-from.
+    options is a list of switches passed to rclone
+        EG: ["--filter-from", "some_file"]
+    """
+    linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
+    process_args = [rclone, "lsl", path, "--config", rcconfig]
+    if filter_file is not None:
+        process_args.extend(["--filter-from", filter_file])
+    if options is not None:
+        process_args.extend(options)
+    if args.rclone_args is not None:
+        process_args.extend(args.rclone_args)
+    logging.debug("    rclone command:  {}".format(process_args))
+    for x in range(MAXTRIES):
+        with io.open(ofile, "wt", encoding='utf8') as of:
+            # if is_Windows_Py27:
+            #     p = win_subprocess.Popen(process_args, stdout=of, shell=True)
+            #     out, err = p.communicate()
+            #     if not err:
+            #         return(0)
+            # else:
+            #     if not subprocess.call(process_args, stdout=of):
+            #         return 0
+            if not subprocess.call(process_args, stdout=of):
+                return 0
+            logging.info(print_msg("WARNING", "rclone lsl try {} failed.".format(x+1)))
+    logging.error(print_msg("ERROR", "rclone lsl failed.  Specified path invalid?  (Line {})".format(linenum)))
+    return 1
+
+
+def rclone_cmd(cmd, p1=None, p2=None, filter_file=None, files_file=None, options=None):
+    """
+    Execute an rclone command.
+    p1 and p2 are optional.
+    filter_file is a string full path to a file which will be passed to rclone --filter-from.
+    options is a list of switches passed to rclone
+        EG: ["--filter-from", "some_file", "--dry-run", "-vv", '--log-format', '""']
+    """
+    linenum = inspect.getframeinfo(inspect.stack()[1][0]).lineno
+    process_args = [rclone, cmd, "--config", rcconfig]
+    if p1 is not None:
+        process_args.append(p1)
+    if p2 is not None:
+        process_args.append(p2)
+    if filter_file is not None:
+        process_args.extend(["--filter-from", filter_file])
+    if files_file is not None:
+        process_args.extend(["--files-from-raw", files_file])
+    if options is not None:
+        process_args.extend(options)
+    if args.rclone_args is not None:
+        process_args.extend(args.rclone_args)
+    logging.debug("    rclone command:  {}".format(process_args))
+    for x in range(MAXTRIES):
+        try:
+            # if is_Windows_Py27:
+            #     # On Windows and Python 2.7, the subprocess module only support ASCII in the process_args
+            #     # argument.  The win_subprocess mdoule supports extended characters (UTF-8), which is needed 
+            #     # when file and directory names contain extended characters.  However, win_subprocess 
+            #     # requires both shell=True and valid output files.  
+            #     with io.open(workdir + "deleteme.txt", "wt") as of:
+            #         p = win_subprocess.Popen(process_args, stdout=of, stderr=of, shell=True)
+            # else:
+            #     p = subprocess.Popen(process_args)
+            p = subprocess.Popen(process_args)
+            p.wait()
+            if p.returncode == 0:
+                return 0
+        except Exception as e:
+            logging.info(print_msg("WARNING", "rclone {} try {} failed.".format(cmd, x+1), p1))
+            logging.info("message:  <{}>".format(e))
+    logging.error(print_msg("ERROR", "rclone {} failed.  (Line {})".format(cmd, linenum), p1))
+    return 1
+
 
 # LINE_FORMAT = re.compile(u'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
 LINE_FORMAT = re.compile(r'\s*([0-9]+) ([\d\-]+) ([\d:]+).([\d]+) (.*)')
-def load_list(infile, match=None):
+def load_list(lslfile, match=None):
     # Format ex:
     #  3009805 2013-09-16 04:13:50.000000000 12 - Wait.mp3
     #   541087 2017-06-19 21:23:28.610000000 DSC02478.JPG
@@ -688,7 +787,7 @@ def load_list(infile, match=None):
 
     d = {}
     try:
-        with io.open(infile, mode='rt', encoding='utf8') as f:
+        with io.open(lslfile, mode='rt', encoding='utf8') as f:
             for line in f:
                 out = LINE_FORMAT.match(line)
                 if out:
@@ -704,11 +803,11 @@ def load_list(infile, match=None):
                         if match in filename:
                             d[filename] = {'size': size, 'datetime': date_time}
                 else:
-                    logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(infile, line))
+                    logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(lslfile, line))
         return 0, collections.OrderedDict(sorted(d.items()))        # return Success and a sorted list
 
     except Exception as e:
-        logging.error("Exception in load_list loading <{}>:  <{}>".format(infile, e))
+        logging.error("Exception in load_list loading <{}>:  <{}>".format(lslfile, e))
         return 1, ""                                                # return False
 
 
