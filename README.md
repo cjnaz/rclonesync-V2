@@ -38,6 +38,16 @@ to check for proper operation.
 
 ## Notable changes in the latest release
 
+V3.0 200824
+- Removed Python 2.7 support
+- Not checking for size change
+- On first-sync either path may be empty.  Something must be sync'd since following syncs don't allow empty dirs.
+- Requires a rclone version that supports --files-from-raw - 1.52.0 or later.
+- The check for file size change is eliminated.  In prior versions a size change was noted but by itself did not trigger a file transfer.  
+- A changed file transfer is only triggered by a timestamp change, usually a newer version.  Note that if a file's timestamp changes to _earlier/older_ the changed file _will_ still be transferred, overwriting the more recent file on the other side.  This behavior supports, for example, a directory of files being replaced with an older snapshot.  The older file will be noted in the verbose log.  This older file handling behavior isn't really a change from prior versions.  
+
+
+
 V2.11 200813 Bug fix for proper searching during the check access phase.  
 - Previously, the user's filters file was not utilized, resulting in searching for check files in normally masked directories, causing access errors and inefficiency.  See [bug #55](https://github.com/cjnaz/rclonesync-V2/issues/55).  With this update, the user's filters is parsed and the search is for check files in all non-excluded directories.
 - Check out the new [FILTERING.md](https://github.com/cjnaz/rclonesync-V2/blob/master/FILTERING.md) for recommendations on how to do effective filtering for your syncs.

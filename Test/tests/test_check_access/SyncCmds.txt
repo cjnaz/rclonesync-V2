@@ -22,10 +22,14 @@
 :RCLONE: delete :PATH1:RCLONE_TEST
 :RCSEXEC: :PATH1: :PATH2: --check-access
 :SAVELSL: Path1_missing
+
+:MSG:	6) Run again, will fail critical due to missing lsl files.
+:RCSEXEC: :PATH1: :PATH2: --check-access
+:SAVELSL: missing_LSLs
 rm :WORKDIR:LSL*
 
-:MSG:	6) Run --first-sync, which will copy the Path2 top level back to Path1
+:MSG:	7) Run --first-sync, which will copy the Path2 top level back to Path1
 :RCSEXEC: :PATH1: :PATH2: --first-sync
 
-:MSG:	7) Run sync with --check-access.  Should pass.
+:MSG:	8) Run sync with --check-access.  Should pass.
 :RCSEXEC: :PATH1: :PATH2: --check-access

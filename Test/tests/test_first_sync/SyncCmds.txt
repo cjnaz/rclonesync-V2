@@ -1,6 +1,21 @@
 :MSG: test_first_sync
 
-:MSG:	File			Path1			Path2			Expected action		Which wins
+:MSG:	1) first-sync with empty path1, resulting in copying all content from path2
+rm -rf :PATH1:*
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:SAVELSL: empty_path1
+rm :WORKDIR:LSL*
+
+
+:MSG:	2) first-sync with empty path2, resulting in syncing all content to path2
+rm -rf :PATH2:*
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:SAVELSL: empty_path2
+rm :WORKDIR:LSL*
+
+
+:MSG:	3) Exercise all of the various file difference scenarios during a first-sync
+#:MSG:	File			Path1			Path2			Expected action		Which wins
 
 touch :TESTCASEROOT:modfiles/fileA.txt --date="2002-02-02"
 touch :TESTCASEROOT:modfiles/fileB.txt --date="1999-09-09"
@@ -27,10 +42,17 @@ touch :TESTCASEROOT:modfiles/fileB.txt --date="1999-09-09"
 
 :MSG:	file7.txt		exists			exists (same)	None				same
 
-
 :MSG:	rclonesync --first-sync test run
 :RCSEXEC: :PATH1: :PATH2: --first-sync
-:SAVELSL: first_sync
+:SAVELSL: mixed_diffs
 
 :MSG:	rclonesync non --first-sync test run
 :RCSEXEC: :PATH1: :PATH2:
+
+
+:MSG:	4) Confirm critical error on normal sync of empty path
+rm -rf :PATH2:*
+:RCSEXEC: :PATH1: :PATH2:
+
+
+

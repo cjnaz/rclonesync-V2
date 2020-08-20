@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Test engine for rclonesync test cases
 Test cases are organized in subdirs beneath ./tests.
 Results are compared against golden LSL files and the rclonesync log file.
@@ -10,7 +10,8 @@ Example for running all tests with output directed to a log file:
 version = "V3.0 200818"
 
 # Revision history
-# V3.0 200818 - Cleanup revision.  Eliminated ChangeCmds phase.  Moved setup --first-sync into the tests themselves.  Added --benchmark.  Removed Py2.7 support.
+# V3.0 200818 - Cleanup revision.  Eliminated ChangeCmds phase.  Moved setup --first-sync into the tests themselves.  
+#   Added --benchmark.  Removed Py2.7 support.
 # V1.8 200813 - Added :SAVELSL: feature
 # V1.7 200411 - Added Python version (2 or 3) to --Windows-testing
 # V1.6 191103 - Unicode enhancements, including on the rclonesync command line
@@ -37,7 +38,8 @@ import shutil
 import filecmp
 import time
 
-if "linux" not in sys.platform:  # <linux2> on Py2, <linux> on Py3
+# if "linux" not in sys.platform:  # <linux2> on Py2, <linux> on Py3
+if sys.platform != "linux":
     print ("This program only works on Linux systems, not Windows.")
     exit()
 if "PYTHONIOENCODING" not in os.environ:
@@ -60,8 +62,7 @@ def rcstest():
     TESTCASEROOT = "./tests/" + testcase + "/"
     INITIALDIR   = TESTCASEROOT + "initial/"
     GOLDENDIR    = TESTCASEROOT + "golden/"
-    CHANGECMDS   = TESTCASEROOT + "/ChangeCmds.txt"         # File of commands for changes from initial setup state for a test
-    SYNCCMD      = TESTCASEROOT + "/SyncCmds.txt"           # File of rclonesync (and other) commands
+    SYNCCMDS     = TESTCASEROOT + "/SyncCmds.txt"           # File of rclonesync (and other) commands
 
     print ("CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2")
     if os.path.exists(WORKDIR):
@@ -88,7 +89,7 @@ def rcstest():
 
     print ("\nRUN SYNCCMDS (console output captured to consolelog.txt)")
     with io.open(CONSOLELOGFILE, mode="wt", encoding="utf8") as logfile:
-        with io.open(SYNCCMD, mode="rt", encoding='utf8', errors="replace") as ifile:
+        with io.open(SYNCCMDS, mode="rt", encoding='utf8', errors="replace") as ifile:
             for line in ifile:
                 line = line[0:line.find('#')].lstrip().rstrip()
                 sys.stdout.flush()
@@ -132,13 +133,10 @@ def rcstest():
                             xx = xx.replace("--config","").replace(rcconfig,"").replace('/','\\')     # Must use Windows-side user default config file
                             print ("    {}".format(xx))
                             with io.open("wincmd.bat", mode='wt', encoding='utf-8') as wincmd_bat:
-                                wincmd_bat.write("    py -{} {} >> {} 2>&1 & del wincmd.bat".format(args.Windows_testing, xx, CONSOLELOGFILE.replace('/','\\')))
+                                wincmd_bat.write("    py -3 {} >> {} 2>&1 & del wincmd.bat".format(xx, CONSOLELOGFILE.replace('/','\\')))
                                 wincmd_bat.flush()
                                 os.fsync(wincmd_bat.fileno())
-                            if sys.version_info[0] < 3:
-                                raw_input("Hit return after running <wincmd.bat> on Windows side. >>")
-                            else:
-                                input("Hit return after running <wincmd.bat> on Windows side. >>")
+                            input("Hit return after running <wincmd.bat> on Windows side. >>")
                         else:
                             print ("    {}".format(xx))
                             subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
@@ -152,9 +150,6 @@ def rcstest():
         h, m = divmod(m, 60)
         print (f"Runtime {int(m)} min {s:6.3f} sec")
         return 0
-
-    if os.path.exists(WORKDIR + "deleteme.txt"):    # Remnant from Windows and Python2.7  TODO
-        os.remove (WORKDIR + "deleteme.txt")        # Delete it so that it doesn't mess up the file compare.
 
     errcnt = 0
     if args.golden:
@@ -191,7 +186,7 @@ def rcstest():
                 errcnt += 1
                 print ("File found in Results but not in Golden:  <{}>".format(xx))
 
-        if args.Windows_testing is not None:
+        if args.Windows_testing:
             # hack the test result consolelog.txt, swapping to Linux-style slashes
             with io.open(CONSOLELOGFILE, encoding='utf-8') as f:
                 s = f.read()
@@ -247,8 +242,8 @@ if __name__ == '__main__':
                         help="Include timestamps and measure full test run time.")
     parser.add_argument('--no-cleanup', action='store_true',
                         help="Disable cleanup of Path1 and Path2 testdirs.  Useful for debug.")
-    parser.add_argument('--Windows-testing', type=int,
-                        help="Disable running rclonesyncs during the SyncCmds phase.  Specify Windows Python version (2 or 3).")
+    parser.add_argument('--Windows-testing', action='store_true',
+                        help="Disable running rclonesyncs during the SyncCmds phase, and produce .bat file to be run on Windows.")
     parser.add_argument('--rclonesync', default=RCSEXEC,
                         help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC))
     parser.add_argument('-r','--rclone', default="rclone",
@@ -304,12 +299,6 @@ if __name__ == '__main__':
                 print ("ERROR  Path2 parameter <{}> not in list of configured remotes: {}".format(path2base, clouds)); exit()
         else:
             print ("ERROR  Path2 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path2, clouds)); exit()
-
-    if args.Windows_testing is not None:        # TODO rework to boolean and hard code logic to py -3
-        if args.Windows_testing != 2 and args.Windows_testing != 3:
-            print ("ERROR  Specify '2' (Python 2.7) or '3' (Python 3.x) with --Windows-testing")
-            exit()
-
 
 
     if testcase != "ALL":
