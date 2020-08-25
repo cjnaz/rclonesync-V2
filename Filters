@@ -11,8 +11,8 @@
 - .dropbox
 
 # Used for rclonesync testing, so excluded from normal runs
-- /testdir/**
+- /testdir/
 
 # Other example filters
-# /TiBU/*
-# /Photos/**
+#- /TiBU/
+#- /Photos/

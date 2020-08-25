@@ -5,23 +5,13 @@ Results are compared against golden LSL files and the rclonesync log file.
 
 Example for running all tests with output directed to a log file:
     ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
+
+See See TESTCASES.md for documentation.
 """
 
-version = "V3.0 200818"
+version = "V3.0 200824"
 
-# Revision history
-# V3.0 200818 - Cleanup revision.  Eliminated ChangeCmds phase.  Moved setup --first-sync into the tests themselves.  
-#   Added --benchmark.  Removed Py2.7 support.
-# V1.8 200813 - Added :SAVELSL: feature
-# V1.7 200411 - Added Python version (2 or 3) to --Windows-testing
-# V1.6 191103 - Unicode enhancements, including on the rclonesync command line
-# V1.5 191003 - Force sorted order of ALL testcases.  Force sorted order of 
-#   results compare.  Deleted --config switch for Windows testing.  Fixed cleanup bug.
-# V1.4 190408 - Added --config switch and support for --rclone-args switches in ChangeCmds and SyncCmds rclonesync calls.
-# V1.3 190330 - Added hook for running tests with Windows.  See README.md.
-# V1.2 181001 - Add support for path to rclone
-# V1.1 180729 - Rework for rclonesync Path1/Path2 changes.  Added optional path to rclonesync.py.
-# V1.0 180701 - New
+# See TESTCASES.md for the revision history
 
 # Todos
 #   sym links are not supported.
@@ -38,7 +28,6 @@ import shutil
 import filecmp
 import time
 
-# if "linux" not in sys.platform:  # <linux2> on Py2, <linux> on Py3
 if sys.platform != "linux":
     print ("This program only works on Linux systems, not Windows.")
     exit()

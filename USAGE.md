@@ -8,17 +8,16 @@ My usage of a cloud service is for exchanging both routine and sensitive persona
 on the road, and with
 my work computer.  The routine data is not sensitive.  I have configured an rclone Crypt (https://rclone.org/crypt/) "remote" to point 
 to a subdirectory within the local disk tree that I rclonesync to Dropbox:.  I then set up an rclonesync for this local crypt directory to 
-a directory outside of main sync tree.
+a directory outside of the main sync tree.
 
 ### The setup looks like this on my local Linux server:
 - `/mnt/somepath/DBoxroot` is the root of my local sync tree.  There are numerous subdirectories.
 - `/mnt/somepath/DBoxroot/crypt` is the root subdirectory for files that are encrypted.  This local directory target is setup as
 an rclone crypt "remote" named Dropcrypt:.  See rclone.conf snip below.
-- `/mnt/somepath/myUnencryptedFiles` is the root of my sensitive files - not encrypted, not within the tree synced to Dropbox, and SAMBA
-shared on my LAN.
+- `/mnt/somepath/myUnencryptedFiles` is the root of my sensitive files - not encrypted, not within the tree synced to Dropbox.
 - To sync my local unencrypted files with the encrypted Dropbox versions I manually run 
-`rclonesync.py /mnt/somepath/myUnencryptedFiles Dropcrypt:`.  (Note **)
-- `rclonesync.py /mnt/somepath/DBoxroot Dropbox:` runs periodically via cron, keeping my full local sync tree in sync with Dropbox.
+`rclonesync /mnt/somepath/myUnencryptedFiles Dropcrypt:`.  (Note **)
+- `rclonesync /mnt/somepath/DBoxroot Dropbox:` runs periodically via cron, keeping my full local sync tree in sync with Dropbox.
 
 Note **:  This step could be bundled into a script to run before and after the full Dropbox tree sync in the last step, thus actively 
 keeping the sensitive files in sync.
@@ -28,7 +27,7 @@ keeping the sensitive files in sync.
 rclone/rclonesync instead.
 - A separate directory tree at `C:\Users\<me>\Documents\DropLocal` hosts the tree of unencrypted files/folders.
 - To sync my local unencrypted files with the encrypted Dropbox versions I manually run 
-`rclonesync.py C:\Users\<me>\Documents\DropLocal Dropcrypt:`.
+`rclonesync C:\Users\<me>\Documents\DropLocal Dropcrypt:`.
 - The Dropbox client then syncs the changes with Dropbox.
 
 ### rclone.conf snip:

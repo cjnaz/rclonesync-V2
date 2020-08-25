@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BiDirectional Sync using rclone"""
 
-__version__ = "V3.0 200818"                         # Version number and date code
+__version__ = "V3.0 200824"                         # Version number and date code
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
@@ -145,13 +145,13 @@ def bidirSync():
     def get_and_load_lsl (path_text, lsl_file, path12=None):
         if path12 is not None:
             if rclone_lsl(path12, lsl_file, filter_file=user_filter_file):
-                return RTN_CRITICAL, None
+                return RTN_ABORT, None
         status, loaded_list = load_list(lsl_file)
         if status:
             logging.error(print_msg("ERROR", f"Failed loading {path_text} list file <{lsl_file}>"))
-            return RTN_CRITICAL, None
+            return RTN_ABORT, None
         if not first_sync and len(loaded_list) == 0:
-            logging.error(print_msg("ERROR", f"Zero length in {path_text} list file <{lsl_file}>"))
+            logging.error(print_msg("ERROR", f"Zero length in {path_text} list file <{lsl_file}>.  Cannot sync to an empty directory tree."))
             return RTN_CRITICAL, None
         return 0, loaded_list
 
@@ -212,7 +212,7 @@ def bidirSync():
         def get_check_files (loaded_lsl):
             check_files = {}
             for key in loaded_lsl:
-                if args.check_filename in key:
+                if args.check_filename in key and "rclonesync/Test/" not in key:
                     check_files[key] = loaded_lsl[key]
             return check_files
 
@@ -236,6 +236,8 @@ def bidirSync():
 
         if check_error:
             return RTN_CRITICAL
+
+        logging.info(f"  Found <{len(path1_check)}> matching <{args.check_filename}> files on both paths")
 
 
     # ***** Load Prior content of both Path1 and Path2 trees *****
@@ -416,9 +418,11 @@ def bidirSync():
                     logging.info(print_msg("Path1", "  Queue delete", path1_base + key))
                     files_delete_P1.append(key)
 
-
+        path1_changes = False
+        path2_changes = False
         # Do the batch operation
         if len(files_copy_P2P1) > 0:
+            path1_changes = True
             files_copy_P2P1_filename = lsl_file_base + "_files_copy_P2P1"
             with io.open(files_copy_P2P1_filename, mode='wt', encoding='utf8') as outf:
                 for item in files_copy_P2P1:
@@ -430,6 +434,7 @@ def bidirSync():
                 os.remove(files_copy_P2P1_filename)
 
         if len(files_copy_P1P2) > 0:
+            path2_changes = True
             files_copy_P1P2_filename = lsl_file_base + "_files_copy_P1P2"
             with io.open(files_copy_P1P2_filename, mode='wt', encoding='utf8') as outf:
                 for item in files_copy_P1P2:
@@ -441,6 +446,7 @@ def bidirSync():
                 os.remove(files_copy_P1P2_filename)
 
         if len(files_delete_P1) > 0:
+            path1_changes = True
             files_delete_P1_filename = lsl_file_base + "_files_delete_P1"
             with io.open(files_delete_P1_filename, mode='wt', encoding='utf8') as outf:
                 for item in files_delete_P1:
@@ -452,6 +458,7 @@ def bidirSync():
                 os.remove(files_delete_P1_filename)
 
         if len(files_delete_P2) > 0:
+            path2_changes = True
             files_delete_P2_filename = lsl_file_base + "_files_delete_P2"
             with io.open(files_delete_P2_filename, mode='wt', encoding='utf8') as outf:
                 for item in files_delete_P2:
@@ -480,11 +487,18 @@ def bidirSync():
         shutil.copy2(path1_lsl_file_new, path1_lsl_file)
         shutil.copy2(path2_lsl_file_new, path2_lsl_file)
     else:
-        if rclone_lsl(path1_base, path1_lsl_file, filter_file=user_filter_file):
-            return RTN_CRITICAL
+        if path1_changes:
+            if rclone_lsl(path1_base, path1_lsl_file, filter_file=user_filter_file):
+                return RTN_CRITICAL
+        else:
+            shutil.copy2(path1_lsl_file_new, path1_lsl_file)
 
-        if rclone_lsl(path2_base, path2_lsl_file, filter_file=user_filter_file):
-            return RTN_CRITICAL
+        if path2_changes:
+            if rclone_lsl(path2_base, path2_lsl_file, filter_file=user_filter_file):
+                return RTN_CRITICAL
+        else:
+            shutil.copy2(path2_lsl_file_new, path2_lsl_file)
+
 
     if not args.no_cleanup:
         os.remove(path1_lsl_file_new)

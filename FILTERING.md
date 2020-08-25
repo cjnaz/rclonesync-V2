@@ -23,7 +23,7 @@ On the other hand, there may be only select directories that you actually want t
 
 1. Begin with excluding directory trees 
 	- EG: `- /AppData/`
-	- `**` on the end is not necessary.  Once a given directory level is excluded then everything beneath it won't be looked at.
+	- `**` on the end is not necessary.  Once a given directory level is excluded then everything beneath it won't be looked at by rclone.
 	- Exclude such directories that are unneeded, are big, dynamically thrashed, or where there may be access permission issues.
 	- Excluding such dirs first will make rclone operations (much) faster.
     - Specific files may also be excluded, as with the Dropbox exclusions example, below.
@@ -79,7 +79,7 @@ Note also that Windows implements several "library" links such as `C:\Users\<me>
 ## Example _Exclude-style_ filters files for use with Dropbox
 
 This file is [included](https://github.com/cjnaz/rclonesync-V2/blob/master/Filters) in the rclonesync repo directory.  Notable:
-- Dropbox disallows syncing the listed temporary and configuration/data files.  The `- ...` filters exclude these files where ever they may occur in the sync tree.  Consider adding similar exclusions for file types you don't need to sync, such as core dump and software build files.
+- Dropbox disallows syncing the listed temporary and configuration/data files.  The `- <filename>` filters exclude these files where ever they may occur in the sync tree.  Consider adding similar exclusions for file types you don't need to sync, such as core dump and software build files.
 - rclonesync testing creates /testdir/ at the top level of the sync tree, and usually deletes the tree after the test.  If a normal sync should run while the /testdir/ tree exists the --check-access phase may fail due to unbalanced RCLONE_TEST files.  The `- /testdir/` filter blocks this tree from being synced.  You don't need this exclusion if you are not doing rclonesync development testing.
 - Everything else beneath the Path1/Path2 root will be synced.
 - RCLONE_TEST files may be placed anywhere within the tree, including the root.
@@ -87,7 +87,7 @@ This file is [included](https://github.com/cjnaz/rclonesync-V2/blob/master/Filte
 ```
 # Filter file for use with rclonesync
 # See https://rclone.org/filtering/ for filtering rules
-# NOTICE:  If you make changes to this file you MUST do a --FirstSetup run OR FILES WILL BE DELETED.  Run with --DryRun to see what changes will be made.
+# NOTICE:  If you make changes to this file you MUST do a --first-sync run.  Run with --dry-run to see what changes will be made.
 
 # Dropbox wont sync some files, so filtered here.  See https://www.dropbox.com/en/help/syncing-uploads/files-not-syncing
 - .dropbox.attr
@@ -98,24 +98,15 @@ This file is [included](https://github.com/cjnaz/rclonesync-V2/blob/master/Filte
 - .dropbox
 
 # Used for rclonesync testing, so excluded from normal runs
-- /testdir/**
+- /testdir/
 
 # Other example filters
-# /TiBU/*
-# /Photos/**
+#- /TiBU/
+#- /Photos/
 ```
 
-## rclonesync's --check-access handling of the filters file (detailed reading)
-For debug purposes, here are the details of how filtering is done during the `--check-access` phase. To view the `--check-access` phase constructed filters, run rclonesync with `--verbose --verbose` (yes, two of them). `--check-filename` may be used to override the default RCLONE_TEST file name.  `--keep-chkfiles` may be set to keep the LSL*CHK files in your rclonesync workdir.
+## rclonesync's --check-access handling of the filters file (a pretty short story)
 
-Normally if there is a supplied `--filters-file` the file is directly passed along to rclone's  `--filter-from`; however, during the `--check-access` phase if there is a supplied `--filters-file` the file is _not_ passed directly to rclone, but rather it is parsed and `--filter` terms are passed to rclone as follows:
-- A directory exclude line, such as `- /AppData/`, is directly passed as `--filter "- /AppData/"`
-    - The filter may be alternately written as `- /AppData/*` or `- /AppData/**`.  All three syntaxes are equivalent - everything in and beneath /AppData/ is excluded by rclone.
-- A directory include line, such as `+ /Documents/ABC/**`, becomes `--filter "+ /Documents/ABC/**RCLONE_TEST"`
-- rclonesync test-related directories are excluded by adding `--filter "- rclonesync/Test/" --filter "- /testdir/"`.  The former is incase you have the rclonesync git tree within the sync tree, which can cause sync failures as new test cases with check files are added.  This git tree can be synced, but check files within this tree are not checked.  The latter excludes directories related to actively running test cases. 
-	- If you are doing development on rclonesync you may wish to put `- /testdir/` in your filters file to avoid syncing this tree, as these are temporary/transient files (otherwise not needed).
-- If your filters file does _not_ contain a `- **` line then `--filter "RCLONE_TEST"` is added to pick up check files throughout the tree, not including excluded directories.
-- Lastly, `--filter "- **"` is added to eliminate all other files.
+At the start of an rclonesync run, lsl files are gathered for Path1 and Path2 while using the user's --filters-file.  During the check access phase, rclonesync scans these lsl files for RCLONE_TEST files.  Any RCLONE_TEST files hidden by the --filers-file are not in the lsl files and thus not checked during the check access phase.
 
-Effectively, RCLONE_TEST files are found _only_ in included directory trees, _or_ in the entire non-excluded tree if there no `- **` line in your filters file.
-
+In addition, any RCLONE_TEST files containing `rclonesync/Test/` in their path are ignored for the check access phase.  This allows for editing rclonesync test cases without tripping the check access abort.
