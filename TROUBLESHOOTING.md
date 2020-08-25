@@ -96,12 +96,3 @@ Note that rclonesync currently ignores any Google docs.  They will show up with 
 >
 2018-07-29 08:49:50,123:  >>>>> Successful run.  All done.
 ```
-
-
-## Running Python version 2.6?
-
-rclonesync requires Python 2.7 or higher.  Running on older versions is trapped and reported as an error (prior to V2.3 rclonesync 
-would crash).  
-Do a secondary Python install of Python 2.7.x or 3.x.  See... Google `Python altinstall` on Linux machines (https://docs.python.org/2/using/unix.html) 
-and (https://danieleriksson.net/2017/02/08/how-to-install-latest-python-on-centos/). 
-

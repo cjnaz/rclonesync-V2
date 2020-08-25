@@ -1,3 +1,8 @@
+:MSG: test_filtersfile_checks
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
 :MSG:   1) Place filtersfile in WORKDIR
 :RCLONE: copy :TESTCASEROOT:filtersfile.txt :WORKDIR:
 

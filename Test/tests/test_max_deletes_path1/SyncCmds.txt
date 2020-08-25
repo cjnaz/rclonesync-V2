@@ -1,5 +1,20 @@
+:MSG: test_max_deletes_path1
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
+
+:MSG:	Delete >50% of local files
+:RCLONE: delete :PATH1:file1.txt
+:RCLONE: delete :PATH1:file2.txt
+:RCLONE: delete :PATH1:file3.txt
+:RCLONE: delete :PATH1:file4.txt
+:RCLONE: delete :PATH1:file5.txt
+
 :MSG:	Sync should fail due to too many local deletes
 :RCSEXEC: :PATH1: :PATH2:
+:SAVELSL: Initial_fail
+
 
 :MSG:   Change --max-delta limit to 60%, and sync should run.
 :RCSEXEC: :PATH1: :PATH2: --max-deletes 60

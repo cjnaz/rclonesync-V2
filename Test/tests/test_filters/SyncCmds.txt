@@ -1,5 +1,16 @@
-# This first line has a --first-sync to force building the filters file -MD5.  Uncomment and run once to reset the stored MD5.
-#:RCSEXEC: :PATH1: :PATH2: --filters-file :TESTCASEROOT:filtersfile.txt --first-sync
+:MSG: test_filters
 
-:MSG:	Issue rclonesync with --filters-file.  Path2-side fileZ.txt is filtered.
-:RCSEXEC: :PATH1: :PATH2: --filters-file :TESTCASEROOT:filtersfile.txt
+:RCLONE: copyto :TESTCASEROOT:filtersfile.txt :WORKDIR:LSLfiltersfile.txt
+
+:MSG:	Do --first-sync to force building the filters file -MD5.
+:RCSEXEC: :PATH1: :PATH2: --filters-file :WORKDIR:LSLfiltersfile.txt --first-sync
+:SAVELSL: Firstsync
+
+:MSG:	Place new files on the Remote
+touch :TESTCASEROOT:modfiles/fileZ.txt --date="2001-01-02"
+:RCLONE: copyto :TESTCASEROOT:/modfiles/fileZ.txt :PATH2:/fileZ.txt
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileZ.txt :PATH1:subdir/fileZ.txt
+
+
+:MSG:	rclonesync test run with --filters-file.  Path2-side fileZ.txt is filtered.
+:RCSEXEC: :PATH1: :PATH2: --filters-file :WORKDIR:LSLfiltersfile.txt

@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""Test engine for rclonesync test cases
+Test cases are organized in subdirs beneath ./tests.
+Results are compared against golden LSL files and the rclonesync log file.
+
+Example for running all tests with output directed to a log file:
+    ./testrcsync.py local GDrive: ALL > runlog.txt 2>&1
+
+See See TESTCASES.md for documentation.
+"""
+
+version = "V3.0 200824"
+
+# See TESTCASES.md for the revision history
+
+# Todos
+#   sym links are not supported.
+
+
+import argparse
+import sys
+import io
+import re
+import os.path
+import os
+import subprocess
+import shutil
+import filecmp
+import time
+
+if sys.platform != "linux":
+    print ("This program only works on Linux systems, not Windows.")
+    exit()
+if "PYTHONIOENCODING" not in os.environ:
+    print ("Environment var PYTHONIOENCODING is not set (needed for output redirection).  Do 'export PYTHONIOENCODING=\'utf-8\''.")
+    exit()
+
+
+RCSEXEC = "../rclonesync"
+LOCALTESTBASE = "./"
+TESTDIR = "testdir/"
+WORKDIR = "./testwd" + "/"
+CONSOLELOGFILE = WORKDIR + "consolelog.txt"
+
+def rcstest():
+    path1 = path1base + TESTDIR + "path1/"
+    path2 = path2base + TESTDIR + "path2/"
+    print ("***** Test case <{}> using Path1 <{}>, Path2 <{}>, <{}>, and <{}>"
+           .format(testcase, path1, path2, rcsexec, rclone))
+
+    TESTCASEROOT = "./tests/" + testcase + "/"
+    INITIALDIR   = TESTCASEROOT + "initial/"
+    GOLDENDIR    = TESTCASEROOT + "golden/"
+    SYNCCMDS     = TESTCASEROOT + "/SyncCmds.txt"           # File of rclonesync (and other) commands
+
+    print ("CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2")
+    if os.path.exists(WORKDIR):
+        shutil.rmtree(WORKDIR)
+    os.mkdir(WORKDIR)
+
+    FNULL = open(os.devnull, 'w')
+    subprocess.call([rclone, "purge", path1, "--config", rcconfig ], stdout=FNULL, stderr=FNULL)
+    subprocess.call([rclone, "purge", path2, "--config", rcconfig ], stdout=FNULL, stderr=FNULL)
+
+
+    # git tends to change file mod dates.  For test stability, jam initial dates to a fixed past date.
+    # test cases that changes files (test_changes, for example) will touch specific files to fixed new dates.
+    subprocess.call("find " + INITIALDIR + r' -type f -exec touch --date="2000-01-01" {} +', shell=True)
+
+    subprocess.call([rclone, "copy", INITIALDIR, path1, "--config", rcconfig])
+    subprocess.call([rclone, "sync", path1, path2, "--config", rcconfig])
+    sys.stdout.flush()                                      # Force alignment of stdout and stderr in redirected output file.
+
+
+    if args.benchmark:
+        start_time = time.time()
+        print ("Start: ", time.asctime(time.localtime()))
+
+    print ("\nRUN SYNCCMDS (console output captured to consolelog.txt)")
+    with io.open(CONSOLELOGFILE, mode="wt", encoding="utf8") as logfile:
+        with io.open(SYNCCMDS, mode="rt", encoding='utf8', errors="replace") as ifile:
+            for line in ifile:
+                line = line[0:line.find('#')].lstrip().rstrip()
+                sys.stdout.flush()
+                sys.stderr.flush()
+                if len(line) > 0:
+                    if ":MSG:" in line:
+                        print ("    {}".format(line))
+                        subprocess.call(["echo", '\n'+line+'\n'], stdout=logfile, stderr=logfile)
+                    elif ":SAVELSL:" in line:
+                        print ("    {}".format(line))
+                        subprocess.call(["echo", '\n'+line+'\n'], stdout=logfile, stderr=logfile)
+                        prefix = line.split()[1]
+                        for _file in os.listdir(WORKDIR):
+                            if _file.startswith("LSL"):
+                                shutil.copy2(os.path.join(WORKDIR, _file), os.path.join(WORKDIR, prefix + '_' + _file))
+                    else:
+                        if ":RCSEXEC:" in line:
+                            _line = line.split()    # Move any --rclone-args after additional switches
+                            beginning = _line
+                            rcargs = []
+                            if "--rclone-args" in line:
+                                rclone_args_index = _line.index("--rclone-args")
+                                beginning = _line[0:rclone_args_index]
+                                rcargs = _line[rclone_args_index:]
+                            if args.benchmark:
+                                line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-cleanup --rclone :RCLONE: --config", rcconfig] + rcargs)
+                            else:
+                                line = " ".join (beginning + [" --verbose --workdir :WORKDIR: --no-datetime-log --no-cleanup --rclone :RCLONE: --config", rcconfig] + rcargs)
+                        xx = line \
+                            .replace(":/", ":") \
+                            .replace(":TESTCASEROOT:", TESTCASEROOT) \
+                            .replace(":PATH1:", path1) \
+                            .replace(":PATH2:", path2) \
+                            .replace(":RCSEXEC:", rcsexec) \
+                            .replace(":RCLONE:", rclone) \
+                            .replace(":WORKDIR:", WORKDIR)
+                        subprocess.call("echo " + xx, stdout=logfile, stderr=logfile, shell=True)
+                        sys.stdout.flush()
+                        sys.stderr.flush()
+                        if args.Windows_testing and ":RCSEXEC:" in line:
+                            xx = xx.replace("--config","").replace(rcconfig,"").replace('/','\\')     # Must use Windows-side user default config file
+                            print ("    {}".format(xx))
+                            with io.open("wincmd.bat", mode='wt', encoding='utf-8') as wincmd_bat:
+                                wincmd_bat.write("    py -3 {} >> {} 2>&1 & del wincmd.bat".format(xx, CONSOLELOGFILE.replace('/','\\')))
+                                wincmd_bat.flush()
+                                os.fsync(wincmd_bat.fileno())
+                            input("Hit return after running <wincmd.bat> on Windows side. >>")
+                        else:
+                            print ("    {}".format(xx))
+                            subprocess.call(xx, stdout=logfile, stderr=logfile, shell=True)
+                    sys.stdout.flush()
+
+    if args.benchmark:
+        end_time = time.time()
+        print ("Finish:", time.asctime(time.localtime()))
+        zz = end_time - start_time
+        m, s = divmod(zz, 60)
+        h, m = divmod(m, 60)
+        print (f"Runtime {int(m)} min {s:6.3f} sec")
+        return 0
+
+    errcnt = 0
+    if args.golden:
+        print ("\nCopying run results to the testcase golden directory")
+        if os.path.exists(GOLDENDIR):
+            shutil.rmtree(GOLDENDIR)
+        shutil.copytree(WORKDIR, GOLDENDIR)
+    else:
+        print ("\nCOMPARE RESULTS files to the testcase golden directory")
+
+        def files_list(dirlist):
+            xxx = ""
+            for file in dirlist:
+                xxx += file + ', '
+            return xxx[:-2]
+
+        goldenfiles =  sorted(os.listdir(GOLDENDIR))
+        resultsfiles = sorted(os.listdir(WORKDIR))
+        sys.stdout.flush()
+
+        print ("----------------------------------------------------------")
+        if len(goldenfiles) != len(resultsfiles):
+            print ("MISCOMPARE - Number of Golden and Results files do notmatch:")
+            print ("  Golden  count {}: {}".format(len(goldenfiles),  files_list(goldenfiles)))
+            print ("  Results count {}: {}".format(len(resultsfiles), files_list(resultsfiles)))
+        else:
+            print ("Number of results files ({}) match".format(len(goldenfiles)))
+        for xx in goldenfiles:
+            if xx not in resultsfiles:
+                errcnt += 1
+                print ("File found in Golden but not in Results:  <{}>".format(xx))
+        for xx in resultsfiles:
+            if xx not in goldenfiles:
+                errcnt += 1
+                print ("File found in Results but not in Golden:  <{}>".format(xx))
+
+        if args.Windows_testing:
+            # hack the test result consolelog.txt, swapping to Linux-style slashes
+            with io.open(CONSOLELOGFILE, encoding='utf-8') as f:
+                s = f.read()
+            s = s.replace("\\\\", "/")
+            s = s.replace("\\", "/")
+            with io.open(CONSOLELOGFILE, "w", encoding='utf-8') as f:
+                f.write(s)
+
+        for xx in goldenfiles:
+            if xx in resultsfiles:
+                print ("\n----------------------------------------------------------")
+                if filecmp.cmp (GOLDENDIR + xx, WORKDIR + xx):
+                    print ("Match:  <{}>".format(xx))
+                else:
+                    if xx in resultsfiles:
+                        errcnt += 1
+                        print ("MISCOMPARE  < Golden  to  > Results  for:  <{}>".format(xx))
+                        sys.stdout.flush()
+                        subprocess.call(["diff", GOLDENDIR + xx, WORKDIR + xx ])
+                sys.stdout.flush()
+
+        print ("\n----------------------------------------------------------")
+
+
+    if args.no_cleanup:
+        print ("SKIPPING CLEANUP of testdirs and workdir")
+    else:
+        print ("CLEANING UP testdirs and workdir")
+        subprocess.call([rclone, "purge", path1, "--config", rcconfig])
+        subprocess.call([rclone, "purge", path2, "--config", rcconfig])
+        shutil.rmtree(WORKDIR)
+
+
+    if errcnt > 0:
+        print ("TEST <{}> FAILED WITH {} ERRORS.\n\n".format(testcase, errcnt))
+    else:
+        print ("TEST <{}> PASSED\n\n".format(testcase))
+    sys.stdout.flush()
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description="rclonesync test engine")
+    parser.add_argument('Path1',
+                        help="'local' or name of cloud service with ':'")
+    parser.add_argument('Path2',
+                        help="'local' or name of cloud service with ':'")
+    parser.add_argument('TestCase',
+                        help="Test case subdir name (beneath ./tests).  'ALL' to run all tests in the tests subdir")
+    parser.add_argument('-g', '--golden', action='store_true',
+                        help="Capture output and place in testcase golden subdir")
+    parser.add_argument('--benchmark', action='store_true',
+                        help="Include timestamps and measure full test run time.")
+    parser.add_argument('--no-cleanup', action='store_true',
+                        help="Disable cleanup of Path1 and Path2 testdirs.  Useful for debug.")
+    parser.add_argument('--Windows-testing', action='store_true',
+                        help="Disable running rclonesyncs during the SyncCmds phase, and produce .bat file to be run on Windows.")
+    parser.add_argument('--rclonesync', default=RCSEXEC,
+                        help="Full or relative path to rclonesync Python file (default <{}>).".format(RCSEXEC))
+    parser.add_argument('-r','--rclone', default="rclone",
+                        help="Path to rclone executable (default is rclone in path environment var).")
+    parser.add_argument('--config', default=None,
+                        help="Path to rclone config file (default is typically ~/.config/rclone/rclone.conf).")
+    parser.add_argument('-V', '--version', action='version', version='%(prog)s ' + version,
+                        help="Return version number and exit.")
+                        
+    
+    args = parser.parse_args()
+    testcase = args.TestCase
+    rcsexec  = args.rclonesync
+    rclone   = args.rclone
+
+    rcconfig = args.config
+    if rcconfig is None:
+        try:  # Extract the second line from the two line <rclone config file> output similar to:
+                # Configuration file is stored at:
+                # /home/<me>/.config/rclone/rclone.conf
+            rcconfig = str(subprocess.check_output([rclone, "config", "file"]).decode("utf8")).split(':\n')[1].strip()
+        except subprocess.CalledProcessError as e:
+            print("ERROR  from <rclone config file> - can't get the config file path."); exit()
+    if not os.path.exists(rcconfig):
+        print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
+    
+    try:
+        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig]).decode("utf8").split()
+    except subprocess.CalledProcessError as e:
+        print ("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
+    except:
+        print ("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}\n".format(sys.exc_info()[1])); exit()
+
+    remoteFormat = re.compile(r'([\w-]+):(.*)')
+    if args.Path1 == "local":
+        path1base = LOCALTESTBASE
+    else:
+        out = remoteFormat.match(args.Path1)
+        if out:
+            path1base = out.group(1) + ':'
+            if path1base not in clouds:
+                print ("ERROR  Path1 parameter <{}> not in list of configured remotes: {}".format(path1base, clouds)); exit()
+        else:
+            print ("ERROR  Path1 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path1, clouds)); exit()
+
+    if args.Path2 == "local":
+        path2base = LOCALTESTBASE
+    else:
+        out = remoteFormat.match(args.Path2)
+        if out:
+            path2base = out.group(1) + ':'
+            if path2base not in clouds:
+                print ("ERROR  Path2 parameter <{}> not in list of configured remotes: {}".format(path2base, clouds)); exit()
+        else:
+            print ("ERROR  Path2 parameter <{}> cannot be parsed. ':' missing?  Configured remotes: {}".format(args.Path2, clouds)); exit()
+
+
+    if testcase != "ALL":
+        if os.path.exists("./tests/" + testcase):
+            rcstest()
+        else:
+            print ("ERROR  TestCase directory <{}> not found".format(testcase)); exit()
+    else:
+        if args.benchmark:
+            start_time_all = time.time()
+            print ("Start: ", time.asctime(time.localtime()))
+        for directory in sorted(os.listdir("./tests")):
+            print ("===================================================================")
+            testcase = directory
+            rcstest()
+
+        if args.benchmark:
+            end_time_all = time.time()
+            print ("Finish:", time.asctime(time.localtime()))
+            zz = end_time_all - start_time_all
+            m, s = divmod(zz, 60)
+            h, m = divmod(m, 60)
+            print (f"Runtime ALL {int(m)} min {s:6.3f} sec")

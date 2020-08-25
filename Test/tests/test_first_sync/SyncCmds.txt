@@ -1,0 +1,58 @@
+:MSG: test_first_sync
+
+:MSG:	1) first-sync with empty path1, resulting in copying all content from path2
+rm -rf :PATH1:*
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:SAVELSL: empty_path1
+rm :WORKDIR:LSL*
+
+
+:MSG:	2) first-sync with empty path2, resulting in syncing all content to path2
+rm -rf :PATH2:*
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:SAVELSL: empty_path2
+rm :WORKDIR:LSL*
+
+
+:MSG:	3) Exercise all of the various file difference scenarios during a first-sync
+#:MSG:	File			Path1			Path2			Expected action		Which wins
+
+touch :TESTCASEROOT:modfiles/fileA.txt --date="2002-02-02"
+touch :TESTCASEROOT:modfiles/fileB.txt --date="1999-09-09"
+
+:MSG:	file1.txt	    exists			missing			Sync Path1 > Path2	Path1
+:RCLONE: delete :PATH2:file1.txt
+
+:MSG:	file2.txt		missing			exists			Copy Path2 > Path1	Path2
+:RCLONE: delete :PATH1:file2.txt
+
+:MSG:	file3.txt		exists			newer date 		Sync Path1 > Path2	Path1
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileA.txt :PATH2:file3.txt
+
+:MSG:	file4.txt		missing			newer date		Copy Path2 > Path1	Path2
+:RCLONE: delete :PATH1:file4.txt
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileA.txt :PATH2:file4.txt
+
+:MSG:	file5.txt		exists			older date		Sync Path1 > Path2	Path1
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileB.txt :PATH2:file5.txt
+
+:MSG:	file6.txt		older date		newer date		Sync Path1 > Path2	Path1
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileB.txt :PATH1:file6.txt
+:RCLONE: copyto :TESTCASEROOT:modfiles/fileA.txt :PATH2:file6.txt
+
+:MSG:	file7.txt		exists			exists (same)	None				same
+
+:MSG:	rclonesync --first-sync test run
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+:SAVELSL: mixed_diffs
+
+:MSG:	rclonesync non --first-sync test run
+:RCSEXEC: :PATH1: :PATH2:
+
+
+:MSG:	4) Confirm critical error on normal sync of empty path
+rm -rf :PATH2:*
+:RCSEXEC: :PATH1: :PATH2:
+
+
+

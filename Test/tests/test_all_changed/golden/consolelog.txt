@@ -1,4 +1,21 @@
 
+:MSG: test_all_changed
+
+
+:MSG:	Initial rclonesync --first-sync
+
+../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+>>>>> --first-sync copying any unique Path2 files to Path1
+>>>>> --first-sync synching Path1 to Path2
+>>>>> --first-sync refreshing lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
+>>>>> Successful run.  All done.
+
+
 :MSG:	Change timestamp on all files except RCLONE_TEST
 
 touch ./testdir/path1/file1 - Copy (2).txt ./testdir/path1/file1 - Copy (3).txt ./testdir/path1/file1 - Copy (4).txt ./testdir/path1/file1 - Copy (5).txt ./testdir/path1/file1 - Copy.txt ./testdir/path1/file1.txt --date=2005-01-02
@@ -6,11 +23,11 @@ touch ./testdir/path1/subdir/file20.txt --date=2005-01-02
 
 :MSG:	Sync should pass
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - file1 - Copy (2).txt
   Path1      File is newer                     - file1 - Copy (3).txt
@@ -21,8 +38,15 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
   Path1      File is newer                     - subdir/file20.txt
      7 file change(s) on Path1:    0 new,    7 newer,    0 older,    0 deleted
 >>>>> Path2 Checking for Diffs
->>>>> No changes on Path2 - Skipping ahead
->>>>> Synching Path1 to Path2
+>>>>> Determining and applying changes
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (2).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (3).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (4).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (5).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy.txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1.txt
+  Path1      Queue copy to Path2               - ./testdir/path2/subdir/file20.txt
+  Path1      Do queued copies to               - Path2
 >>>>> Refreshing Path1 and Path2 lsl files
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
@@ -35,11 +59,11 @@ touch ./testdir/path1/subdir/file20.txt --date=2004-01-02
 
 :MSG:	Sync should fail
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - RCLONE_TEST
   Path1      File is OLDER                     - file1 - Copy (2).txt
@@ -51,18 +75,18 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
   Path1      File is OLDER                     - subdir/file20.txt
      8 file change(s) on Path1:    0 new,    1 newer,    7 older,    0 deleted
 >>>>> Path2 Checking for Diffs
-All Path1 prior files were found to be changed.  Something is possibly wrong - Aborting.  Run with --force if desired.
+SAFETY ABORT - All files were found to be changed on the Path1 filesystem <./testdir/path1/>.  Something is possibly wrong.  Run with --force if desired.
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 ***** Error Abort.  Try running rclonesync again. *****
 
 
 :MSG:	Sync with --force should pass
 
-../rclonesync.py ./testdir/path1/ ./testdir/path2/ --force --verbose --workdir ./testwd/ --no-datetime-log --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V2.11 200813) *****
+../rclonesync ./testdir/path1/ ./testdir/path2/ --force --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=True, keep_chkfiles=False, max_deletes=50, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=True, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - RCLONE_TEST
   Path1      File is OLDER                     - file1 - Copy (2).txt
@@ -74,8 +98,16 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
   Path1      File is OLDER                     - subdir/file20.txt
      8 file change(s) on Path1:    0 new,    1 newer,    7 older,    0 deleted
 >>>>> Path2 Checking for Diffs
->>>>> No changes on Path2 - Skipping ahead
->>>>> Synching Path1 to Path2
+>>>>> Determining and applying changes
+  Path1      Queue copy to Path2               - ./testdir/path2/RCLONE_TEST
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (2).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (3).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (4).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy (5).txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1 - Copy.txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file1.txt
+  Path1      Queue copy to Path2               - ./testdir/path2/subdir/file20.txt
+  Path1      Do queued copies to               - Path2
 >>>>> Refreshing Path1 and Path2 lsl files
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.

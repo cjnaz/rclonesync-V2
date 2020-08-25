@@ -1,3 +1,18 @@
-:MSG:	Issue rclonesync command
+:MSG: test_rclone_args
 
-:RCSEXEC: :PATH1: :PATH2: --rclone-args --transfers 1 --syslog --timeout 0m5s --size-only
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
+:MSG:	Place a newer files on the Path1 and Path2
+
+# Must force a specific mod date since file mod data is lost through git
+touch :TESTCASEROOT:modfiles/* --date="2001-01-02"
+
+:RCLONE: copy :TESTCASEROOT:modfiles/file1.txt :PATH1:
+:RCLONE: copy :TESTCASEROOT:modfiles/file2.txt :PATH2:
+
+:RCLONE: copy :TESTCASEROOT:modfiles/file20.txt :PATH1:subdir
+:RCLONE: copy :TESTCASEROOT:modfiles/file21.txt :PATH2:subdir
+
+:MSG:	rclonesync test run
+:RCSEXEC: :PATH1: :PATH2: --rclone-args --transfers 1 --syslog --timeout 0m5s  --size-only

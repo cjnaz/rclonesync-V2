@@ -3,27 +3,40 @@
 
 [Rclone](https://rclone.org/) provides a programmatic building block interface for transferring files between a cloud service 
 provider and your local filesystem (actually a lot of functionality), but _rclone does not provide a turnkey bidirectional 
-sync capability_.  rclonesync.py provides a bidirectional sync solution using rclone.
+sync capability_.  _rclonesync_ provides a bidirectional sync solution using rclone.
 
-I use rclonesync on a Centos 7 box to sync both Dropbox and Google Drive to a local disk which is Samba-shared on my LAN. 
-I run rclonesync as a Cron job every 30 minutes, or on-demand from the command line.
+### rclonesync high level behaviors / operations
+- Retains the `rclone lsl` file lists of the Path1 and Path2 filesystems from the prior run
+- On each successive run: 
+	- rclonesync get the current lsl of the paths and checks for deltas on Path1 and Path2
+	- Changes on Path1 are propagated to Path2, and vice-versa. 
+- Handles change conflicts nondestructively by creating _Path1 and _Path2 file versions
+-  Reasonably fail safe:
+	- Lock file prevents multiple simultaneous runs when taking a while.
+	- File system access health check using `RCLONE_TEST` files (see `--check-access` switch).
+	- Excessive deletes abort - Protects against a failing `rclone lsl` being interpreted as all the files were deleted.  See 
+	the `--max-deletes` and `--force` switches.
+	- If something evil happens, rclonesync goes into a safe state to block damage by later runs.  (See **Runtime Error Handling**, below)
 
-rclonesync support:
+
+
+
+### rclonesync support:
 - Validated on Google Drive, Dropbox, OwnCloud, OneDrive (thanks @AlexEshoo), Box (thanks @darlac).
-- Linux support, and V2.3 adds Windows support.
-- Runs on both Python 2.7 and 3.x.
-
-rclonesync has not been 
+- Linux and Windows support.
+- Runs on Python 3.x. (tested on 3.6.8 minimum)
+- rclonesync has not been fully 
 tested on other services.  If it works, or sorta works, please raise an issue and I'll update these notes.  Run the test suite
 to check for proper operation.
 
+
 ## Installation, setup, getting started
 - Install [rclone](https://rclone.org/) and setup your remotes.  Ensure the location is included in your executables search path (PATH environment variable), else see rclonesync's `--rclone` switch.
-- Place the rclonesync.py script on your system.  Place it in a directory within your PATH environment variable, or run it with a full path reference.  On Linux, make sure the file mode is set to executable (`chmod +x rclonesync.py`).  On Windows and if using Python 2.7, read about the `win_subprocess.py` and `win32_unicode_argv.py` modules below in the Windows support section.  Place these two modules in the same directory as the rclonesync.py script. 
+- Place the rclonesync script on your system.  Place it in a directory within your PATH environment variable, or run it with a full path reference.  On Linux, make sure the file mode is set to executable (`chmod +x rclonesync`).   
 - Create the rclonesync working directory at `~/.rclonesyncwd` (Linux) or `C:\Users\<your loginname>\.rclonesyncwd` (Windows),  Set up a filters file in this directory, if needed.
 - Run rclonesync with the `--first-sync` switch, specifying the paths to the local and remote sync directory roots.
 - For successive sync runs, leave off the `--first-sync` switch.
-- Consider setting up the --check-access feature for safety, and the `--filters-file` feature for excluding unnecessary files and directories from the sync.
+- Consider setting up the `--check-access` feature for safety, and the `--filters-file` feature for excluding unnecessary files and directories from the sync.  See [FILTERING.md](https://github.com/cjnaz/rclonesync-V2/blob/master/FILTERING.md).
 - On Linux, consider setting up a crontab entry.  The following runs a sync every 5 minutes between a local directory and an OwnCloud server, with output logged to a runlog file:
 ```
 # Minute (0-59)
@@ -32,39 +45,54 @@ to check for proper operation.
 #                Month (1-12 or Jan-Dec)
 #                     Day of Week (0-6 or Sun-Sat)
 #                         Command
-  */5  *    *    *    *   ~/scripts/rclonesync.py /mnt/share/myoc owncloud: --check-access --filters-file ~/.rclonesyncwd/Filters  >> ~/scripts/owncloud_runlog 2>&1
-
+  */5  *    *    *    *   ~/scripts/rclonesync /mnt/share/mylocal Dropbox: --check-access --filters-file ~/.rclonesyncwd/Filters  >> ~/scripts/runlog 2>&1
 ```
 
 ## Notable changes in the latest release
 
-V2.11 200813 Bug fix for proper searching during the check access phase.  
-- Previously, the user's filters file was not utilized, resulting in searching for check files in normally masked directories, causing access errors and inefficiency.  See [bug #55](https://github.com/cjnaz/rclonesync-V2/issues/55).  With this update, the user's filters is parsed and the search is for check files in all non-excluded directories.
-- Check out the new [FILTERING.md](https://github.com/cjnaz/rclonesync-V2/blob/master/FILTERING.md) for recommendations on how to do effective filtering for your syncs.
-- Added `--keep-chkfiles` switch to aid in testing and debug.
+### V3.0 200824 is a major clean-up and reimplementation of the core algorithms.  
+- In prior versions, rclonesync individually and sequentially issued rclone copy commands for changed files on Path2 to Path1, and relied on a final rclone sync to make Path2 match Path1.  In V3.0, the new rclone `--files-from-raw` switch is utilized to specify the individual files to be transferred or deleted.  rclonesync identifies the changed files on both paths and queues up the changes (you will find new files in your working directory if you use `--no-cleanup`), then finally feeds the copies and deletes file lists to rclone for most optimal processing.  rclone natively manages concurrent copy/delete commands in parallel on the remote.
+- The number of rclone lsl's issued is reduced to the bare minimum - one on each path if there are no changes, and a second if changes were made on the respective path.
+- The user's `--filters-file` is cleanly handled in V3.0.  Effectively, it is only needed for the rclone lsl Path1/Path2 operations, and thus only filter-included files are fed into the sync algorithm.  _Check out the new [FILTERING.md](https://github.com/cjnaz/rclonesync-V2/blob/master/FILTERING.md) for recommendations on how to do effective filtering for your syncs._
+- The `--check-access` algorithm now just scans the initial lsl's that utilize the user's filters file.  This saves from additional lsl calls and naturally aligns with the user's filtering.  This change also eliminates the _CHK files in the working directory.
+- Added the more general `--no-cleanup` switch and removed the `--keep-chkfiles` switch added in V2.11.  With `--no-cleanup`, the initial lsl runs at the beginning of the rclonesync run are retained with a _NEW suffix and the queued copy and delete list files are kept.  They are overwritten by the next rclonesync run.  This switch is intended for debug, and otherwise not needed.
+- Removed Python 2.7 support.  This removes a lot of clutter and testing corner cases.  Tested on Python 3.6.8 and some newer versions.
+- Eliminated the .py file extension on rclonesync and testrcsync.
+- On first-sync either path may be empty of files (the directories at the path roots must exist).  Non-first-sync runs require at least one file on each path as a safety check.
+- Requires an rclone version (V1.52 or later) that supports `--files-from-raw`.
+- The check for file size change is eliminated.  In prior versions a size change was noted but by itself did not trigger a file transfer.  Now, size changes are not identified.
+- Transfer of a changed file  is only triggered by a timestamp change, usually a newer date.  Note that if a file's timestamp changes to _earlier/older_ the changed file _will_ still be transferred, overwriting the more recent file on the other side.  This behavior supports, for example, a directory of files being replaced with an older snapshot.  The older files will be noted in the verbose log.  _This older file handling behavior is the same as with prior rclonesync versions._
 
 
 
-## High level behaviors / operations
--  Keeps `rclone lsl` file lists of the Path1 and Path2 filesystems, and on each run checks for deltas on Path1 and Path2
--  Applies Path2 deltas to the Path1 filesystem, then `rclone syncs` the Path1 filesystem to the Path2 filesystem
--  Handles change conflicts nondestructively by creating _Path1 and _Path2 file versions
--  Reasonably fail safe:
-	- Lock file prevents multiple simultaneous runs when taking a while.
-	- File access health check using `RCLONE_TEST` files (see `--check-access` switch).
-	- Excessive deletes abort - Protects against a failing `rclone lsl` being interpreted as all the files were deleted.  See 
-	the `--max-deletes` and `--force` switches.
-	- If something evil happens, rclonesync goes into a safe state to block damage by later runs.  (See **Runtime Error Handling**, below)
+### Benchmark results comparing V2.11 and V3.0
+The test was set up from my local disk to Dropbox.  My Speedtest download speed is ~170 Mbps, and upload speed is ~10 Mbps.  500 files are already sync'd.  50 files were added in a new directory, each ~9.5 MB, ~475 MB total.
 
+Change | V2.11 operations | V2.11 overall | V3.0 operations | V3.0 overall | V3.0 time savings  
+----|----|----|----|----|----|
+500 files sync'd | 2x LSL Path1 & Path2 | 2.8 sec | 1x LSL Path1 & Path2 | 1.5 sec | 1.3 sec, 46% reduction
+500 files sync'd with --check-access | 3x LSL Path1 & Path2 | 4.8 sec | 1x LSL Path1 & Path2 | 1.5 sec | 3.3 sec, 68% reduction
+50 new files on remote | Individual 50 copies down: 82 sec | 88 sec |Queued 50 copies down: 27 sec | 29 sec | 59 sec, 67% reduction
+Moved local dir | Sync up 50 deletes, Sync up 50 copies: 423 sec | 425 sec | Queued 50 copies up: 410 sec, Queued 50 deletes up: 9 sec | 421 sec | A wash
+Moved remote dir | Individual 50 local deletes: 1 sec, Individual 50 copies down: 86 sec | 91 sec| Queued 50 copies down: 31 sec, Queued 50 deletes down: <1 sec | 33 sec | 58 sec, 64% reduction
+Delete local dir | Sync up 50 deletes: 10 sec | 14 sec | Queued 50 deletes up: 9 sec | 13 sec | A wash
+
+Observations:
+- rclone's sync and copy operations are much more efficient, due to concurrent operations on the remote.  (You can see the concurrency by enabling rclone 2x verbose via `rclonesync ... --rc-verbose --rc-verbose`)
+- rclonesync's up changes (from local to the remote) were no faster, in spite of the rclone concurrency, probably limited by my network upload bandwidth.
+- rclonesync's down changes were greatly improved by leveraging rclone's concurrency.
+
+
+
+## rclonesync command line interface
 
 ```
-$ ./rclonesync.py -h
-usage: rclonesync.py [-h] [-1] [-c] [--check-filename CHECK_FILENAME]
-                     [-D MAX_DELETES] [-F] [-e] [-f FILTERS_FILE] [-r RCLONE]
-                     [--config CONFIG] [--rclone-args ...] [-v] [--rc-verbose]
-                     [-d] [-w WORKDIR] [--no-datetime-log] [--keep-chkfiles]
-                     [-V]
-                     Path1 Path2
+$ ./rclonesync -h
+usage: rclonesync [-h] [-1] [-c] [--check-filename CHECK_FILENAME]
+                  [-D MAX_DELETES] [-F] [-e] [-f FILTERS_FILE] [-r RCLONE]
+                  [--config CONFIG] [--rclone-args ...] [-v] [--rc-verbose]
+                  [-d] [-w WORKDIR] [--no-datetime-log] [--no-cleanup] [-V]
+                  Path1 Path2
 
 ***** BiDirectional Sync for Cloud Services using rclone *****
 
@@ -117,48 +145,54 @@ optional arguments:
                         ~user/.rclonesyncwd.
   --no-datetime-log     Disable date-time from log output - useful for
                         testing.
-  --keep-chkfiles       Disable deleting the --check-access phase CHK files -
-                        useful for testing.
+  --no-cleanup          Retain working files - useful for debug and testing.
   -V, --version         Return rclonesync's version number and exit.
 ```	
 
-Typical run log:
+Typical run log (test case `test_changes` output - normally timestamps are included):
 ```
-$ ./rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --verbose
-2018-07-28 17:13:25,912:  ***** BiDirectional Sync for Cloud Services using rclone *****
-2018-07-28 17:13:25,913:  Synching Path1  <./testdir/path1/>  with Path2  <GDrive:/testdir/path2/>
-2018-07-28 17:13:25,913:  Command line:  <Namespace(Path1='./testdir/path1/', Path2='GDrive:testdir/path2/', check_access=False, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_datetime_log=False, rc_verbose=None, verbose=True, workdir='./testwd/')>
-2018-07-28 17:13:27,244:  >>>>> Path1 Checking for Diffs
-2018-07-28 17:13:27,244:    Path1      File is newer                     - file2.txt
-2018-07-28 17:13:27,244:    Path1      File size is different            - file2.txt
-2018-07-28 17:13:27,244:    Path1      File was deleted                  - file4.txt
-2018-07-28 17:13:27,244:    Path1      File is newer                     - file5.txt
-2018-07-28 17:13:27,244:    Path1      File size is different            - file5.txt
-2018-07-28 17:13:27,244:    Path1      File was deleted                  - file6.txt
-2018-07-28 17:13:27,244:    Path1      File is newer                     - file7.txt
-2018-07-28 17:13:27,245:    Path1      File size is different            - file7.txt
-2018-07-28 17:13:27,245:    Path1      File is new                       - file11.txt
-2018-07-28 17:13:27,245:       6 file change(s) on Path1:    1 new,    3 newer,    0 older,    2 deleted
-2018-07-28 17:13:27,245:  >>>>> Path2 Checking for Diffs
-2018-07-28 17:13:27,245:    Path2      File is newer                     - file1.txt
-2018-07-28 17:13:27,245:    Path2      File size is different            - file1.txt
-2018-07-28 17:13:27,245:    Path2      File is newer                     - file5.txt
-2018-07-28 17:13:27,245:    Path2      File size is different            - file5.txt
-2018-07-28 17:13:27,245:    Path2      File is newer                     - file6.txt
-2018-07-28 17:13:27,245:    Path2      File size is different            - file6.txt
-2018-07-28 17:13:27,245:    Path2      File is new                       - file10.txt
-2018-07-28 17:13:27,245:       4 file change(s) on Path2:    1 new,    3 newer,    0 older,    0 deleted
-2018-07-28 17:13:27,245:  >>>>> Applying changes on Path2 to Path1
-2018-07-28 17:13:27,245:    Path2      Copying to Path1                  - ./testdir/path1/file1.txt
-2018-07-28 17:13:30,133:    Path2      Copying to Path1                  - ./testdir/path1/file10.txt
-2018-07-28 17:13:33,148:    WARNING    Changed in both Path1 and Path2   - file5.txt
-2018-07-28 17:13:33,148:    Path2      Copying to Path1                  - ./testdir/path1/file5.txt_Path2
-2018-07-28 17:13:43,739:    Path1      Renaming Path1 copy               - ./testdir/path1/file5.txt_Path1
-2018-07-28 17:13:43,747:    WARNING    Deleted on Path1 and also changed on Path2 - file6.txt
-2018-07-28 17:13:43,747:    Path2      Copying to Path1                  - ./testdir/path1/file6.txt
-2018-07-28 17:13:46,642:  >>>>> Synching Path1 to Path2
-2018-07-28 17:13:51,932:  >>>>> Refreshing Path1 and Path2 lsl files
-2018-07-28 17:13:53,263:  >>>>> Successful run.  All done.
+../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/<me>/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/<me>/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+>>>>> Path1 Checking for Diffs
+  Path1      File is newer                     - file2.txt
+  Path1      File was deleted                  - file4.txt
+  Path1      File is newer                     - file5.txt
+  Path1      File was deleted                  - file6.txt
+  Path1      File is newer                     - file7.txt
+  Path1      File is new                       - file11.txt
+     6 file change(s) on Path1:    1 new,    3 newer,    0 older,    2 deleted
+>>>>> Path2 Checking for Diffs
+  Path2      File is newer                     - file1.txt
+  Path2      File was deleted                  - file3.txt
+  Path2      File is newer                     - file5.txt
+  Path2      File is newer                     - file6.txt
+  Path2      File was deleted                  - file7.txt
+  Path2      File is new                       - file10.txt
+     6 file change(s) on Path2:    1 new,    3 newer,    0 older,    2 deleted
+>>>>> Determining and applying changes
+  Path1      Queue copy to Path2               - ./testdir/path2/file11.txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file2.txt
+  Path2      Queue delete                      - ./testdir/path2/file4.txt
+  WARNING    Changed in both Path1 and Path2   - file5.txt
+  Path1      Renaming Path1 copy               - ./testdir/path1/file5.txt_Path1
+  Path1      Queue copy to Path2               - ./testdir/path2/file5.txt_Path1
+  Path2      Renaming Path2 copy               - ./testdir/path2/file5.txt_Path2
+  Path2      Queue copy to Path1               - ./testdir/path1/file5.txt_Path2
+  Path2      Queue copy to Path1               - ./testdir/path1/file6.txt
+  Path1      Queue copy to Path2               - ./testdir/path2/file7.txt
+  Path2      Queue copy to Path1               - ./testdir/path1/file1.txt
+  Path2      Queue copy to Path1               - ./testdir/path1/file10.txt
+  Path1      Queue delete                      - ./testdir/path1/file3.txt
+  Path2      Do queued copies to               - Path1
+  Path1      Do queued copies to               - Path2
+             Do queued deletes on              - Path1
+             Do queued deletes on              - Path2
+>>>>> Refreshing Path1 and Path2 lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
+>>>>> Successful run.  All done.
 ```
 
 ## rclonesync Operations
@@ -171,24 +205,22 @@ and Path2-to-Path2 deltas, and then applying the changes on the other side.
 ### Notable features / functions / behaviors
 
 - **Path1** and **Path2** arguments may be references to any mix of local directory paths (absolute or relative), UNC paths 
-(//server/share/path), or configured 
+(//server/share/path), Windows drive paths (with a drive letter and `:`) or configured 
 remotes/clouds with optional subdirectory paths.  Cloud references are distinguished by having a ':' in the argument 
-(see Windows support, below).  Path1 may 
-be considered the master, in that any changed files on Path2 are applied to Path1, and then a native `rclone sync` is used to 
-make Path2 match Path1.  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
+(see Windows support, below).  Path1 and Path2 are treated equally, in that neither has priority for file changes, and access efficiency does not change whether a remote is on Path1 or Path2 (except during a first-sync).  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
 are named based on the Path1 and Path2 arguments so that separate syncs to individual directories within the tree may be set up. 
-In the tables below, understand that the last operation is to do an `rclone sync <Path1> <Path2>` _if_ rclonesync had made any 
-changes on the Path1 filesystem.
 
-- Any empty directories after the sync on both the Path1 and Path2 filesystems are **NOT** deleted, by default 
+
+- Any empty directories after the sync on both the Path1 and Path2 filesystems are not deleted, by default 
 (changed in V2.4).  If the `--remove-empty-directories` switch is specified, then both paths will have any empty directories
 purged as the last step in the process.
 
 - **--first-sync** - This will effectively make both Path1 and Path2 filesystems contain a matching superset of all files.  Path2 
 files that do not exist in Path1 will be copied to Path1, and the process will then sync the Path1 tree to Path2. 
 **Note that the base directories on both the Path1 and Path2 filesystems 
-must exist, and must contain at least one file, or rclonesync will fail.**  This is required for safety - that rclonesync can
-verify that both paths are valid.  Attempting to rclonesync to an empty directory results in `ERROR    Zero length in prior Path list file`.
+must exist or rclonesync will fail.**  This is required for safety - that rclonesync can
+verify that both paths are valid.  Attempting to rclonesync to an empty directory results in 
+`ERROR    Zero length in current Path1 list file <./testwd/LSL_._testdir_path1_._testdir_path2__Path1_NEW>.  Cannot sync to an empty directory tree.`
 The fix is simply to create the missing directory and place a single file in it and rerun the --first-sync.
 **NOTE that when using --first-sync a newer version of a file on the Path2 filesystem will be overwritten by the Path1 filesystem 
 version.** Carefully evaluate deltas using --dry-run.
@@ -196,8 +228,8 @@ version.** Carefully evaluate deltas using --dry-run.
 - **--check-access** - Access check files are an additional safety measure against data loss.  rclonesync will ensure it can 
 find matching `RCLONE_TEST` files in the same places in the Path1 and Path2 filesystems.  Time stamps and file contents 
 are not important, just the names and locations.  Place one or more RCLONE_TEST files in the Path1 or Path2 filesystem and then 
-do either a run without `--check-access` or a `--first-sync` to set matching files on both filesystems. _Also see the 
-`--check-filename` switch._
+do either a run without `--check-access` or a `--first-sync` to set matching files on both filesystems. _If you have symbolic links in your sync tree it is recommended to place RCLONE_TEST files in the linked-to directory tree to protect against rclonesync assuming a bunch of deleted files if the linked-to tree should not be accessible._  Also see the 
+`--check-filename` switch.
 
 - **--max-deletes** - As a safety check, if greater than the --max-deletes percent of files were deleted on either the Path1 or
 Path2 filesystem, then rclonesync will abort with a warning message, without making any changes.  The default --max-deletes is 50%. 
@@ -223,7 +255,7 @@ place as your filters file.  On each rclonesync run with --filters-file set, rcl
 filters file and compares it to the hash stored in the ...MD5 file.  If they don't match the run aborts with a CRITICAL error and
 thus forces you to do a --first-sync, likely avoiding a disaster.
 
-- **--rclone-args** - Arbitrary rclone switches may be specified on the rclonesync.py command line by placing `--rclone-args` as the last argument in the rclonesync.py call, followed by one or more switches to be passed in the rclone calls.  For example:  `../rclonesync.py ./testdir/path1/ GDrive:testdir/path2/ --rclone-args --drive-skip-gdocs -v -v --timeout 0m10s`.  (rclonesync.py is coded to skip Google doc files without the example switch.)  Note that the interaction of the various rclone switches with the rclonesync.py process flow has not be tested.  The specified switches are passed on all rclone calls (lsl, copy, copyto, move, moveto, delete, sync, rmdirs), although some switches may not be appropriate for some rclone commands. Initial testing shows problems with the `--copy-links` and `--links` switches.
+- **--rclone-args** - Arbitrary rclone switches may be specified on the rclonesync command line by placing `--rclone-args` as the last argument in the rclonesync call, followed by one or more switches to be passed in the rclone calls.  For example:  `../rclonesync ./testdir/path1/ GDrive:testdir/path2/ --rclone-args --drive-skip-gdocs -v -v --timeout 0m10s`.  (rclonesync is coded to skip Google doc files without the example switch.)  Note that the interaction of the various rclone switches with the rclonesync process flow has not be tested.  The specified switches are passed on all rclone calls (lsl, copy, copyto, move, moveto, delete, sync, rmdirs), although some switches may not be appropriate for some rclone commands. Initial testing shows problems with the `--copy-links` and `--links` switches.
 
 - **Google Doc files** - Google docs exist as virtual files on Google Drive, and cannot be transferred to other filesystems natively.
 rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
@@ -245,9 +277,8 @@ the <...>__Path1LSL and <...>__Path1LSL files are renamed adding _ERROR, which b
 original files are not found).  Some errors are considered temporary, and re-running the rclonesync is not blocked. 
 Within the code, see usages of `return RTN_CRITICAL` and `return RTN_ABORT`.  `return RTN_CRITICAL` blocks further rclonesync runs.
 
-- **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete files on the Path2 server in the last 
-rclonesync step of rclone syncing Path1 to the Path2.  If the file did not exist on Path1 then it would normally be copied to 
-the Path1 filesystem, but with --dry-run enabled those copies didn't happen, and thus on the final `rclone sync` step they don't exist on Path1, 
+- **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete some files.  If the file did not exist on Path1 then it would normally be copied to 
+the Path1 filesystem, but with --dry-run enabled those copies didn't happen,
 which leads to the attempted delete on the Path2, blocked again by --dry-run: `... Not deleting as --dry-run`.  This whole confusing situation is an 
 artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then 
 the threatened deletes on Path2 may be disregarded.
@@ -260,62 +291,55 @@ traceback please open an issue.  **NOTE** that while concurrent rclonesync runs 
 
 - **Return codes** - rclonesync returns `0` to the calling script on a successful run, `1` for a non-critical failing run (a rerun may be successful), and `2` for a critically aborted run (requires a --first-sync to recover).
 
-- **Test features** - V2.0 adds a companion testrcsync.py script.  The --workdir and --no-datetime-log switches were added to rclonesync
-to support testing.  See the TESTCASES.md file.  You 
-will likely want to add `- /testdir/**` to your filters-file so that normal syncs do not attempt to sync the test run temporary 
-directories, which may have RCLONE_TEST miscompares in some test cases and thus trip the --check-access system.  The --check-access
-mechanism is hard-coded to ignore RCLONE_TEST files beneath RCloneSync/Test.
+- **Test features** - rclonesync has a companion testrcsync script.  See the TESTCASES.md file.  _If you are doing rclonesync development_ you will likely want to add `- /testdir/` to your filters-file so that normal syncs do not attempt to sync the test run temporary 
+directories, which may have RCLONE_TEST miscompares in some test cases and thus trip the --check-access system.  If the rclonesync development directory is within your sync paths, the testing sub-tree is automatically not scanned for RCLONE_TEST files during the check access phase - RCLONE_TEST files beneath `rclonesync/Test/` are excluded from the check.
 
 ### Windows support
 Support for rclonesync on Windows was added in V2.3.  
-- Tested on Windows 10 Pro version 1903 (May'19) and with rclone v1.46 release, and both Python 2.7.17 and 3.8.0.
-- **NOTE:   As of V2.9, it is required that the Windows CMD shell be properly configured for Unicode support, even if you only use ASCII.  Execute both `chcp 65001` and `set PYTHONIOENCODING=UTF-8` in the command shell before attempting to run rclonesync.  If these are not set properly rclonesync will post an error and exit.**
-- Drive letters are allowed, including drive letters mapped to network drives (`rclonesync.py J:\localsync GDrive:`). 
+- Tested on Windows 10 Pro 64-bit version 1909 and with rclone v1.52.2 release on Python 3.8.0.
+- **NOTE:  It is required that the Windows CMD shell be properly configured for Unicode support, even if you only use ASCII.  Execute both `chcp 65001` and `set PYTHONIOENCODING=UTF-8` in the command shell before attempting to run rclonesync.  If these are not set properly rclonesync will post an error and exit.**
+- Drive letters are allowed, including drive letters mapped to network drives (`rclonesync J:\localsync GDrive:`). 
 If a drive letter is omitted the shell current drive is the default.  Drive letters are a single character follows by ':', so cloud names
 must be more than one character long.
 - Absolute paths (with or without a drive letter), and relative paths (with or without a drive letter) are supported.
 - rclonesync's working directory is created at the user's top level (`C:\Users\<user>\.rclonesyncwd`).
 - rclone must be in the path, or use rclonesync's `--rclone` switch.
-- Note that rclonesync output will show a mix of forward `/` and back '\' slashes.  They are equivalent in Python - not to worry.
+- Note that rclonesync output will show a mix of forward `/` and back `\` slashes.  They are equivalent in Python - not to worry.
 - Be careful of case independent directory and file naming on Windows vs. case dependent Linux!
-- As of version 2.9, extended characters (Unicode code points, UTF-8) are now supported in all path fields in the rclonesync command line.  However,Python 2.7 on Windows does not natively support extended characters on the command line.  The `win32_unicode_argv.py` module has been added to this project to address this Win-Ph2.7-specific gap.  See [this post](https://stackoverflow.com/questions/846850/read-unicode-characters-from-command-line-arguments-in-python-2-x-on-windows/846931#846931).  Additionally, the subprocess calls within rclonesync.py must support extended characters, and the Python 2.7 on Windows subprocess module does not natively support extended characters.  Valentin Lab posted a fix for the Python 2.7 Windows subprocess.py module as `win_subprocess.py` (https://gist.github.com/vaab/2ad7051fc193167f15f85ef573e54eb9), which has also been added to the rclonesync project, with no edits other than noting the source.  When rclonesync.py is run from Windows on Python 2.7, a dummy file `deleteme.txt` is created in the rclonesync working directory (due to a constraint/bug in win_subprocess.py).  This file may be ignored or deleted (it will come back).  These modules are only needed for Python 2.7 on Windows.    Note that it appears that rclone itself only allows ASCII characters in the names of remotes.
  
 
 ### Usual sync checks
 
- Type | Description | Result| Implementation ** 
+ Type | Description | Result| Implementation 
 --------|-----------------|---------|------------------------
-Path2 new| File is new on Path2, does not exist on Path1 | Path2 version survives | `rclone copyto` Path2 to Path1
-Path2 newer| File is newer on Path2, unchanged on Path1 | Path2 version survives | `rclone copyto` Path2 to Path1
+Path2 new| File is new on Path2, does not exist on Path1 | Path2 version survives | `rclone copy` Path2 to Path1
+Path2 newer| File is newer on Path2, unchanged on Path1 | Path2 version survives | `rclone copy` Path2 to Path1
 Path2 deleted | File is deleted on Path2, unchanged on Path1 | File is deleted | `rclone delete` Path1
-Path1 new | File is new on Path1, does not exist on Path2 | Path1 version survives | `rclone sync` Path1 to Path2
-Path1 newer| File is newer on Path1, unchanged on Path2 | Path1 version survives | `rclone sync` Path1 to Path2
-Path1 older| File is older on Path1, unchanged on Path2 | Path1 version survives | `rclone sync` Path1 to Path2
-Path1 deleted| File no longer exists on Path1| File is deleted | `rclone sync` Path1 to Path2
+Path1 new | File is new on Path1, does not exist on Path2 | Path1 version survives | `rclone copy` Path1 to Path2
+Path1 newer| File is newer on Path1, unchanged on Path2 | Path1 version survives | `rclone copy` Path1 to Path2
+Path1 older| File is older on Path1, unchanged on Path2 | _Path1 version survives_ | `rclone copy` Path1 to Path2
+Path2 older| File is older on Path2, unchanged on Path1 | _Path2 version survives_ | `rclone copy` Path2 to Path1
+Path1 deleted| File no longer exists on Path1| File is deleted | `rclone delete` Path2
 
 
 ### *UNusual* sync checks
 
- Type | Description | Result| Implementation **
+ Type | Description | Result| Implementation 
 --------|-----------------|---------|------------------------
-Path1 new AND Path2 new | File is new on Path1 AND new on Path2 | Files renamed to _Path1 and _Path2 | `rclone copyto` Path2 to Path1 as _Path2, `rclone moveto` Path1 as _Path1
-Path2 newer AND Path1 changed | File is newer on Path2 AND also changed (newer/older/size) on Path1 | Files renamed to _Path1 and _Path2 | `rclone copyto` Path2 to Path1 as _Path2, `rclone moveto` Path1 as _Path1
-Path2 newer AND Path1 deleted | File is newer on Path2 AND also deleted on Path1 | Path2 version survives  | `rclone copyto` Path2 to Path1
-Path2 deleted AND Path1 changed | File is deleted on Path2 AND changed (newer/older/size) on Path1 | Path1 version survives |`rclone sync` Path1 to Path2
-Path1 deleted AND Path2 changed | File is deleted on Path1 AND changed (newer/older/size) on Path2 | Path2 version survives  | `rclone copyto` Path2 to Path1
-
-** If any changes are made on the Path1 filesystem then the final operation is an `rclone sync` to update the Path2 filesystem to match.
+Path1 new AND Path2 new | File is new on Path1 AND new on Path2 | Files renamed to _Path1 and _Path2 | `rclone copy` _Path2 file to Path1, `rclone copy` _Path1 file to Path2
+Path2 newer AND Path1 changed | File is newer on Path2 AND also changed (newer/older/size) on Path1 | Files renamed to _Path1 and _Path2 | `rclone copy` _Path2 file to Path1, `rclone copy` _Path1 file to Path2
+Path2 newer AND Path1 deleted | File is newer on Path2 AND also deleted on Path1 | Path2 version survives  | `rclone copy` Path2 to Path1
+Path2 deleted AND Path1 changed | File is deleted on Path2 AND changed (newer/older/size) on Path1 | Path1 version survives |`rclone copy` Path1 to Path2
+Path1 deleted AND Path2 changed | File is deleted on Path1 AND changed (newer/older/size) on Path2 | Path2 version survives  | `rclone copy` Path2 to Path1
 
 ### Unhandled - WARNING
 
- Type | Description | Comment 
---------|-----------------|---------
-Path2 older|  File is older on Path2, unchanged on Path1 | `rclone sync` will push the newer Path1 version to Path2.
-Path1 size | File size is different (same timestamp) | Not sure if `rclone sync` will pick up on just a size difference and push the Path1 to Path2.
+**rclonesync relies on file date/time stamps to identify changed files.  If an application (or yourself) should change the content of a file without changing the modification time then rclonesync will not notice the change, and thus will not copy it to the other side.**
 
 
 ## Revision history
 
+- V3.0  200824 - Major algorithm revamp.
 - V2.11 200813 - Bug fix for proper searching during the check access phase.  
 - V2.10 200411 - Added verbose level 2 (debug) with rclone command log (issue #46); Removed '/' after remote: name in support of SFTP remotes (issue #46); Added error trap for all files changed (such as for system timezone change, issue #32); Added trap of keyboard interrupt / SIGINT and lock file removal; Added log of rclonesync version number.
 - V2.9.1 191208 - Fixed workdir bug issue #39.

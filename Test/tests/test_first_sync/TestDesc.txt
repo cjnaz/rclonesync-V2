@@ -1,0 +1,17 @@
+test_first_sync
+
+1) first-sync with empty path 1, resulting in copying all content from path2
+
+2) first-sync with empty path 2, resulting in syncing all content to path2
+
+3) Exercise all of the various file difference scenarios during a first-sync
+				Path1			Path2			Expected action		Which wins
+file1.txt	    exists			missing			Sync Path1 > Path2	Path1
+file2.txt		missing			exists			Copy Path2 > Path1	Path2
+file3.txt		exists			newer date 		Sync Path1 > Path2	Path1
+file4.txt		missing			newer date		Copy Path2 > Path1	Path2
+file5.txt		exists			older date		Sync Path1 > Path2	Path1
+file6.txt		older date		newer date		Sync Path1 > Path2	Path1
+file7.txt		exists			exists (same)	None				same
+
+4) Confirm critical error on normal sync of empty path
