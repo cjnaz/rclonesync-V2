@@ -22,6 +22,7 @@ sync capability_.  _rclonesync_ provides a bidirectional sync solution using rcl
 ### rclonesync supported usage:
 - Runs on Linux and Windows.
 - Runs on Python 3.6 and later (tested on 3.6.8 minimum).
+- Requires rclone V1.52 or later.
 - Validated on Google Drive, Dropbox, OwnCloud, OneDrive (thanks @AlexEshoo), Box (thanks @darlac).
 - rclonesync has not been fully 
 tested on other services.  If it works, or sorta works, please raise an issue and I'll update these notes.  Run the test suite
