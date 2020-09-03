@@ -5,7 +5,7 @@
 :MSG:	Initial rclonesync --first-sync
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -27,7 +27,7 @@ rclone copy ./tests/test_rclone_args/modfiles/file21.txt ./testdir/path2/subdir
 :MSG:	rclonesync test run
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf --rclone-args --transfers 1 --syslog --timeout 0m5s --size-only
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args==[--transfers 1 --syslog --timeout 0m5s --size-only], remove_empty_directories=False, verbose=1, workdir=./testwd/>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BiDirectional Sync using rclone"""
 
-__version__ = "V3.0 200824"                         # Version number and date code
+__version__ = "V3.1 200902"                         # Version number and date code
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
@@ -13,7 +13,6 @@ __version__ = "V3.0 200824"                         # Version number and date co
 # See README.md for revision history
 #
 # Known bugs:
-#   Add file compares based on hashes - NO
 #   Many print statements use .format vs. Py3 f strings, only for historical reasons.
 #
 #==========================================================================================================
@@ -41,7 +40,6 @@ is_Windows = False
 is_Linux = False
 if sys.platform == "win32":
     is_Windows = True
-# if "linux" in sys.platform:  # <linux2> on Py2, <linux> on Py3
 if sys.platform == "linux":
     is_Linux = True
 
@@ -54,19 +52,16 @@ RTN_CRITICAL = 2                                    # Aborts allow rerunning.  C
 
 def bidirSync():
 
-    if not os.path.exists(workdir):
-        os.makedirs(workdir)
-
     global path1_lsl_file, path2_lsl_file
     lsl_file_base  = workdir + "LSL_" + (path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_')
-            # '/home/<user>/.rclonesyncwd/LSL_<path1_base><path2_base>'
+            # eg:  '/home/<user>/.rclonesyncwd/LSL_<path1_base><path2_base>'
     path1_lsl_file = lsl_file_base + '_Path1'
     path2_lsl_file = lsl_file_base + '_Path2'
 
     logging.info("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
 
 
-    args_string = ''                            # TODO Build call args string for consistency across Linux/Windows/Py27/Py3x (??)
+    args_string = ''
     for arg in sorted(args.__dict__):
         argvalue = getattr(args, arg)
         if type(argvalue) is int:
@@ -126,47 +121,25 @@ def bidirSync():
         switches.append("--dry-run")
         if os.path.exists(path1_lsl_file):
             shutil.copy(path1_lsl_file, path1_lsl_file + '_DRYRUN')
-            path1_lsl_file += '_DRYRUN'
+        path1_lsl_file += '_DRYRUN'
         if os.path.exists(path2_lsl_file):          
             shutil.copy(path2_lsl_file, path2_lsl_file + '_DRYRUN')
-            path2_lsl_file  += '_DRYRUN'
+        path2_lsl_file  += '_DRYRUN'
     if args.no_datetime_log:
         switches.extend(['--log-format', '""'])
-
-
-    # ***** Check for existence of prior Path1 and Path2 lsl files *****
-    if not first_sync and (not os.path.exists(path1_lsl_file) or not os.path.exists(path2_lsl_file)):
-        # On prior critical error abort, the prior LSL files are renamed to _ERROR to lock out further runs
-        logging.error("***** Cannot find prior Path1 or Path2 lsl files, likely due to critical error on prior run.")
-        return RTN_CRITICAL
-
-
-    # ***** Get current listings of the path1 and path2 trees *****
-    def get_and_load_lsl (path_text, lsl_file, path12=None):
-        if path12 is not None:
-            if rclone_lsl(path12, lsl_file, filter_file=user_filter_file):
-                return RTN_ABORT, None
-        status, loaded_list = load_list(lsl_file)
-        if status:
-            logging.error(print_msg("ERROR", f"Failed loading {path_text} list file <{lsl_file}>"))
-            return RTN_ABORT, None
-        if not first_sync and len(loaded_list) == 0:
-            logging.error(print_msg("ERROR", f"Zero length in {path_text} list file <{lsl_file}>.  Cannot sync to an empty directory tree."))
-            return RTN_CRITICAL, None
-        return 0, loaded_list
-
-    path1_lsl_file_new = path1_lsl_file + '_NEW'
-    status, path1_now = get_and_load_lsl ("current Path1", path1_lsl_file_new, path1_base)
-    if status:  return status
-
-    path2_lsl_file_new = path2_lsl_file + '_NEW'
-    status, path2_now = get_and_load_lsl ("current Path2", path2_lsl_file_new, path2_base)
-    if status:  return status
 
 
     # ***** first_sync generate path1 and path2 file lists, and copy any unique path2 files to path1 ***** 
     if first_sync:
         logging.info(">>>>> --first-sync copying any unique Path2 files to Path1")
+
+        path1_lsl_file_new = path1_lsl_file + '_NEW'
+        status, path1_now = get_and_load_lsl ("current Path1", path1_lsl_file_new, path1_base)
+        if status:  return status
+
+        path2_lsl_file_new = path2_lsl_file + '_NEW'
+        status, path2_now = get_and_load_lsl ("current Path2", path2_lsl_file_new, path2_base)
+        if status:  return status
 
         files_first_sync_copy_P2P1 = []
         for key in path2_now:
@@ -205,19 +178,135 @@ def bidirSync():
         return 0
     
 
+    # ***** Check for existence of prior Path1 and Path2 lsl files *****
+    if (not os.path.exists(path1_lsl_file) or not os.path.exists(path2_lsl_file)):
+        # On prior critical error abort, the prior LSL files are renamed to _ERROR to lock out further runs
+        logging.error("***** Cannot find prior Path1 or Path2 lsl files, likely due to critical error on prior run.")
+        return RTN_CRITICAL
+
+
+    # ***** Check for Path1 deltas relative to the prior sync *****
+    logging.info(">>>>> Path1 Checking for Diffs")
+
+    path1_lsl_file_new = path1_lsl_file + '_NEW'
+    status, path1_now = get_and_load_lsl ("current Path1", path1_lsl_file_new, path1_base)
+    if status:  return status
+
+    def get_check_files (loaded_lsl):
+        check_files = {}
+        for key in loaded_lsl:
+            if args.check_filename in key and "rclonesync/Test/" not in key:
+                check_files[key] = loaded_lsl[key]
+        return check_files
+
+    if check_access:
+        path1_check = get_check_files(path1_now)
+
+    status, path1_prior = get_and_load_lsl ("prior Path1", path1_lsl_file)
+    if status:  return status
+    path1_prior_count = len(path1_prior)    # Save for later max deletes check
+
+    path1_deltas = {}
+    path1_deleted = 0
+    path1_found_same = False
+    for key in path1_prior:
+        _newer=False; _older=False; _size=False; _deleted=False
+        if key not in path1_now:
+            logging.info(print_msg("Path1", "  File was deleted", key))
+            path1_deleted += 1
+            _deleted = True
+        else:
+            if path1_prior[key]['datetime'] != path1_now[key]['datetime']:
+                if path1_prior[key]['datetime'] < path1_now[key]['datetime']:
+                    logging.info(print_msg("Path1", "  File is newer", key))
+                    _newer = True
+                else:               # Current path1 version is older than prior sync.
+                    logging.info(print_msg("Path1", "  File is OLDER", key))
+                    _older = True
+
+        if _newer or _older or _size or _deleted:
+            path1_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
+        else:
+            path1_found_same = True # Once we've found at least 1 unchanged file we know that not everything has changed, as with a DST time change
+
+    for key in path1_now:
+        if key not in path1_prior:
+            logging.info(print_msg("Path1", "  File is new", key))
+            path1_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
+
+    path1_prior = None              # Free up the memory
+    path1_now = None
+
+    path1_deltas = collections.OrderedDict(sorted(path1_deltas.items()))    # Sort the deltas list.
+    if len(path1_deltas) > 0:
+        news = newers = olders = deletes = 0
+        for key in path1_deltas:
+            if path1_deltas[key]['new']:      news += 1
+            if path1_deltas[key]['newer']:    newers += 1
+            if path1_deltas[key]['older']:    olders += 1
+            if path1_deltas[key]['deleted']:  deletes += 1
+        logging.info(f"  {len(path1_deltas):4} file change(s) on Path1: {news:4} new, {newers:4} newer, {olders:4} older, {deletes:4} deleted")
+
+
+    # ***** Check for Path2 deltas relative to the prior sync *****
+    logging.info(">>>>> Path2 Checking for Diffs")
+
+    path2_lsl_file_new = path2_lsl_file + '_NEW'
+    status, path2_now = get_and_load_lsl ("current Path2", path2_lsl_file_new, path2_base)
+    if status:  return status
+
+    if check_access:
+        path2_check = get_check_files(path2_now)
+
+    status, path2_prior = get_and_load_lsl ("prior Path2", path2_lsl_file)
+    if status:  return status
+    path2_prior_count = len(path2_prior)    # Save for later max deletes check
+
+    path2_deltas = {}
+    path2_deleted = 0
+    path2_found_same = False
+    for key in path2_prior:
+        _newer=False; _older=False; _size=False; _deleted=False
+        if key not in path2_now:
+            logging.info(print_msg("Path2", "  File was deleted", key))
+            path2_deleted += 1
+            _deleted = True
+        else:
+            if path2_prior[key]['datetime'] != path2_now[key]['datetime']:
+                if path2_prior[key]['datetime'] < path2_now[key]['datetime']:
+                    logging.info(print_msg("Path2", "  File is newer", key))
+                    _newer = True
+                else:               # Current Path2 version is older than prior sync.
+                    logging.info(print_msg("Path2", "  File is OLDER", key))
+                    _older = True
+
+        if _newer or _older or _size or _deleted:
+            path2_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
+        else:
+            path2_found_same = True # Once we've found at least 1 unchanged file we know that not everything has changed, as with a DST time change
+
+    for key in path2_now:
+        if key not in path2_prior:
+            logging.info(print_msg("Path2", "  File is new", key))
+            path2_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
+
+    path2_prior = None              # Free up the memory
+    path2_now = None
+
+    path2_deltas = collections.OrderedDict(sorted(path2_deltas.items()))      # Sort the deltas list.
+    if len(path2_deltas) > 0:
+        news = newers = olders = deletes = 0
+        for key in path2_deltas:
+            if path2_deltas[key]['new']:      news += 1
+            if path2_deltas[key]['newer']:    newers += 1
+            if path2_deltas[key]['older']:    olders += 1
+            if path2_deltas[key]['deleted']:  deletes += 1
+        logging.info(f"  {len(path2_deltas):4} file change(s) on Path2: {news:4} new, {newers:4} newer, {olders:4} older, {deletes:4} deleted")
+
+
     # ***** Check access health to the Path1 and Path2 filesystems *****
     if check_access:
         logging.info(">>>>> Checking Path1 and Path2 rclone filesystems access health")
-
-        def get_check_files (loaded_lsl):
-            check_files = {}
-            for key in loaded_lsl:
-                if args.check_filename in key and "rclonesync/Test/" not in key:
-                    check_files[key] = loaded_lsl[key]
-            return check_files
-
-        path1_check = get_check_files(path1_now)
-        path2_check = get_check_files(path2_now)
 
         check_error = False
         if len(path1_check) < 1 or len(path1_check) != len(path2_check):
@@ -240,112 +329,18 @@ def bidirSync():
         logging.info(f"  Found <{len(path1_check)}> matching <{args.check_filename}> files on both paths")
 
 
-    # ***** Load Prior content of both Path1 and Path2 trees *****
-    status, path1_prior = get_and_load_lsl ("prior Path1", path1_lsl_file)
-    if status:  return status
-    status, path2_prior = get_and_load_lsl ("prior Path2", path2_lsl_file)
-    if status:  return status
-
-
-    # ***** Check for Path1 deltas relative to the prior sync *****
-    logging.info(">>>>> Path1 Checking for Diffs")
-    path1_deltas = {}
-    path1_deleted = 0
-    path1_found_same = False
-    for key in path1_prior:
-        _newer=False; _older=False; _size=False; _deleted=False
-        if key not in path1_now:
-            logging.info(print_msg("Path1", "  File was deleted", key))
-            path1_deleted += 1
-            _deleted = True
-        else:
-            if path1_prior[key]['datetime'] != path1_now[key]['datetime']:
-                if path1_prior[key]['datetime'] < path1_now[key]['datetime']:
-                    logging.info(print_msg("Path1", "  File is newer", key))
-                    _newer = True
-                else:               # Current path1 version is older than prior sync.
-                    logging.info(print_msg("Path1", "  File is OLDER", key))
-                    _older = True
-            # if path1_prior[key]['size'] != path1_now[key]['size']:
-            #     logging.info(print_msg("Path1", "  File size is different", key))
-            #     _size = True
-
-        if _newer or _older or _size or _deleted:
-            path1_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
-        else:
-            path1_found_same = True # Once we've found at least 1 unchanged file we know that not everything has changed, as with a DST time change
-
-    for key in path1_now:
-        if key not in path1_prior:
-            logging.info(print_msg("Path1", "  File is new", key))
-            path1_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
-
-    path1_deltas = collections.OrderedDict(sorted(path1_deltas.items()))    # Sort the deltas list.
-    if len(path1_deltas) > 0:
-        news = newers = olders = deletes = 0
-        for key in path1_deltas:
-            if path1_deltas[key]['new']:      news += 1
-            if path1_deltas[key]['newer']:    newers += 1
-            if path1_deltas[key]['older']:    olders += 1
-            if path1_deltas[key]['deleted']:  deletes += 1
-        logging.info(f"  {len(path1_deltas):4} file change(s) on Path1: {news:4} new, {newers:4} newer, {olders:4} older, {deletes:4} deleted")
-
-
-    # ***** Check for Path2 deltas relative to the prior sync *****
-    logging.info(">>>>> Path2 Checking for Diffs")
-    path2_deltas = {}
-    path2_deleted = 0
-    path2_found_same = False
-    for key in path2_prior:
-        _newer=False; _older=False; _size=False; _deleted=False
-        if key not in path2_now:
-            logging.info(print_msg("Path2", "  File was deleted", key))
-            path2_deleted += 1
-            _deleted = True
-        else:
-            if path2_prior[key]['datetime'] != path2_now[key]['datetime']:
-                if path2_prior[key]['datetime'] < path2_now[key]['datetime']:
-                    logging.info(print_msg("Path2", "  File is newer", key))
-                    _newer = True
-                else:               # Current Path2 version is older than prior sync.
-                    logging.info(print_msg("Path2", "  File is OLDER", key))
-                    _older = True
-            # if path2_prior[key]['size'] != path2_now[key]['size']:
-            #     logging.info(print_msg("Path2", "  File size is different", key))
-            #     _size = True
-
-        if _newer or _older or _size or _deleted:
-            path2_deltas[key] = {'new':False, 'newer':_newer, 'older':_older, 'size':_size, 'deleted':_deleted}
-        else:
-            path2_found_same = True # Once we've found at least 1 unchanged file we know that not everything has changed, as with a DST time change
-
-    for key in path2_now:
-        if key not in path2_prior:
-            logging.info(print_msg("Path2", "  File is new", key))
-            path2_deltas[key] = {'new':True, 'newer':False, 'older':False, 'size':False, 'deleted':False}
-
-    path2_deltas = collections.OrderedDict(sorted(path2_deltas.items()))      # Sort the deltas list.
-    if len(path2_deltas) > 0:
-        news = newers = olders = deletes = 0
-        for key in path2_deltas:
-            if path2_deltas[key]['new']:      news += 1
-            if path2_deltas[key]['newer']:    newers += 1
-            if path2_deltas[key]['older']:    olders += 1
-            if path2_deltas[key]['deleted']:  deletes += 1
-        logging.info(f"  {len(path2_deltas):4} file change(s) on Path2: {news:4} new, {newers:4} newer, {olders:4} older, {deletes:4} deleted")
-
 
     # ***** Check for too many deleted files - possible error condition and don't want to start deleting on the other side !!! *****
     too_many_path1_deletes = False
-    if not force and float(path1_deleted)/len(path1_prior) > float(max_deletes)/100:
+    if not force and float(path1_deleted)/path1_prior_count > float(max_deletes)/100:
         logging.error("SAFETY ABORT - Excessive number of deletes (>{}%, {} of {}) found on the Path1 filesystem <{}>.  Run with --force if desired."
-                       .format(max_deletes, path1_deleted, len(path1_prior), path1_base))
+                       .format(max_deletes, path1_deleted, path1_prior_count, path1_base))
         too_many_path1_deletes = True
 
     too_many_path2_deletes = False
-    if not force and float(path2_deleted)/len(path2_prior) > float(max_deletes)/100:
+    if not force and float(path2_deleted)/path2_prior_count > float(max_deletes)/100:
         logging.error("SAFETY ABORT - Excessive number of deletes (>{}%, {} of {}) found on the Path2 filesystem <{}>.  Run with --force if desired."
-                       .format(max_deletes, path2_deleted, len(path2_prior), path2_base))
+                       .format(max_deletes, path2_deleted, path2_prior_count, path2_base))
         too_many_path2_deletes = True
 
     if too_many_path1_deletes or too_many_path2_deletes:
@@ -362,7 +357,7 @@ def bidirSync():
         return RTN_ABORT
         
 
-    # ***** Apply changes to Path1 and Path2 *****
+    # ***** Determine and apply changes to Path1 and Path2 *****
     files_copy_P1P2 = []
     files_copy_P2P1 = []
     files_delete_P1 = []
@@ -593,8 +588,11 @@ def load_list(lslfile):
     """
     d = {}
     try:
+        line = "<none>"
+        line_cnt = 0
         with io.open(lslfile, mode='rt', encoding='utf8') as f:
             for line in f:
+                line_cnt += 1
                 out = LINE_FORMAT.match(line)
                 if out:
                     size = out.group(1)
@@ -603,14 +601,44 @@ def load_list(lslfile):
                     microsec = out.group(4)
                     date_time = time.mktime(datetime.strptime(date + ' ' + _time, '%Y-%m-%d %H:%M:%S').timetuple()) + float('.'+ microsec)
                     filename = out.group(5)
-                    d[filename] = {'size': size, 'datetime': date_time}
+                    if filename in d:
+                        logging.warning (f"WARNING  Duplicate line in LSL file:   <{line[:-1]}>")
+                        strtime = datetime.fromtimestamp(d[filename]['datetime']).strftime("%Y-%m-%d %H:%M:%S.%f")
+                        logging.warning (f"         Prior found (keeping latest): <{d[filename]['size']:>9} {strtime}    {filename}>")
+                        if date_time > d[filename]['datetime']:
+                            d[filename] = {'size': size, 'datetime': date_time}
+                    else:
+                        d[filename] = {'size': size, 'datetime': date_time}
+
                 else:
                     logging.warning("Something wrong with this line (ignored) in {}.  (Google Doc files cannot be synced.):\n   <{}>".format(lslfile, line))
         return 0, collections.OrderedDict(sorted(d.items()))        # return Success and a sorted list
 
     except Exception as e:
-        logging.error("Exception in load_list loading <{}>:  <{}>".format(lslfile, e))
+        logging.error(f"Exception in load_list loading <{lslfile}>:\n  <{e}>\n  Line # {line_cnt}:  {line}")
         return 1, ""                                                # return False
+
+
+def get_and_load_lsl (path_text, lsl_file, path12=None):
+    """
+    Optionally call for an rclone lsl of the referenced path12, written to the lsl_file.
+    Then load the lsl file content into into a dictionary and return the dictionary to the caller.
+
+    path_text is a convenience string for logging, eg "Path2 prior"
+    lsl_file is the full path string for file to be written to by the rclone lsl, and read from for loading the content.
+    path12 is a string to be passed to the rclone lsl, eg "Dropbox:"
+    """
+    if path12 is not None:
+        if rclone_lsl(path12, lsl_file, filter_file=user_filter_file):
+            return RTN_ABORT, None
+    status, loaded_list = load_list(lsl_file)
+    if status:
+        logging.error(print_msg("ERROR", f"Failed loading {path_text} list file <{lsl_file}>"))
+        return RTN_ABORT, None
+    if not first_sync and len(loaded_list) == 0:
+        logging.error(print_msg("ERROR", f"Zero length in {path_text} list file <{lsl_file}>.  Cannot sync to an empty directory tree."))
+        return RTN_CRITICAL, None
+    return 0, loaded_list
 
 
 def request_lock(caller, lock_file):
@@ -644,7 +672,7 @@ def keyboardInterruptHandler(signal, frame):
     if os.path.exists(path1_lsl_file):
         shutil.move(path1_lsl_file, path1_lsl_file + '_ERROR')
     release_lock(lock_file)
-    exit (2)
+    sys.exit(2)
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
     
 
@@ -703,10 +731,6 @@ if __name__ == '__main__':
     force        =  args.force
     rmdirs       =  args.remove_empty_directories
 
-    workdir      =  args.workdir
-    if not (workdir.endswith('/') or workdir.endswith('\\')):   # 2nd check is for Windows paths
-        workdir += '/'
-
     if not args.no_datetime_log:
         logging.basicConfig(format='%(asctime)s:  %(message)s') # /%(levelname)s/%(module)s/%(funcName)s
     else:
@@ -715,7 +739,6 @@ if __name__ == '__main__':
     if verbose >= 2:
         logging.getLogger().setLevel(logging.DEBUG)             # Log debug detail
     elif verbose>0 or rc_verbose>0 or force or first_sync or dry_run:
-        # verbose = True
         logging.getLogger().setLevel(logging.INFO)              # Log each file transaction
     else:
         logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events.  Normally silent.
@@ -727,13 +750,24 @@ if __name__ == '__main__':
         if "PYTHONIOENCODING" in os.environ:
             py_encode_env = os.environ["PYTHONIOENCODING"]
         if "65001" not in chcp:
-            print ("ERROR  In the Windows CMD shell execute <chcp 65001> to enable support for UTF-8.")
+            logging.error ("ERROR  In the Windows CMD shell execute <chcp 65001> to enable support for UTF-8.")
             err = True
         if py_encode_env.lower().replace('-','') != "utf8":
-            print ("ERROR  In the Windows CMD shell execute <set PYTHONIOENCODING=UTF-8> to enable support for UTF-8.")
+            logging.error ("ERROR  In the Windows CMD shell execute <set PYTHONIOENCODING=UTF-8> to enable support for UTF-8.")
             err = True
         if err:
-            exit()
+            sys.exit(1)
+
+    workdir = args.workdir
+    if not (workdir.endswith('/') or workdir.endswith('\\')):   # 2nd check is for Windows paths
+        workdir += '/'
+    try:
+        if not os.path.exists(workdir):
+            os.makedirs(workdir)
+    except Exception as e:
+        logging.error(f"Cannot access workdir at <{workdir}>.")
+        sys.exit(1)
+
 
     logging.info(f"***** BiDirectional Sync for Cloud Services using rclone ({__version__}) *****")
 
@@ -744,16 +778,16 @@ if __name__ == '__main__':
                 # /home/<me>/.config/rclone/rclone.conf
             rcconfig = str(subprocess.check_output([rclone, "config", "file"]).decode("utf8")).split(':\n')[1].strip()
         except subprocess.CalledProcessError as e:
-            print("ERROR  from <rclone config file> - can't get the config file path."); exit()
+            logging.error("ERROR  from <rclone config file> - can't get the config file path."); sys.exit(1)
     if not os.path.exists(rcconfig):
-        print("ERROR  rclone config file <{}> not found.".format(rcconfig)); exit()
+        logging.error("ERROR  rclone config file <{}> not found.".format(rcconfig)); sys.exit(1)
 
     try:
         clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig]).decode("utf8").split()
     except subprocess.CalledProcessError as e:
-        print("ERROR  Can't get list of known remotes.  Have you run rclone config?"); exit()
+        logging.error("ERROR  Can't get list of known remotes.  Have you run rclone config?"); sys.exit(1)
     except:
-        print("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}\n".format(sys.exc_info()[1])); exit()
+        logging.error("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}.\n".format(sys.exc_info()[1])); sys.exit(1)
 
     def pathparse(path):
         """Handle variations in a path argument.
@@ -768,7 +802,7 @@ if __name__ == '__main__':
         _cloud = False
         if ':' in path:
             if len(path) == 1:                                  # Handle corner case of ':' only passed in
-                logging.error("ERROR  Path argument <{}> not a legal path".format(path)); exit()
+                logging.error("ERROR  Path argument <{}> not a legal path.".format(path)); sys.exit(1)
             if path[1] == ':' and is_Windows:                   # Windows drive letter case
                 path_base = path
                 if not path_base.endswith('\\'):                # For consistency ensure the path ends with '/'
@@ -780,8 +814,8 @@ if __name__ == '__main__':
                     _cloud = True
                     cloud_name = out.group(1) + ':'
                     if cloud_name not in clouds:
-                        logging.error("ERROR  Path argument <{}> not in list of configured Clouds: {}"
-                                      .format(cloud_name, clouds)); exit()
+                        logging.error("ERROR  Path argument <{}> not in list of configured Clouds: {}."
+                                      .format(cloud_name, clouds)); sys.exit(1)
                     path_part = out.group(2)
                     if path_part:
                         if not (path_part.endswith('/') or path_part.endswith('\\')):    # 2nd check is for Windows paths
@@ -794,8 +828,8 @@ if __name__ == '__main__':
 
         if not _cloud:
             if not os.path.exists(path_base):
-                logging.error("ERROR  Local path parameter <{}> cannot be accessed.  Path error?  Aborting"
-                              .format(path_base)); exit()
+                logging.error("ERROR  Local path parameter <{}> cannot be accessed.  Path error?"
+                              .format(path_base)); sys.exit(1)
 
         return path_base
 
@@ -815,13 +849,13 @@ if __name__ == '__main__':
                 shutil.move(path2_lsl_file, path2_lsl_file + '_ERROR')
             if os.path.exists(path1_lsl_file):
                 shutil.move(path1_lsl_file, path1_lsl_file + '_ERROR')
-            exit (2)
+            sys.exit(2)
         if status == RTN_ABORT:
             logging.error("***** Error Abort.  Try running rclonesync again. *****\n")
-            exit (1)
+            sys.exit(1)
         if status == 0:
             logging.info(">>>>> Successful run.  All done.\n")
-            exit (0)
+            sys.exit(0)
     else:
         logging.warning("***** Prior lock file in place, aborting.  Try running rclonesync again. *****\n")
-        exit (1)
+        sys.exit(1)

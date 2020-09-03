@@ -41,6 +41,9 @@ touch :TESTCASEROOT:modfiles/file7.txt --date="2001-01-02"
 :RCLONE: copy :TESTCASEROOT:modfiles/file7.txt :PATH1:
 :RCLONE: delete :PATH2:file7.txt
 
+:MSG:	Sync with --dry-run and --first-sync
+:RCSEXEC: :PATH1: :PATH2: --dry-run --first-sync
+:SAVELSL: dry_run_first_sync
 
 :MSG:	Sync with --dry-run
 :RCSEXEC: :PATH1: :PATH2: --dry-run
@@ -48,3 +51,5 @@ touch :TESTCASEROOT:modfiles/file7.txt --date="2001-01-02"
 
 :MSG:	Sync without --dry-run
 :RCSEXEC: :PATH1: :PATH2:
+
+
