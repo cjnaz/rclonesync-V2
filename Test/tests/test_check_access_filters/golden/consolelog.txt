@@ -9,7 +9,7 @@ rclone copy ./tests/test_check_access_filters/ExcludeOther_filtersfile.txt ./tes
 :MSG:  --first-sync to get the ExcludeOther_filtersfile.txt.MD5 built.
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --filters-file ./testwd/ExcludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/ExcludeOther_filtersfile.txt, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -25,7 +25,7 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 :MSG:  EXCLUDE - Test filters for Check Access
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --filters-file ./testwd/ExcludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/ExcludeOther_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -53,7 +53,7 @@ rclone delete ./testdir/path1/subdirX/RCLONE_TEST
 :MSG:  EXCLUDE - Test Should PASS
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --filters-file ./testwd/ExcludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/ExcludeOther_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -79,7 +79,7 @@ rclone delete ./testdir/path1/subdir/RCLONE_TEST
 :MSG:  EXCLUDE - Test Should CRITICAL ERROR
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --filters-file ./testwd/ExcludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/ExcludeOther_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -110,7 +110,7 @@ rclone copy ./tests/test_check_access_filters/initial ./testdir/path1/
 rclone sync ./testdir/path1/ ./testdir/path2/
 rclone copy ./tests/test_check_access_filters/IncludeOther_filtersfile.txt ./testwd/
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --filters-file ./testwd/IncludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/IncludeOther_filtersfile.txt, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -126,7 +126,7 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 :MSG:  INCLUDE - Test Include/Exclude filters for Check Access
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --filters-file ./testwd/IncludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/IncludeOther_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -153,7 +153,7 @@ rclone delete ./testdir/path2/subdir-not/subdir-not2/RCLONE_TEST
 :MSG:  INCLUDE - Test Should PASS
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --filters-file ./testwd/IncludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/IncludeOther_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -180,7 +180,7 @@ rclone delete ./testdir/path1/subdirX/subdirX1/RCLONE_TEST
 :MSG:  INCLUDE - Test Should CRITICAL ERROR
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --filters-file ./testwd/IncludeOther_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200902) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/IncludeOther_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>

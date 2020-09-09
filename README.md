@@ -21,7 +21,7 @@ sync capability_.  _rclonesync_ provides a bidirectional sync solution using rcl
 
 ### rclonesync supported usage:
 - Runs on Linux and Windows.
-- Runs on Python 3.6 and later (tested on 3.6.8 minimum).
+- Requires Python 3.6 or later (tested on 3.6.8 minimum).
 - Requires rclone V1.52 or later. 
 - Validated on Google Drive, Dropbox, OwnCloud, OneDrive (thanks @AlexEshoo), Box (thanks @darlac).
 - rclonesync has not been fully 
@@ -49,10 +49,11 @@ to check for proper operation.
 
 ## Notable changes in the latest release
 
-### V3.1 200902 
-- Modified flow to limit to two the number of loaded LSL files at any time.  Prior versions had all four LSLs loaded at once - Prior and New for both Path1 and Path2.  This change moves Check Access after finding the deltas on Path1 and Path2.
+### V3.1 200909
+- Modified flow to limit to two the number of loaded LSL files at any time.  Prior versions had all four LSLs loaded at once (Prior and New for both Path1 and Path2).  This change moves Check Access after finding the deltas on Path1 and Path2.
 - Fixed lsl file naming bug related to --dry-run and --first-sync introduced in V3.0.
 - Added WARNING log for duplicate entries in the LSL files, as seen in one test case.
+- Enforces rclone V1.52 minimum
 
 
 ### V3.0 200824 is a major clean-up and reimplementation of the core algorithms.  
@@ -342,9 +343,33 @@ Path1 deleted AND Path2 changed | File is deleted on Path1 AND changed (newer/ol
 **rclonesync relies on file date/time stamps to identify changed files.  If an application (or yourself) should change the content of a file without changing the modification time then rclonesync will not notice the change, and thus will not copy it to the other side.**
 
 
+## Benchmarks
+
+Here are a few data points for scale, execution times, and memory usage.
+
+This first set of data was between my local disk to Dropbox.  My [Speedtest.net](https://www.Speedtest.net) download speed is ~170 Mbps, and upload speed is ~10 Mbps.  500 files (~9.5 MB each) are already sync'd.  50 files were added in a new directory, each ~9.5 MB, ~475 MB total.
+
+Change | Operations and times | Overall run time
+----|----|----|----|----|----|
+500 files sync'd (nothing to move) | 1x LSL Path1 & Path2 | 1.5 sec | 1.3 sec, 46% reduction
+500 files sync'd with --check-access  | 1x LSL Path1 & Path2 | 1.5 sec | 3.3 sec
+50 new files on remote | Queued 50 copies down: 27 sec | 29 sec 
+Moved local dir | Queued 50 copies up: 410 sec, Queued 50 deletes up: 9 sec | 421 sec 
+Moved remote dir | Queued 50 copies down: 31 sec, Queued 50 deletes down: <1 sec | 33 sec 
+Delete local dir | Queued 50 deletes up: 9 sec | 13 sec
+
+This next data is from a user's application.  They have ~400GB of data over 1.96 million files being sync'ed between a Windows local disk and a remote/cloud (type??).  The file full path length is average 35 characters (which factors into load time and RAM required).  (Data points to be added are noted once the user replies.  If you have similar large-scale data please share.)
+- Loading the prior LSL into memory (1.96 million files, LSL file size 140 MB) takes ~30 sec and occupies about 1 GB of RAM.
+- Executing a fresh `rclone lsl` of the local file system (producing the 140 MB output file) takes about xxx sec.
+- Executing a fresh `rclone lsl` of the remote file system (producing the 140 MB output file) takes about xxx sec.  The network download speed was measured at yyy Mb/s.
+- Once the prior and current Path1 and Path2 lsl's are loaded (a total of four to be loaded, two at a time), determining the deltas is pretty quick (a few seconds for this test case), and the transfer times for any files to be copied is dominated by the network bandwidth.
+
+
+
+
 ## Revision history
 
-- V3.1 200902 - 50% memory size reduction optimization by loading only two LSLs simultaneously.  Fixed lsl file naming bug related to --dry-run and --first-sync introduced in V3.0.  Added WARNING log for duplicate entries in the LSL files, as seen in one test case.
+- V3.1 200909 - 50% memory size reduction optimization by loading only two LSLs simultaneously.  Fixed lsl file naming bug related to --dry-run and --first-sync introduced in V3.0.  Added WARNING log for duplicate entries in the LSL files, as seen in one test case.
 - V3.0  200824 - Major algorithm revamp.
 - V2.11 200813 - Bug fix for proper searching during the check access phase.  
 - V2.10 200411 - Added verbose level 2 (debug) with rclone command log (issue #46); Removed '/' after remote: name in support of SFTP remotes (issue #46); Added error trap for all files changed (such as for system timezone change, issue #32); Added trap of keyboard interrupt / SIGINT and lock file removal; Added log of rclonesync version number.

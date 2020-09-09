@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BiDirectional Sync using rclone"""
 
-__version__ = "V3.1 200902"                         # Version number and date code
+__version__ = "V3.1 200909"                         # Version number and date code
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
@@ -36,6 +36,7 @@ import signal                                       # For keyboard interrupt han
 
 
 # Configurations and constants
+RCLONE_MIN_VERSION = 1.52
 is_Windows = False
 is_Linux = False
 if sys.platform == "win32":
@@ -687,9 +688,9 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--check-access', action='store_true',
                         help="Ensure expected RCLONE_TEST files are found on both path1 and path2 filesystems, else abort.")
     parser.add_argument('--check-filename', default=CHK_FILE, 
-                        help="Filename for --check-access (default is <{}>).".format(CHK_FILE))
+                        help=f"Filename for --check-access (default is <{CHK_FILE}>).")
     parser.add_argument('-D', '--max-deletes', type=int, default=MAX_DELETE,
-                        help="Safety check for percent maximum deletes allowed (default {}%%).  If exceeded the rclonesync run will abort.  See --force.".format(MAX_DELETE))
+                        help=f"Safety check for percent maximum deletes allowed (default {MAX_DELETE}%%).  If exceeded the rclonesync run will abort.  See --force.")
     parser.add_argument('-F', '--force', action='store_true',
                         help="Bypass --max-deletes safety check and run the sync.  Also asserts --verbose.")
     parser.add_argument('-e', '--remove-empty-directories', action='store_true',
@@ -731,6 +732,8 @@ if __name__ == '__main__':
     force        =  args.force
     rmdirs       =  args.remove_empty_directories
 
+
+    # Set up logging
     if not args.no_datetime_log:
         logging.basicConfig(format='%(asctime)s:  %(message)s') # /%(levelname)s/%(module)s/%(funcName)s
     else:
@@ -743,6 +746,10 @@ if __name__ == '__main__':
     else:
         logging.getLogger().setLevel(logging.WARNING)           # Log only unusual events.  Normally silent.
 
+    logging.info(f"***** BiDirectional Sync for Cloud Services using rclone ({__version__}) *****")
+
+
+    # Environment checks
     if is_Windows:
         chcp = subprocess.check_output(["chcp"], shell=True).decode("utf-8")
         err = False
@@ -758,6 +765,8 @@ if __name__ == '__main__':
         if err:
             sys.exit(1)
 
+
+    # Check workdir goodness
     workdir = args.workdir
     if not (workdir.endswith('/') or workdir.endswith('\\')):   # 2nd check is for Windows paths
         workdir += '/'
@@ -765,11 +774,26 @@ if __name__ == '__main__':
         if not os.path.exists(workdir):
             os.makedirs(workdir)
     except Exception as e:
-        logging.error(f"Cannot access workdir at <{workdir}>.")
+        logging.error(f"ERROR  Cannot access workdir at <{workdir}>.")
         sys.exit(1)
 
 
-    logging.info(f"***** BiDirectional Sync for Cloud Services using rclone ({__version__}) *****")
+    # Check rclone related goodness
+    rcversion_FORMAT = re.compile(r"v(\d+)\.(\d+).*")
+    try:
+        rclone_V = subprocess.check_output([rclone, "version"]).decode("utf8").split()[1]
+    except Exception as e:
+        logging.error(f"ERROR  Cannot invoke <rclone version>.  rclone not installed or invalid --rclone path?\nError message: {e}.\n")
+        sys.exit(1)
+    out = rcversion_FORMAT.match(rclone_V)
+    if out:
+        rcversion = int(out.group(1)) + float("0." + out.group(2))
+        if rcversion < RCLONE_MIN_VERSION:
+            logging.error(f"ERROR  rclone minimum version is v{RCLONE_MIN_VERSION}.  Found version v{rcversion}.")
+            sys.exit(1)
+    else:
+        logging.error(f"ERROR  Cannot get rclone version info.  Check rclone installation - minimum version v{RCLONE_MIN_VERSION}.")
+        sys.exit(1)
 
     rcconfig = args.config
     if rcconfig is None:
@@ -777,18 +801,21 @@ if __name__ == '__main__':
                 # Configuration file is stored at:
                 # /home/<me>/.config/rclone/rclone.conf
             rcconfig = str(subprocess.check_output([rclone, "config", "file"]).decode("utf8")).split(':\n')[1].strip()
-        except subprocess.CalledProcessError as e:
-            logging.error("ERROR  from <rclone config file> - can't get the config file path."); sys.exit(1)
+        except Exception as e:
+            logging.error(f"ERROR  Cannot get <rclone config file> path.  rclone install problem?\nError message: {e}.\n")
+            sys.exit(1)
     if not os.path.exists(rcconfig):
-        logging.error("ERROR  rclone config file <{}> not found.".format(rcconfig)); sys.exit(1)
+        logging.error(f"ERROR  rclone config file <{rcconfig}> not found.  Check rclone configuration, or invalid --config switch?")
+        sys.exit(1)
 
     try:
         clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig]).decode("utf8").split()
-    except subprocess.CalledProcessError as e:
-        logging.error("ERROR  Can't get list of known remotes.  Have you run rclone config?"); sys.exit(1)
-    except:
-        logging.error("ERROR  rclone not installed, or invalid --rclone path?\nError message: {}.\n".format(sys.exc_info()[1])); sys.exit(1)
+    except Exception as e:
+        logging.error("ERROR  Cannot get list of known remotes.  Have you run rclone config?")
+        sys.exit(1)
 
+
+    # Set up Path1 / Path2
     def pathparse(path):
         """Handle variations in a path argument.
         Cloud:              - Root of the defined cloud
@@ -802,7 +829,8 @@ if __name__ == '__main__':
         _cloud = False
         if ':' in path:
             if len(path) == 1:                                  # Handle corner case of ':' only passed in
-                logging.error("ERROR  Path argument <{}> not a legal path.".format(path)); sys.exit(1)
+                logging.error("ERROR  Path argument <{}> not a legal path.".format(path))
+                sys.exit(1)
             if path[1] == ':' and is_Windows:                   # Windows drive letter case
                 path_base = path
                 if not path_base.endswith('\\'):                # For consistency ensure the path ends with '/'
@@ -814,8 +842,8 @@ if __name__ == '__main__':
                     _cloud = True
                     cloud_name = out.group(1) + ':'
                     if cloud_name not in clouds:
-                        logging.error("ERROR  Path argument <{}> not in list of configured Clouds: {}."
-                                      .format(cloud_name, clouds)); sys.exit(1)
+                        logging.error(f"ERROR  Path argument <{cloud_name}> not in list of configured Clouds: {clouds}.")
+                        sys.exit(1)
                     path_part = out.group(2)
                     if path_part:
                         if not (path_part.endswith('/') or path_part.endswith('\\')):    # 2nd check is for Windows paths
@@ -828,8 +856,8 @@ if __name__ == '__main__':
 
         if not _cloud:
             if not os.path.exists(path_base):
-                logging.error("ERROR  Local path parameter <{}> cannot be accessed.  Path error?"
-                              .format(path_base)); sys.exit(1)
+                logging.error(f"ERROR  Local path parameter <{path_base}> cannot be accessed.  Path error?")
+                sys.exit(1)
 
         return path_base
 
@@ -837,6 +865,7 @@ if __name__ == '__main__':
     path2_base = pathparse(args.Path2)
 
 
+    # Run the job
     lock_file = os.path.join(tempfile.gettempdir(), 'rclonesync_LOCK_' + (
         path1_base + path2_base).replace(':','_').replace(r'/','_').replace('\\','_'))
 

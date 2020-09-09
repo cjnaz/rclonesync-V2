@@ -377,26 +377,14 @@ Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
 8,9d7
-<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 11a10,11
->       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
-5,6d4
-<       110 2000-01-01 00:00:00.000000000 subdirX/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdirX/file20.txt
-9,10c7,8
-<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
----
->       110 2000-01-01 00:00:00.000000000 subdirX/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdirX/file20.txt
-12a11,12
->       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
 
 ----------------------------------------------------------
 Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1>
@@ -405,22 +393,10 @@ Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1>
 Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
 
 ----------------------------------------------------------
-MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2>
-8,9d7
-<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
-11a10,11
->       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2>
 
 ----------------------------------------------------------
-MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
-8,9d7
-<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
-11a10,11
->       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
 
 ----------------------------------------------------------
 Match:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1>
@@ -431,27 +407,27 @@ Match:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path2>
 8,9d7
-<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 11a10,11
->       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
 8,9d7
-<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
-<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 11a10,11
->       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
->         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
 Match:  <consolelog.txt>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
-TEST <test_check_access_filters> FAILED WITH 6 ERRORS.
+TEST <test_check_access_filters> FAILED WITH 3 ERRORS.
 
 
 ===================================================================
@@ -615,22 +591,24 @@ Match:  <LSL_._testdir_path1_._testdir_path2__files_first_sync_copy_P2P1>
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-78d77
-< NOTICE: file6.txt: Not copying as --dry-run
-80a80
-> NOTICE: file6.txt: Not copying as --dry-run
-82a83
-> NOTICE: file3.txt: Not copying as --dry-run
-86d86
-< NOTICE: file3.txt: Not copying as --dry-run
-88d87
-< NOTICE: file10.txt: Not deleting as --dry-run
-90a90
-> NOTICE: file10.txt: Not deleting as --dry-run
-143d142
+82d81
 < NOTICE: file11.txt: Not copying as --dry-run
-144a144
+84d82
+< NOTICE: file1.txt: Not copying as --dry-run
+85a84
 > NOTICE: file11.txt: Not copying as --dry-run
+86a86
+> NOTICE: file1.txt: Not copying as --dry-run
+87a88
+> NOTICE: file6.txt: Not deleting as --dry-run
+90d90
+< NOTICE: file6.txt: Not deleting as --dry-run
+139,140d138
+< NOTICE: file10.txt: Not copying as --dry-run
+< NOTICE: file1.txt: Not copying as --dry-run
+141a140,141
+> NOTICE: file1.txt: Not copying as --dry-run
+> NOTICE: file10.txt: Not copying as --dry-run
 
 ----------------------------------------------------------
 Match:  <dry_run_LSL_._testdir_path1_._testdir_path2__Path1>
