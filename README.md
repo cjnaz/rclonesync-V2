@@ -350,9 +350,9 @@ Here are a few data points for scale, execution times, and memory usage.
 This first set of data was between my local disk to Dropbox.  My [Speedtest.net](https://www.Speedtest.net) download speed is ~170 Mbps, and upload speed is ~10 Mbps.  500 files (~9.5 MB each) are already sync'd.  50 files were added in a new directory, each ~9.5 MB, ~475 MB total.
 
 Change | Operations and times | Overall run time
-----|----|----|----|----|----|
-500 files sync'd (nothing to move) | 1x LSL Path1 & Path2 | 1.5 sec | 1.3 sec, 46% reduction
-500 files sync'd with --check-access  | 1x LSL Path1 & Path2 | 1.5 sec | 3.3 sec
+----|----|----
+500 files sync'd (nothing to move) | 1x LSL Path1 & Path2 | 1.5 sec 
+500 files sync'd with --check-access  | 1x LSL Path1 & Path2 | 1.5 sec
 50 new files on remote | Queued 50 copies down: 27 sec | 29 sec 
 Moved local dir | Queued 50 copies up: 410 sec, Queued 50 deletes up: 9 sec | 421 sec 
 Moved remote dir | Queued 50 copies down: 31 sec, Queued 50 deletes down: <1 sec | 33 sec 
