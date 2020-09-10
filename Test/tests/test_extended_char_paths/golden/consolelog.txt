@@ -5,7 +5,7 @@
 :MSG:	--first-sync of subdirs with extended chars
 
 ../rclonesync ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ_>
 Synching Path1  <./testdir/path1/測試_Русский_ě_áñ/>  with Path2  <./testdir/path2/測試_Русский_ě_áñ/>
 Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./testdir/path2/測試_Русский_ě_áñ, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -28,7 +28,7 @@ rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path
 :MSG:   Normal sync of subdirs with extended chars
 
 ../rclonesync ./testdir/path1/測試_Русский_ě_áñ ./testdir/path2/測試_Русский_ě_áñ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_測試_Русский_ě_áñ_>
 Synching Path1  <./testdir/path1/測試_Русский_ě_áñ/>  with Path2  <./testdir/path2/測試_Русский_ě_áñ/>
 Command args: <Path1=./testdir/path1/測試_Русский_ě_áñ, Path2=./testdir/path2/測試_Русский_ě_áñ, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -55,7 +55,7 @@ rm ./testwd/LSL_._testdir_path1_測試_Русский_ě_áñ_._testdir_path2_�
 :MSG:	Test --check-filename with extended chars - check fail
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -67,10 +67,14 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 
 rclone delete ./testdir/path1/測試_Русский_ě_áñ/測試_checkfile
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=測試_checkfile, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+>>>>> Path1 Checking for Diffs
+  Path1      File was deleted                  - 測試_Русский_ě_áñ/測試_checkfile
+     1 file change(s) on Path1:    0 new,    0 newer,    0 older,    1 deleted
+>>>>> Path2 Checking for Diffs
 >>>>> Checking Path1 and Path2 rclone filesystems access health
   ERROR    Failed access health test:  <測試_checkfile> Path1 count 1, Path2 count 2 - 
   ERROR    Failed access health test:  Path2 key <測試_Русский_ě_áñ/測試_checkfile> not found in Path1 - 
@@ -84,7 +88,7 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 :MSG:	Test --check-filename with extended chars - check pass
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -97,14 +101,14 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-access --check-filename 測試_checkfile --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=True, check_filename=測試_checkfile, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
->>>>> Checking Path1 and Path2 rclone filesystems access health
-  Found <2> matching <測試_checkfile> files on both paths
 >>>>> Path1 Checking for Diffs
 >>>>> Path2 Checking for Diffs
+>>>>> Checking Path1 and Path2 rclone filesystems access health
+  Found <2> matching <測試_checkfile> files on both paths
 >>>>> No changes on Path1 or Path2
 >>>>> Refreshing Path1 and Path2 lsl files
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
@@ -119,7 +123,7 @@ rm ./testwd/LSL_._testdir_path1_._testdir_path2__files_first_sync_copy_P2P1 ./te
 
 rclone copy ./tests/test_extended_char_paths/modfiles/測試_filtersfile.txt ./testwd/
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/測試_filtersfile.txt --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/測試_filtersfile.txt, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -133,7 +137,7 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 
 rclone copyto ./tests/test_extended_char_paths/modfiles/file1.txt ./testdir/path1/fileZ.txt
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/測試_filtersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/測試_filtersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>

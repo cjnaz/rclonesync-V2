@@ -5,7 +5,7 @@
 :MSG:	Initial rclonesync --first-sync
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -63,10 +63,43 @@ touch ./tests/test_dry_run/modfiles/file7.txt --date=2001-01-02
 rclone copy ./tests/test_dry_run/modfiles/file7.txt ./testdir/path1/
 rclone delete ./testdir/path2/file7.txt
 
+:MSG:	Sync with --dry-run and --first-sync
+
+../rclonesync ./testdir/path1/ ./testdir/path2/ --dry-run --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
+Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=True, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+>>>>> --first-sync copying any unique Path2 files to Path1
+  Path2      --first-sync queue copy to Path1  - file10.txt
+  Path2      --first-sync queue copy to Path1  - file4.txt
+  Path2      --first-sync queue copy to Path1  - file6.txt
+  Path2      Do queued first-sync copies to    - Path1
+NOTICE: file10.txt: Not copying as --dry-run
+NOTICE: file4.txt: Not copying as --dry-run
+NOTICE: file6.txt: Not copying as --dry-run
+>>>>> --first-sync synching Path1 to Path2
+NOTICE: file11.txt: Not copying as --dry-run
+NOTICE: file3.txt: Not copying as --dry-run
+NOTICE: file1.txt: Not copying as --dry-run
+NOTICE: file7.txt: Not copying as --dry-run
+NOTICE: file2.txt: Not copying as --dry-run
+NOTICE: file5.txt: Not updating modification time as --dry-run
+NOTICE: file10.txt: Not deleting as --dry-run
+NOTICE: file4.txt: Not deleting as --dry-run
+NOTICE: file6.txt: Not deleting as --dry-run
+>>>>> --first-sync refreshing lsl files
+Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
+>>>>> Successful run.  All done.
+
+
+:SAVELSL: dry_run_first_sync
+
+
 :MSG:	Sync with --dry-run
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --dry-run --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=True, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
@@ -104,8 +137,8 @@ NOTICE: file5.txt: Not moving as --dry-run
   Path1      Queue delete                      - ./testdir/path1/file3.txt
   Path2      Do queued copies to               - Path1
 NOTICE: file10.txt: Not copying as --dry-run
-NOTICE: file6.txt: Not copying as --dry-run
 NOTICE: file1.txt: Not copying as --dry-run
+NOTICE: file6.txt: Not copying as --dry-run
   Path1      Do queued copies to               - Path2
 NOTICE: file11.txt: Not copying as --dry-run
 NOTICE: file7.txt: Not copying as --dry-run
@@ -125,7 +158,7 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 :MSG:	Sync without --dry-run
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.0 200824) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
 Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
