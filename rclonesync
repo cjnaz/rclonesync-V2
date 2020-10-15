@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BiDirectional Sync using rclone"""
 
-__version__ = "V3.1 200909"                         # Version number and date code
+__version__ = "V3.1.1 201015"                         # Version number and date code
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
@@ -779,7 +779,7 @@ if __name__ == '__main__':
 
 
     # Check rclone related goodness
-    rcversion_FORMAT = re.compile(r"v(\d+)\.(\d+).*")
+    rcversion_FORMAT = re.compile(r"v?(\d+)\.(\d+).*")
     try:
         rclone_V = subprocess.check_output([rclone, "version"]).decode("utf8").split()[1]
     except Exception as e:

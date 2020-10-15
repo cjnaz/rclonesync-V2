@@ -29,32 +29,36 @@ tested on other services.  If it works, or sorta works, please raise an issue an
 to check for proper operation.
 
 
+` `  
 ## Installation, setup, getting started
 - Install [rclone](https://rclone.org/) and setup your remotes.  Ensure the location is included in your executables search path (PATH environment variable), else see rclonesync's `--rclone` switch.
 - Place the rclonesync script on your system.  Place it in a directory within your PATH environment variable, or run it with a full path reference.  On Linux, make sure the file mode is set to executable (`chmod +x rclonesync`).   
 - Create the rclonesync working directory at `~/.rclonesyncwd` (Linux) or `C:\Users\<your loginname>\.rclonesyncwd` (Windows),  Set up a filters file in this directory, if needed.
 - Run rclonesync with the `--first-sync` switch, specifying the paths to the local and remote sync directory roots.
 - For successive sync runs, leave off the `--first-sync` switch.
-- Consider setting up the `--check-access` feature for safety, and the `--filters-file` feature for excluding unnecessary files and directories from the sync.  See [FILTERING.md](https://github.com/cjnaz/rclonesync-V2/blob/master/FILTERING.md).
+- Consider setting up the `--check-access` feature for safety, and the `--filters-file` feature for excluding unnecessary files and directories from the sync.  See [FILTERING.md](FILTERING.md).
 - On Linux, consider setting up a crontab entry.  The following runs a sync every 5 minutes between a local directory and an OwnCloud server, with output logged to a runlog file:
-```
-# Minute (0-59)
-#      Hour (0-23)
-#           Day of Month (1-31)
-#                Month (1-12 or Jan-Dec)
-#                     Day of Week (0-6 or Sun-Sat)
-#                         Command
-  */5  *    *    *    *   ~/scripts/rclonesync /mnt/share/mylocal Dropbox: --check-access --filters-file ~/.rclonesyncwd/Filters  >> ~/scripts/runlog 2>&1
-```
 
+        # Minute (0-59)
+        #      Hour (0-23)
+        #           Day of Month (1-31)
+        #                Month (1-12 or Jan-Dec)
+        #                     Day of Week (0-6 or Sun-Sat)
+        #                         Command
+          */5  *    *    *    *   ~/scripts/rclonesync /mnt/share/mylocal Mycloud: --check-access --filters-file ~/.rclonesyncwd/Filters  >> ~/scripts/runlog 2>&1
+
+` `  
 ## Notable changes in the latest release
+
+### V3.1.1 201015
+- In startup check, allow rclone version without 'v' per issue #64 - `...an artifact of the NixOS build script`.
+- Added a rollup of [most notable LIMITATIONS](#limitations-most-notable---warning) to the README.md, and various other cleanup.
 
 ### V3.1 200909
 - Modified flow to limit to two the number of loaded LSL files at any time.  Prior versions had all four LSLs loaded at once (Prior and New for both Path1 and Path2).  This change moves Check Access after finding the deltas on Path1 and Path2.
 - Fixed lsl file naming bug related to --dry-run and --first-sync introduced in V3.0.
 - Added WARNING log for duplicate entries in the LSL files, as seen in one test case.
 - Enforces rclone V1.52 minimum
-
 
 ### V3.0 200824 is a major clean-up and reimplementation of the core algorithms.  
 - In prior versions, rclonesync individually and sequentially issued rclone copy commands for changed files on Path2 to Path1, and relied on a final rclone sync to make Path2 match Path1.  In V3.0, the new rclone `--files-from-raw` switch is utilized to specify the individual files to be transferred or deleted.  rclonesync identifies the changed files on both paths and queues up the changes (you will find new files in your working directory if you use `--no-cleanup`), then finally feeds the copies and deletes file lists to rclone for most optimal processing.  rclone natively manages concurrent copy/delete commands in parallel on the remote.
@@ -68,7 +72,6 @@ to check for proper operation.
 - Requires an rclone version (V1.52 or later) that supports `--files-from-raw`.
 - The check for file size change is eliminated.  In prior versions a size change was noted but by itself did not trigger a file transfer.  Now, size changes are not identified.
 - Transfer of a changed file  is only triggered by a timestamp change, usually a newer date.  Note that if a file's timestamp changes to _earlier/older_ the changed file _will_ still be transferred, overwriting the more recent file on the other side.  This behavior supports, for example, a directory of files being replaced with an older snapshot.  The older files will be noted in the verbose log.  _This older file handling behavior is the same as with prior rclonesync versions._
-
 
 
 ### Benchmark results comparing V2.11 and V3.0
@@ -89,7 +92,7 @@ Observations:
 - rclonesync's down changes were greatly improved by leveraging rclone's concurrency.
 
 
-
+` `  
 ## rclonesync command line interface
 
 ```
@@ -201,6 +204,7 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 ```
 
+` `  
 ## rclonesync Operations
 
 rclonesync keeps copies of the prior sync file lists of both Path1 and Path2 filesystems, and on a new run checks for any changes.
@@ -213,7 +217,7 @@ and Path2-to-Path2 deltas, and then applying the changes on the other side.
 - **Path1** and **Path2** arguments may be references to any mix of local directory paths (absolute or relative), UNC paths 
 (//server/share/path), Windows drive paths (with a drive letter and `:`) or configured 
 remotes/clouds with optional subdirectory paths.  Cloud references are distinguished by having a ':' in the argument 
-(see Windows support, below).  Path1 and Path2 are treated equally, in that neither has priority for file changes, and access efficiency does not change whether a remote is on Path1 or Path2 (except during a first-sync).  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
+(see Windows support, below).  Path1 and Path2 are treated equally, in that neither has priority for file changes, and access efficiency does not change whether a remote is on Path1 or Path2.  The LSL files in rclonesync's working directory (default `~/.rclonesyncwd`) 
 are named based on the Path1 and Path2 arguments so that separate syncs to individual directories within the tree may be set up. 
 
 
@@ -222,14 +226,14 @@ are named based on the Path1 and Path2 arguments so that separate syncs to indiv
 purged as the last step in the process.
 
 - **--first-sync** - This will effectively make both Path1 and Path2 filesystems contain a matching superset of all files.  Path2 
-files that do not exist in Path1 will be copied to Path1, and the process will then sync the Path1 tree to Path2. 
-**Note that the base directories on both the Path1 and Path2 filesystems 
-must exist or rclonesync will fail.**  This is required for safety - that rclonesync can
-verify that both paths are valid.  Attempting to rclonesync to an empty directory results in 
-`ERROR    Zero length in current Path1 list file <./testwd/LSL_._testdir_path1_._testdir_path2__Path1_NEW>.  Cannot sync to an empty directory tree.`
-The fix is simply to create the missing directory and place a single file in it and rerun the --first-sync.
-**NOTE that when using --first-sync a newer version of a file on the Path2 filesystem will be overwritten by the Path1 filesystem 
-version.** Carefully evaluate deltas using --dry-run.
+files that do not exist in Path1 will be copied to Path1, and the process will then sync the Path1 tree to Path2. Note:
+  - The base directories on both the Path1 and Path2 filesystems 
+must exist or rclonesync will fail.  This is required for safety - that rclonesync can
+verify that both paths are valid.  
+  - **When using --first-sync a newer version of a file on the Path2 filesystem will be overwritten by the Path1 filesystem version.** Carefully evaluate deltas using --dry-run.
+  - For a first-sync run, one of the paths may be empty (no files in the path tree).  The first-sync run should result in files on both paths, else a non-first-sync run will fail.
+  - For a non-first-sync run, either path being empty (no files in the path tree) results in 
+`ERROR    Zero length in current Path<X> list file <./testwd/LSL_._testdir_path1_._testdir_path2__Path1_NEW>.  Cannot sync to an empty directory tree.`  This is a safety check - that an unexpected empty path does not result in deleting everything in the other path.
 
 - **--check-access** - Access check files are an additional safety measure against data loss.  rclonesync will ensure it can 
 find matching `RCLONE_TEST` files in the same places in the Path1 and Path2 filesystems.  Time stamps and file contents 
@@ -245,12 +249,12 @@ This safety check is intended to block rclonesync from deleting all of the files
 due to a temporary network access issue, or if the user had inadvertently deleted the files on one side or the other.  To force the sync 
 either set a different delete percentage limit, eg `--max-deletes 75` (allows up to 75% deletion), or use `--force` to bypass the check.
 
-- **All files changed check** - Added in V2.10, if _all_ prior existing files on either of the filesystems have changed (e.g. timestamps have changed due to changing the system's timezone) then rclonesync will abort without making any changes.  Any new files are not considered for this check.  A `--force` may be used for forcing the sync (which ever side has what appear to be newer files wins).  Alternately, a `--first-sync` may be issued (Path1 versions will be pushed to Path2).  Consider the situation carefully, and perhaps use `--dry-run` before you commit to the changes.
+- **All files changed check** - Added in V2.10, if _all_ prior existing files on either of the filesystems have changed (e.g. timestamps have changed due to changing the system's timezone) then rclonesync will abort without making any changes.  Any new files are not considered for this check.  A `--force` may be used for forcing the sync (which ever side has the changed timestamp files wins).  Alternately, a `--first-sync` may be issued (Path1 versions will be pushed to Path2).  Consider the situation carefully, and perhaps use `--dry-run` before you commit to the changes.
 
 - **--filters-file** - Using rclone's filter features you can exclude file types or directory sub-trees from the sync. 
 See [rclone Filtering documentation](https://rclone.org/filtering/#filter-from-read-filtering-patterns-from-a-file).) A
 starter `Filters` file is included with rclonesync that contains filters for not-allowed files for syncing with Dropbox, and a filter
-for the rclonesync test engine temporary test tree, `/testdir/`.  **NOTE:** if you make changes to your filters file then 
+for the rclonesync test engine `/testdir/` temporary test tree.  **NOTE:** if you make changes to your filters file then 
 rclonesync requires a run with --first-sync.  This is a safety feature, which avoids 
 existing files on the Path1 and/or Path2 side from seeming to disappear from view (since they are newly excluded in the LSL runs), 
 which would fool
@@ -261,11 +265,7 @@ place as your filters file.  On each rclonesync run with --filters-file set, rcl
 filters file and compares it to the hash stored in the ...MD5 file.  If they don't match the run aborts with a CRITICAL error and
 thus forces you to do a --first-sync, likely avoiding a disaster.
 
-- **--rclone-args** - Arbitrary rclone switches may be specified on the rclonesync command line by placing `--rclone-args` as the last argument in the rclonesync call, followed by one or more switches to be passed in the rclone calls.  For example:  `../rclonesync ./testdir/path1/ GDrive:testdir/path2/ --rclone-args --drive-skip-gdocs -v -v --timeout 0m10s`.  (rclonesync is coded to skip Google doc files without the example switch.)  Note that the interaction of the various rclone switches with the rclonesync process flow has not be tested.  The specified switches are passed on all rclone calls (lsl, copy, copyto, move, moveto, delete, sync, rmdirs), although some switches may not be appropriate for some rclone commands. Initial testing shows problems with the `--copy-links` and `--links` switches.
-
-- **Google Doc files** - Google docs exist as virtual files on Google Drive, and cannot be transferred to other filesystems natively.
-rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
-deletes, or syncs.  See TROUBLESHOOTING.md for more info.
+- **--rclone-args** - Arbitrary rclone switches may be specified on the rclonesync command line by placing `--rclone-args` as the last argument in the rclonesync call, followed by one or more switches to be passed in the rclone calls.  For example:  `../rclonesync ./testdir/path1/ GDrive:testdir/path2/ --rclone-args --drive-skip-gdocs -v -v --timeout 0m10s`.  (rclonesync is coded to skip Google doc files without the example switch.)  Note that the interaction of the various rclone switches with the rclonesync process flow has not be tested.  The specified switches are passed on all rclone calls (lsl, copy, copyto, move, moveto, delete, sync, rmdirs), although some switches may not be appropriate for some rclone commands. Initial testing shows problems with the `--copy-links`, `--links`, and `--create-empty-src-dirs` switches.
 
 - **Verbosity controls** - `--verbose` enables rclonesync's logging of each check and action (as shown in the typical run log, above). Specifying `--verbose --verbose` turns on debug level logging and notably logging of the issued rclone commands. 
 rclone's verbosity levels may also be enabled using the `--rc-verbose` switch.  rclone supports additional verbosity levels which may be 
@@ -273,18 +273,17 @@ enabled by providing the `--rc-verbose` switch more than once.  Turning on rclon
 rclonesync's `--verbose` switch.  **Note** that rclonesync's log messages have '-'s in the date stamp (2018-06-11), while rclone's 
 log messages have '/'s in the date stamp (2018/06/11) - this is important for tracking down the source of problems.
 
-- **Runtime Error Handling** - Certain rclonesync critical errors, such as `rclone copyto` failing, 
-will result in an rclonesync lockout of successive runs.  The lockout is asserted because the sync status of the Path1 and Path2 filesystems
-cannot be trusted, so it is safer to block any further changes until someone with a brain (you) check things out.
-The recovery is to do a --first-sync again.  It is recommended to use --first-sync 
---dry-run --rc-verbose initially and carefully review what changes will be made before running the --first-sync without --dry-run. 
+- **Runtime Error Handling** - Certain rclonesync critical errors, such as `rclone moveto` failing, 
+will result in an rclonesync lockout of following runs.  The lockout is asserted because the sync status and history of the Path1 and Path2 filesystems
+cannot be trusted, so it is safer to block any further changes until someone with a brain (you) checks things out.
+The recovery is to do a --first-sync again.  It is recommended to use `--first-sync 
+--dry-run --rc-verbose` initially and carefully review what changes will be made before running the --first-sync without --dry-run. 
 Most of these events come up due to rclone returning a non-zero status from a command.  On such a critical error 
-the <...>__Path1LSL and <...>__Path1LSL files are renamed adding _ERROR, which blocks any future rclonesync runs (since the 
+the <...>__Path1LSL and <...>__Path1LSL files are renamed adding `_ERROR`, which blocks any future rclonesync runs (since the 
 original files are not found).  Some errors are considered temporary, and re-running the rclonesync is not blocked. 
 Within the code, see usages of `return RTN_CRITICAL` and `return RTN_ABORT`.  `return RTN_CRITICAL` blocks further rclonesync runs.
 
-- **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete some files.  If the file did not exist on Path1 then it would normally be copied to 
-the Path1 filesystem, but with --dry-run enabled those copies didn't happen,
+- **--dry-run oddity** - The --dry-run messages may indicate that it would try to delete some files.  For example, if a file is new on Path2 and does not exist on Path1 then it would normally be copied to Path1, but with --dry-run enabled those copies don't happen,
 which leads to the attempted delete on the Path2, blocked again by --dry-run: `... Not deleting as --dry-run`.  This whole confusing situation is an 
 artifact of the `--dry-run` switch.  Scrutinize the proposed deletes carefully, and if the files would have been copied to Path1 then 
 the threatened deletes on Path2 may be disregarded.
@@ -297,15 +296,35 @@ traceback please open an issue.  **NOTE** that while concurrent rclonesync runs 
 
 - **Return codes** - rclonesync returns `0` to the calling script on a successful run, `1` for a non-critical failing run (a rerun may be successful), and `2` for a critically aborted run (requires a --first-sync to recover).
 
-- **Test features** - rclonesync has a companion testrcsync script.  See the TESTCASES.md file.  _If you are doing rclonesync development_ you will likely want to add `- /testdir/` to your filters-file so that normal syncs do not attempt to sync the test run temporary 
+- **Test features** - rclonesync has a companion testrcsync script.  See the [TESTCASES.md](TESTCASES.md) file.  _If you are doing rclonesync development_ you will likely want to add `- /testdir/` to your filters-file so that normal syncs do not attempt to sync the test run temporary 
 directories, which may have RCLONE_TEST miscompares in some test cases and thus trip the --check-access system.  If the rclonesync development directory is within your sync paths, the testing sub-tree is automatically not scanned for RCLONE_TEST files during the check access phase - RCLONE_TEST files beneath `rclonesync/Test/` are excluded from the check.
 
-### Windows support
+` `  
+## LIMITATIONS (most notable) - _WARNING_
+See the Github [Issues](https://github.com/cjnaz/rclonesync-V2/issues) tab for further details.
+
+1. rclonesync relies on file date/time stamps to identify changed files.  If an application (or yourself) should change the content of a file without changing the modification time then rclonesync will not notice the change, and thus will not copy it to the other side.
+2. New empty directories on one path are _not_ propagated to the other side ([issue #63](https://github.com/cjnaz/rclonesync-V2/issues/63)).  This is because rclone, and thus rclonesync, natively works on files not directories.  This sequence is a workaround but will not propagate the delete of an empty to the other side:
+
+        1) rclonesync <path1> <path2>
+        2) rclone copy <path1> <path2> --filter "+ */" --filter "- **" --create-empty-src-dirs
+        3) rclone copy <path2> <path1> --filter "+ */" --filter "- **" --create-empty-src-dirs
+3. When using local, ftp, or sftp remotes rclone does not create temporary files at the destination when copying, and thus if the connection is lost the created file may be corrupt, which will likely propagate back to the original path on the next sync, resulting in data loss ([rclonesync issue #56](https://github.com/cjnaz/rclonesync-V2/issues/56) and [rclone issue #1316](https://github.com/rclone/rclone/issues/1316)).  This is a problem for rclone to solve, as there is no way for rclonesync to gracefully and reliably deal with it.
+4. Files that change during an rclonesync run may result in data loss ([issue #24](https://github.com/cjnaz/rclonesync-V2/issues/24)).  This has been seen in a highly dynamic environment, where the file system is getting hammered by running processes during the sync.  The best solutions are to 1) sync at quiet times, and/or 2) to [filter out](FILTERING.md) unnecessary directories and files.
+5. Exception / failure if there are bogus (non-UTF8) filenames ([issue #62](https://github.com/cjnaz/rclonesync-V2/issues/62)).  rclonesync is hard coded to work with UTF8-encoded filenames.  Solutions: Fix invalid filenames, filter out directories containing such files, or put such files into a .zip file with a proper name.
+6. Syncing with non-case-sensitive filesystems, such as Windows and Box, can result in filename conflicts ([issue #54](https://github.com/cjnaz/rclonesync-V2/issues/54)).  This may have some handling in rclonesync in a future release.  The near term fix is to make sure that files on both sides don't have spelling case differences (`Smile.jpg` vs. `smile.jpg`).
+7. Google docs exist as virtual files on Google Drive, and cannot be transferred to other filesystems natively.
+rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
+deletes, or syncs.  See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more info.
+
+
+` `  
+## Windows support
 Support for rclonesync on Windows was added in V2.3.  
 - Tested on Windows 10 Pro 64-bit version 1909 and with rclone v1.52.2 release on Python 3.8.0.
 - **NOTE:  It is required that the Windows CMD shell be properly configured for Unicode support, even if you only use ASCII.  Execute both `chcp 65001` and `set PYTHONIOENCODING=UTF-8` in the command shell before attempting to run rclonesync.  If these are not set properly rclonesync will post an error and exit.**
 - Drive letters are allowed, including drive letters mapped to network drives (`rclonesync J:\localsync GDrive:`). 
-If a drive letter is omitted the shell current drive is the default.  Drive letters are a single character follows by ':', so cloud names
+If a drive letter is omitted the shell current drive is the default.  Drive letters are a single character follows by `:`, so cloud names
 must be more than one character long.
 - Absolute paths (with or without a drive letter), and relative paths (with or without a drive letter) are supported.
 - rclonesync's working directory is created at the user's top level (`C:\Users\<user>\.rclonesyncwd`).
@@ -314,7 +333,8 @@ must be more than one character long.
 - Be careful of case independent directory and file naming on Windows vs. case dependent Linux!
  
 
-### Usual sync checks
+` `  
+## Usual sync checks
 
  Type | Description | Result| Implementation 
 --------|-----------------|---------|------------------------
@@ -328,7 +348,8 @@ Path2 older| File is older on Path2, unchanged on Path1 | _Path2 version survive
 Path1 deleted| File no longer exists on Path1| File is deleted | `rclone delete` Path2
 
 
-### *UNusual* sync checks
+` `  
+## *UNusual* sync checks
 
  Type | Description | Result| Implementation 
 --------|-----------------|---------|------------------------
@@ -338,11 +359,8 @@ Path2 newer AND Path1 deleted | File is newer on Path2 AND also deleted on Path1
 Path2 deleted AND Path1 changed | File is deleted on Path2 AND changed (newer/older/size) on Path1 | Path1 version survives |`rclone copy` Path1 to Path2
 Path1 deleted AND Path2 changed | File is deleted on Path1 AND changed (newer/older/size) on Path2 | Path2 version survives  | `rclone copy` Path2 to Path1
 
-### Unhandled - WARNING
 
-**rclonesync relies on file date/time stamps to identify changed files.  If an application (or yourself) should change the content of a file without changing the modification time then rclonesync will not notice the change, and thus will not copy it to the other side.**
-
-
+` `  
 ## Benchmarks
 
 Here are a few data points for scale, execution times, and memory usage.
@@ -365,10 +383,9 @@ This next data is from a user's application.  They have ~400GB of data over 1.96
 - Once the prior and current Path1 and Path2 lsl's are loaded (a total of four to be loaded, two at a time), determining the deltas is pretty quick (a few seconds for this test case), and the transfer times for any files to be copied is dominated by the network bandwidth.
 
 
-
-
+` `  
 ## Revision history
-
+- V3.1.1 201015 - In startup check, allow rclone version without 'v'.
 - V3.1 200909 - 50% memory size reduction optimization by loading only two LSLs simultaneously.  Fixed lsl file naming bug related to --dry-run and --first-sync introduced in V3.0.  Added WARNING log for duplicate entries in the LSL files, as seen in one test case.
 - V3.0  200824 - Major algorithm revamp.
 - V2.11 200813 - Bug fix for proper searching during the check access phase.  
