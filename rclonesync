@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BiDirectional Sync using rclone"""
 
-__version__ = "V3.1.1 201015"                         # Version number and date code
+__version__ = "V3.2 201201"                         # Version number and date code
 
 #==========================================================================================================
 # Configure rclone, including authentication before using this tool.  rclone must be in the search path.
@@ -36,7 +36,7 @@ import signal                                       # For keyboard interrupt han
 
 
 # Configurations and constants
-RCLONE_MIN_VERSION = 1.52
+RCLONE_MIN_VERSION = 1.53
 is_Windows = False
 is_Linux = False
 if sys.platform == "win32":
@@ -59,8 +59,37 @@ def bidirSync():
     path1_lsl_file = lsl_file_base + '_Path1'
     path2_lsl_file = lsl_file_base + '_Path2'
 
-    logging.info("Synching Path1  <{}>  with Path2  <{}>".format(path1_base, path2_base))
+    
+    # ***** Check Sync Only *****
+    def check_sync():           # Used here and at the end of the flow
+        _, path1_contents = load_list(path1_lsl_file)
+        _, path2_contents = load_list(path2_lsl_file)
 
+        sync_integrity_fail = False
+        for key in path1_contents:
+            if key not in path2_contents:
+                logging.info(print_msg("ERROR", "Path1 file not found in Path2", key))
+                sync_integrity_fail = True
+        for key in path2_contents:
+            if key not in path1_contents:
+                logging.info(print_msg("ERROR", "Path2 file not found in Path1", key))
+                sync_integrity_fail = True
+        if sync_integrity_fail:
+            logging.error("ERROR: The content of Path1 and Path2 are out of sync.  --first-sync required to recover.")
+            return 1
+        return 0
+        
+        path1_contents = None
+        path2_contents = None
+
+    if args.check_sync_only:
+        logging.info(f">>>>> Checking integrity of LSL history files for Path1  <{path1_base}>  versus Path2  <{path2_base}>")
+        if check_sync():
+            return RTN_CRITICAL
+        return 0
+    
+
+    logging.info(f"Synching Path1  <{path1_base}>  with Path2  <{path2_base}>")
 
     args_string = ''
     for arg in sorted(args.__dict__):
@@ -330,7 +359,6 @@ def bidirSync():
         logging.info(f"  Found <{len(path1_check)}> matching <{args.check_filename}> files on both paths")
 
 
-
     # ***** Check for too many deleted files - possible error condition and don't want to start deleting on the other side !!! *****
     too_many_path1_deletes = False
     if not force and float(path1_deleted)/path1_prior_count > float(max_deletes)/100:
@@ -382,7 +410,7 @@ def bidirSync():
                     already_handled[key] = 1
 
                 elif path2_deltas[key]['new'] or path2_deltas[key]['newer'] or path2_deltas[key]['older']:
-                    logging.warning(print_msg("WARNING", "  Changed in both Path1 and Path2", key))
+                    logging.warning(print_msg("WARNING", "  New or changed in both paths", key))
                     logging.warning(print_msg("Path1", "  Renaming Path1 copy", path1_base + key + "_Path1"))
                     if rclone_cmd('moveto', path1_base + key, path1_base + key + "_Path1", options=switches):
                         return RTN_CRITICAL
@@ -403,6 +431,8 @@ def bidirSync():
                 elif path2_deltas[key]['new'] or path2_deltas[key]['newer'] or path2_deltas[key]['older']:
                     logging.info(print_msg("Path2", "  Queue copy to Path1", path1_base + key))
                     files_copy_P2P1.append(key)
+                    already_handled[key] = 1
+                elif path2_deltas[key]['deleted']:
                     already_handled[key] = 1
 
         for key in path2_deltas:
@@ -465,19 +495,14 @@ def bidirSync():
             if not args.no_cleanup:
                 os.remove(files_delete_P2_filename)
 
-
-    # ***** Optional rmdirs for empty directories *****
-    if rmdirs:
-        logging.info(">>>>> rmdirs Path1")
-        if rclone_cmd('rmdirs', path1_base, filter_file=user_filter_file, options=switches):
-            return RTN_CRITICAL
-
-        logging.info(">>>>> rmdirs Path2")
-        if rclone_cmd('rmdirs', path2_base, filter_file=user_filter_file, options=switches):
-            return RTN_CRITICAL
+        files_copy_P1P2 = None      # Free up the memory
+        files_copy_P2P1 = None
+        files_delete_P1 = None
+        files_delete_P2 = None
+        already_handled = None
 
 
-    # ***** Clean up *****
+    # ***** Clean up and check LSL files integrity *****
     logging.info(">>>>> Refreshing Path1 and Path2 lsl files")
     if len(path1_deltas) == 0 and len(path2_deltas) == 0:
         shutil.copy2(path1_lsl_file_new, path1_lsl_file)
@@ -495,10 +520,28 @@ def bidirSync():
         else:
             shutil.copy2(path2_lsl_file_new, path2_lsl_file)
 
-
     if not args.no_cleanup:
         os.remove(path1_lsl_file_new)
         os.remove(path2_lsl_file_new)
+
+    path1_deltas    = None      # Free up the memory
+    path2_deltas    = None
+
+    if not args.no_check_sync and not dry_run:
+        logging.info(f">>>>> Checking integrity of LSL history files for Path1  <{path1_base}>  versus Path2  <{path2_base}>")
+        if check_sync():
+            return RTN_CRITICAL
+
+
+    # ***** Optional rmdirs for empty directories *****
+    if rmdirs:
+        logging.info(">>>>> rmdirs Path1")
+        if rclone_cmd('rmdirs', path1_base, filter_file=user_filter_file, options=switches):
+            return RTN_CRITICAL
+
+        logging.info(">>>>> rmdirs Path2")
+        if rclone_cmd('rmdirs', path2_base, filter_file=user_filter_file, options=switches):
+            return RTN_CRITICAL
 
     return 0
 
@@ -684,7 +727,7 @@ if __name__ == '__main__':
     parser.add_argument('Path2',
                         help="Local path, or cloud service with ':' plus optional path.  Type 'rclone listremotes' for list of configured remotes.")
     parser.add_argument('-1', '--first-sync', action='store_true',
-                        help="First run setup.  WARNING: Path2 files may overwrite path1 versions.  Consider using with --dry-run first.  Also asserts --verbose.")
+                        help="First run setup.  WARNING: Path1 files may overwrite path2 versions.  Consider using with --dry-run first.  Also asserts --verbose.")
     parser.add_argument('-c', '--check-access', action='store_true',
                         help="Ensure expected RCLONE_TEST files are found on both path1 and path2 filesystems, else abort.")
     parser.add_argument('--check-filename', default=CHK_FILE, 
@@ -693,6 +736,10 @@ if __name__ == '__main__':
                         help=f"Safety check for percent maximum deletes allowed (default {MAX_DELETE}%%).  If exceeded the rclonesync run will abort.  See --force.")
     parser.add_argument('-F', '--force', action='store_true',
                         help="Bypass --max-deletes safety check and run the sync.  Also asserts --verbose.")
+    parser.add_argument('--no-check-sync', action='store_true',
+                        help="Disable comparison of final LSL files (default is check-sync enabled).")
+    parser.add_argument('--check-sync-only', action='store_true',
+                        help="Only execute the comparison of LSL files from the last rclonesync run.")
     parser.add_argument('-e', '--remove-empty-directories', action='store_true',
                         help="Execute rclone rmdirs as a final cleanup step.")
     parser.add_argument('-f','--filters-file', default=None,
@@ -809,7 +856,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig]).decode("utf8").split()
+        clouds = subprocess.check_output([rclone, "listremotes", "--config", rcconfig]).decode("utf8") .split("\n")[:-1]
     except Exception as e:
         logging.error("ERROR  Cannot get list of known remotes.  Have you run rclone config?")
         sys.exit(1)
@@ -827,6 +874,7 @@ if __name__ == '__main__':
         On Windows a one-character cloud name is not supported - it will be interprested as a drive letter.
         """
         _cloud = False
+        path_base = ''
         if ':' in path:
             if len(path) == 1:                                  # Handle corner case of ':' only passed in
                 logging.error("ERROR  Path argument <{}> not a legal path.".format(path))
@@ -836,7 +884,8 @@ if __name__ == '__main__':
                 if not path_base.endswith('\\'):                # For consistency ensure the path ends with '/'
                     path_base += '/'
             else:                                               # Cloud case with optional path part
-                path_FORMAT = re.compile(r'([\w-]+):(.*)')
+                # path_FORMAT = re.compile(r'([\w-]+):(.*)')
+                path_FORMAT = re.compile(r'([ \w-]+):(.*)')
                 out = path_FORMAT.match(path)
                 if out:
                     _cloud = True
@@ -863,7 +912,6 @@ if __name__ == '__main__':
 
     path1_base = pathparse(args.Path1)
     path2_base = pathparse(args.Path2)
-
 
     # Run the job
     lock_file = os.path.join(tempfile.gettempdir(), 'rclonesync_LOCK_' + (

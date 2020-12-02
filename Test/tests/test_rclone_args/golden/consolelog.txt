@@ -5,10 +5,10 @@
 :MSG:	Initial rclonesync --first-sync
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> --first-sync synching Path1 to Path2
 >>>>> --first-sync refreshing lsl files
@@ -27,10 +27,10 @@ rclone copy ./tests/test_rclone_args/modfiles/file21.txt ./testdir/path2/subdir
 :MSG:	rclonesync test run
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf --rclone-args --transfers 1 --syslog --timeout 0m5s --size-only
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args==[--transfers 1 --syslog --timeout 0m5s --size-only], remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args==[--transfers 1 --syslog --timeout 0m5s --size-only], remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - file1.txt
   Path1      File is newer                     - subdir/file20.txt
@@ -47,6 +47,7 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
   Path2      Do queued copies to               - Path1
   Path1      Do queued copies to               - Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+>>>>> Checking integrity of LSL history files for Path1  <./testdir/path1/>  versus Path2  <./testdir/path2/>
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 

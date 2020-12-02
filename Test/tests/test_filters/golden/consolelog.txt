@@ -6,10 +6,10 @@ rclone copyto ./tests/test_filters/filtersfile.txt ./testwd/LSLfiltersfile.txt
 :MSG:	Do --first-sync to force building the filters file -MD5.
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/LSLfiltersfile.txt --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/LSLfiltersfile.txt, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/LSLfiltersfile.txt, first_sync=True, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 Using filters-file  <./testwd/LSLfiltersfile.txt>
 Storing filters-file hash to <./testwd/LSLfiltersfile.txt-MD5>
 >>>>> --first-sync copying any unique Path2 files to Path1
@@ -31,10 +31,10 @@ rclone copyto ./tests/test_filters/modfiles/fileZ.txt ./testdir/path1/subdir/fil
 :MSG:	rclonesync test run with --filters-file.  Path2-side fileZ.txt is filtered.
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --filters-file ./testwd/LSLfiltersfile.txt --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/LSLfiltersfile.txt, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=./testwd/LSLfiltersfile.txt, first_sync=False, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 Using filters-file  <./testwd/LSLfiltersfile.txt>
 >>>>> Path1 Checking for Diffs
   Path1      File is new                       - subdir/fileZ.txt
@@ -44,6 +44,7 @@ Using filters-file  <./testwd/LSLfiltersfile.txt>
   Path1      Queue copy to Path2               - ./testdir/path2/subdir/fileZ.txt
   Path1      Do queued copies to               - Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+>>>>> Checking integrity of LSL history files for Path1  <./testdir/path1/>  versus Path2  <./testdir/path2/>
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 
