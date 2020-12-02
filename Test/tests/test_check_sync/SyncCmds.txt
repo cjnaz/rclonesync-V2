@@ -1,0 +1,29 @@
+:MSG: test_check_sync
+
+:MSG:	Initial rclonesync --first-sync
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
+:MSG:	1) Run --check-sync-only on a clean sync
+:RCSEXEC: :PATH1: :PATH2: --check-sync-only
+
+:MSG:	2) Copy modified LSL files into the workdir
+:RCLONE: copy :TESTCASEROOT:modfiles/LSL_._testdir_path1_._testdir_path2__Path1 :WORKDIR:
+:RCLONE: copy :TESTCASEROOT:modfiles/LSL_._testdir_path1_._testdir_path2__Path2 :WORKDIR:
+
+:MSG:	3) Run --check-sync-only on modified LSL files
+:RCSEXEC: :PATH1: :PATH2: --check-sync-only
+:SAVELSL: Check_sync_only
+
+:MSG:	4) Run normal sync to check that it critical aborts
+:RCSEXEC: :PATH1: :PATH2:
+
+:MSG:	5) Run first-sync
+rm :WORKDIR:LSL*
+:RCSEXEC: :PATH1: :PATH2: --first-sync
+
+:MSG:	6) Run normal sync with check-sync enabled (default)
+:RCSEXEC: :PATH1: :PATH2:
+
+:MSG:	7) Run normal sync with --no-check-sync
+:RCSEXEC: :PATH1: :PATH2: --no-check-sync
+

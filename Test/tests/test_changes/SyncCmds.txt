@@ -26,6 +26,10 @@ touch :TESTCASEROOT:modfiles/file2.txt --date="2001-01-02"
 :MSG:	Deleted on Path1						file4	
 :RCLONE: delete :PATH1:file4.txt
 
+:MSG:	Deleted on both paths					file8
+:RCLONE: delete :PATH1:file8.txt
+:RCLONE: delete :PATH2:file8.txt
+
 :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
 touch :TESTCASEROOT:modfiles/file5R.txt --date="2001-01-02"
 :RCLONE: copyto :TESTCASEROOT:modfiles/file5R.txt :PATH2:file5.txt

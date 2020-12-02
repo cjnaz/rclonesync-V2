@@ -5,10 +5,10 @@
 :MSG:	Initial rclonesync --first-sync
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=True, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> --first-sync copying any unique Path2 files to Path1
 >>>>> --first-sync synching Path1 to Path2
 >>>>> --first-sync refreshing lsl files
@@ -66,28 +66,28 @@ rclone delete ./testdir/path2/file7.txt
 :MSG:	Sync with --dry-run and --first-sync
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --dry-run --first-sync --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=True, filters_file=None, first_sync=True, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=True, filters_file=None, first_sync=True, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> --first-sync copying any unique Path2 files to Path1
   Path2      --first-sync queue copy to Path1  - file10.txt
   Path2      --first-sync queue copy to Path1  - file4.txt
   Path2      --first-sync queue copy to Path1  - file6.txt
   Path2      Do queued first-sync copies to    - Path1
-NOTICE: file10.txt: Not copying as --dry-run
-NOTICE: file4.txt: Not copying as --dry-run
-NOTICE: file6.txt: Not copying as --dry-run
+NOTICE: file4.txt: Skipped copy as --dry-run is set
+NOTICE: file10.txt: Skipped copy as --dry-run is set
+NOTICE: file6.txt: Skipped copy as --dry-run is set
 >>>>> --first-sync synching Path1 to Path2
-NOTICE: file11.txt: Not copying as --dry-run
-NOTICE: file3.txt: Not copying as --dry-run
-NOTICE: file1.txt: Not copying as --dry-run
-NOTICE: file7.txt: Not copying as --dry-run
-NOTICE: file2.txt: Not copying as --dry-run
-NOTICE: file5.txt: Not updating modification time as --dry-run
-NOTICE: file10.txt: Not deleting as --dry-run
-NOTICE: file4.txt: Not deleting as --dry-run
-NOTICE: file6.txt: Not deleting as --dry-run
+NOTICE: file11.txt: Skipped copy as --dry-run is set
+NOTICE: file2.txt: Skipped copy as --dry-run is set
+NOTICE: file7.txt: Skipped copy as --dry-run is set
+NOTICE: file3.txt: Skipped copy as --dry-run is set
+NOTICE: file1.txt: Skipped copy as --dry-run is set
+NOTICE: file5.txt: Skipped update modification time as --dry-run is set
+NOTICE: file10.txt: Skipped delete as --dry-run is set
+NOTICE: file6.txt: Skipped delete as --dry-run is set
+NOTICE: file4.txt: Skipped delete as --dry-run is set
 >>>>> --first-sync refreshing lsl files
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
@@ -99,10 +99,10 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 :MSG:	Sync with --dry-run
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --dry-run --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=True, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=True, filters_file=None, first_sync=False, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - file2.txt
   Path1      File was deleted                  - file4.txt
@@ -123,12 +123,12 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
   Path1      Queue copy to Path2               - ./testdir/path2/file11.txt
   Path1      Queue copy to Path2               - ./testdir/path2/file2.txt
   Path2      Queue delete                      - ./testdir/path2/file4.txt
-  WARNING    Changed in both Path1 and Path2   - file5.txt
+  WARNING    New or changed in both paths      - file5.txt
   Path1      Renaming Path1 copy               - ./testdir/path1/file5.txt_Path1
-NOTICE: file5.txt: Not moving as --dry-run
+NOTICE: file5.txt: Skipped move as --dry-run is set
   Path1      Queue copy to Path2               - ./testdir/path2/file5.txt_Path1
   Path2      Renaming Path2 copy               - ./testdir/path2/file5.txt_Path2
-NOTICE: file5.txt: Not moving as --dry-run
+NOTICE: file5.txt: Skipped move as --dry-run is set
   Path2      Queue copy to Path1               - ./testdir/path1/file5.txt_Path2
   Path2      Queue copy to Path1               - ./testdir/path1/file6.txt
   Path1      Queue copy to Path2               - ./testdir/path2/file7.txt
@@ -136,17 +136,17 @@ NOTICE: file5.txt: Not moving as --dry-run
   Path2      Queue copy to Path1               - ./testdir/path1/file10.txt
   Path1      Queue delete                      - ./testdir/path1/file3.txt
   Path2      Do queued copies to               - Path1
-NOTICE: file10.txt: Not copying as --dry-run
-NOTICE: file1.txt: Not copying as --dry-run
-NOTICE: file6.txt: Not copying as --dry-run
+NOTICE: file10.txt: Skipped copy as --dry-run is set
+NOTICE: file6.txt: Skipped copy as --dry-run is set
+NOTICE: file1.txt: Skipped copy as --dry-run is set
   Path1      Do queued copies to               - Path2
-NOTICE: file11.txt: Not copying as --dry-run
-NOTICE: file7.txt: Not copying as --dry-run
-NOTICE: file2.txt: Not copying as --dry-run
+NOTICE: file2.txt: Skipped copy as --dry-run is set
+NOTICE: file7.txt: Skipped copy as --dry-run is set
+NOTICE: file11.txt: Skipped copy as --dry-run is set
              Do queued deletes on              - Path1
-NOTICE: file3.txt: Not deleting as --dry-run
+NOTICE: file3.txt: Skipped delete as --dry-run is set
              Do queued deletes on              - Path2
-NOTICE: file4.txt: Not deleting as --dry-run
+NOTICE: file4.txt: Skipped delete as --dry-run is set
 >>>>> Refreshing Path1 and Path2 lsl files
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
@@ -158,10 +158,10 @@ Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 :MSG:	Sync without --dry-run
 
 ../rclonesync ./testdir/path1/ ./testdir/path2/ --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
-***** BiDirectional Sync for Cloud Services using rclone (V3.1 200909) *****
+***** BiDirectional Sync for Cloud Services using rclone (V3.2 201201) *****
 Lock file created: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 Synching Path1  <./testdir/path1/>  with Path2  <./testdir/path2/>
-Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
+Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=False, check_filename=RCLONE_TEST, check_sync_only=False, config=/home/cjn/.config/rclone/rclone.conf, dry_run=False, filters_file=None, first_sync=False, force=False, max_deletes=50, no_check_sync=False, no_cleanup=True, no_datetime_log=True, rc_verbose=None, rclone=rclone, rclone_args=None, remove_empty_directories=False, verbose=1, workdir=./testwd/>
 >>>>> Path1 Checking for Diffs
   Path1      File is newer                     - file2.txt
   Path1      File was deleted                  - file4.txt
@@ -182,7 +182,7 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
   Path1      Queue copy to Path2               - ./testdir/path2/file11.txt
   Path1      Queue copy to Path2               - ./testdir/path2/file2.txt
   Path2      Queue delete                      - ./testdir/path2/file4.txt
-  WARNING    Changed in both Path1 and Path2   - file5.txt
+  WARNING    New or changed in both paths      - file5.txt
   Path1      Renaming Path1 copy               - ./testdir/path1/file5.txt_Path1
   Path1      Queue copy to Path2               - ./testdir/path2/file5.txt_Path1
   Path2      Renaming Path2 copy               - ./testdir/path2/file5.txt_Path2
@@ -197,6 +197,7 @@ Command args: <Path1=./testdir/path1/, Path2=./testdir/path2/, check_access=Fals
              Do queued deletes on              - Path1
              Do queued deletes on              - Path2
 >>>>> Refreshing Path1 and Path2 lsl files
+>>>>> Checking integrity of LSL history files for Path1  <./testdir/path1/>  versus Path2  <./testdir/path2/>
 Lock file removed: </tmp/rclonesync_LOCK_._testdir_path1_._testdir_path2_>
 >>>>> Successful run.  All done.
 

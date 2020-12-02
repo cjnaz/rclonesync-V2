@@ -1,0 +1,9 @@
+test_check_sync - Exercise LSL file integrity checks
+
+1) Run --check-sync-only on a clean sync
+2) Copy modified LSL files into the workdir
+3) Run --check-sync-only on modified LSL files
+4) Run normal sync to check that it critical aborts
+5) Run first-sync
+6) Run normal sync with check-sync enabled (default)
+7) Run normal sync with --no-check-sync

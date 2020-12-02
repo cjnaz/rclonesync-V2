@@ -116,6 +116,9 @@ RUN SYNCCMDS (console output captured to consolelog.txt)
     rclone delete ./testdir/path2/file3.txt
     :MSG:	Deleted on Path1						file4
     rclone delete ./testdir/path1/file4.txt
+    :MSG:	Deleted on both paths					file8
+    rclone delete ./testdir/path1/file8.txt
+    rclone delete ./testdir/path2/file8.txt
     :MSG:	Changed on Path2 and on Path1			file5 (file5R, file5L)
     touch ./tests/test_changes/modfiles/file5R.txt --date="2001-01-02"
     rclone copyto ./tests/test_changes/modfiles/file5R.txt ./testdir/path2/file5.txt
@@ -369,10 +372,20 @@ Match:  <IncludeOther_filtersfile.txt>
 Match:  <IncludeOther_filtersfile.txt-MD5>
 
 ----------------------------------------------------------
-Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+8d7
+<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+9a9
+>         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
@@ -384,25 +397,67 @@ MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1
 >         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-Match:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_ErrorRun_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
+7,8d6
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+10a9,10
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
 
 ----------------------------------------------------------
-Match:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_Initial_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdirX/subdirX1/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdirX/subdirX1/file30.txt
 
 ----------------------------------------------------------
-Match:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
-Match:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+8,9d7
+<       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+<         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
+11a10,11
+>       110 2000-01-01 00:00:00.000000000 subdir/RCLONE_TEST
+>         0 2000-01-01 00:00:00.000000000 subdir/file20.txt
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <Include_PassRun_LSL_._testdir_path1_._testdir_path2__Path2>
@@ -427,7 +482,7 @@ Match:  <consolelog.txt>
 
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
-TEST <test_check_access_filters> FAILED WITH 3 ERRORS.
+TEST <test_check_access_filters> FAILED WITH 12 ERRORS.
 
 
 ===================================================================
@@ -498,6 +553,68 @@ Match:  <consolelog.txt>
 ----------------------------------------------------------
 CLEANING UP testdirs and workdir
 TEST <test_check_filename> PASSED
+
+
+===================================================================
+***** Test case <test_check_sync> using Path1 <./testdir/path1/>, Path2 <./testdir/path2/>, <../rclonesync>, and <rclone>
+CLEAN UP any remnant test content and SET UP the INITIAL STATE on both Path1 and Path2
+
+RUN SYNCCMDS (console output captured to consolelog.txt)
+    :MSG: test_check_sync
+    :MSG:	Initial rclonesync --first-sync
+    ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	1) Run --check-sync-only on a clean sync
+    ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-sync-only  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	2) Copy modified LSL files into the workdir
+    rclone copy ./tests/test_check_sync/modfiles/LSL_._testdir_path1_._testdir_path2__Path1 ./testwd/
+    rclone copy ./tests/test_check_sync/modfiles/LSL_._testdir_path1_._testdir_path2__Path2 ./testwd/
+    :MSG:	3) Run --check-sync-only on modified LSL files
+    ../rclonesync ./testdir/path1/ ./testdir/path2/ --check-sync-only  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :SAVELSL: Check_sync_only
+    :MSG:	4) Run normal sync to check that it critical aborts
+    ../rclonesync ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	5) Run first-sync
+    rm ./testwd/LSL*
+    ../rclonesync ./testdir/path1/ ./testdir/path2/ --first-sync  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	6) Run normal sync with check-sync enabled (default)
+    ../rclonesync ./testdir/path1/ ./testdir/path2/  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+    :MSG:	7) Run normal sync with --no-check-sync
+    ../rclonesync ./testdir/path1/ ./testdir/path2/ --no-check-sync  --verbose --workdir ./testwd/ --no-datetime-log --no-cleanup --rclone rclone --config /home/cjn/.config/rclone/rclone.conf
+
+COMPARE RESULTS files to the testcase golden directory
+----------------------------------------------------------
+Number of results files (9) match
+
+----------------------------------------------------------
+Match:  <Check_sync_only_LSL_._testdir_path1_._testdir_path2__Path1_ERROR>
+
+----------------------------------------------------------
+Match:  <Check_sync_only_LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+
+----------------------------------------------------------
+Match:  <Check_sync_only_LSL_._testdir_path1_._testdir_path2__Path2_ERROR>
+
+----------------------------------------------------------
+Match:  <Check_sync_only_LSL_._testdir_path1_._testdir_path2__Path2_NEW>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path1_NEW>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2>
+
+----------------------------------------------------------
+Match:  <LSL_._testdir_path1_._testdir_path2__Path2_NEW>
+
+----------------------------------------------------------
+Match:  <consolelog.txt>
+
+----------------------------------------------------------
+CLEANING UP testdirs and workdir
+TEST <test_check_sync> PASSED
 
 
 ===================================================================
@@ -591,24 +708,30 @@ Match:  <LSL_._testdir_path1_._testdir_path2__files_first_sync_copy_P2P1>
 
 ----------------------------------------------------------
 MISCOMPARE  < Golden  to  > Results  for:  <consolelog.txt>
-82d81
-< NOTICE: file11.txt: Not copying as --dry-run
-84d82
-< NOTICE: file1.txt: Not copying as --dry-run
-85a84
-> NOTICE: file11.txt: Not copying as --dry-run
-86a86
-> NOTICE: file1.txt: Not copying as --dry-run
-87a88
-> NOTICE: file6.txt: Not deleting as --dry-run
-90d90
-< NOTICE: file6.txt: Not deleting as --dry-run
-139,140d138
-< NOTICE: file10.txt: Not copying as --dry-run
-< NOTICE: file1.txt: Not copying as --dry-run
-141a140,141
-> NOTICE: file1.txt: Not copying as --dry-run
-> NOTICE: file10.txt: Not copying as --dry-run
+79d78
+< NOTICE: file10.txt: Skipped copy as --dry-run is set
+80a80
+> NOTICE: file10.txt: Skipped copy as --dry-run is set
+82,83d81
+< NOTICE: file11.txt: Skipped copy as --dry-run is set
+< NOTICE: file2.txt: Skipped copy as --dry-run is set
+85c83
+< NOTICE: file3.txt: Skipped copy as --dry-run is set
+---
+> NOTICE: file2.txt: Skipped copy as --dry-run is set
+86a85,86
+> NOTICE: file3.txt: Skipped copy as --dry-run is set
+> NOTICE: file11.txt: Skipped copy as --dry-run is set
+89d88
+< NOTICE: file6.txt: Skipped delete as --dry-run is set
+90a90
+> NOTICE: file6.txt: Skipped delete as --dry-run is set
+143,144d142
+< NOTICE: file2.txt: Skipped copy as --dry-run is set
+< NOTICE: file7.txt: Skipped copy as --dry-run is set
+145a144,145
+> NOTICE: file7.txt: Skipped copy as --dry-run is set
+> NOTICE: file2.txt: Skipped copy as --dry-run is set
 
 ----------------------------------------------------------
 Match:  <dry_run_LSL_._testdir_path1_._testdir_path2__Path1>

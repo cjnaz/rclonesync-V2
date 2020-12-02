@@ -9,4 +9,4 @@ test_changes - Exercise all of the various file change scenarios
  - Changed on Path2 and on Path1			file5 (file5r, file5l)
  - Newer on Path2 and deleted on Path1		file6
  - Newer on Path1 and deleted on Path2		file7
- 
+ - Deleted on both paths					file8
