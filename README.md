@@ -299,7 +299,7 @@ See the Github [Issues](https://github.com/cjnaz/rclonesync-V2/issues) tab for f
 7. Google docs exist as virtual files on Google Drive, and cannot be transferred to other filesystems natively.
 rclonesync's handling of Google Doc files is to 1) Flag them in the run log output as an FYI, and 2) ignore them for any file transfers,
 deletes, or syncs.  See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more info.
-
+8. Renaming a folder on side A results is deleting all files on side B and then copying all files again from A to B. rclonesync sees this as all files in the old directory name as deleted and all files in the new directory name as new. Similarly, renaming a directory on both sides to the same name will result in creating _Path1 and _Path2 files on both sides. Quite a mess. The most effective and efficient method of renaming a directory is to 1) rename it on both sides, then 2) do a --first-sync.
 
 ` `  
 ## Windows support
