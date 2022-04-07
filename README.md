@@ -1,6 +1,10 @@
 # rclonesync - A Bidirectional Cloud Sync Utility using rclone
 
 
+## NOTE:  rclonesync functionality is now natively supported in rclone v1.58.0+.  See `rclone bisync`.  Please consider moving over to the native rclone implementation.  rclonesync will remain here with critical bug fix support only, for the time being.
+` `
+
+
 [Rclone](https://rclone.org/) provides a programmatic building block interface for transferring files between a cloud service 
 provider and your local filesystem (actually a lot of functionality), but _rclone does not provide a turnkey bidirectional 
 sync capability_.  _rclonesync_ provides a bidirectional sync solution using rclone.
